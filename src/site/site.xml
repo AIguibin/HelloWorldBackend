@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/DECORATION/1.8.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.0
+         http://maven.apache.org/xsd/decoration-1.8.0.xsd">
+         <!--name="" combine.self="">-->
+    <!--详细参考以下网址
+        http://maven.apache.org/plugins/maven-site-plugin/examples/creating-content.html
+        http://maven.apache.org/doxia/doxia-sitetools/doxia-decoration-model/decoration.html
+    -->
+    <!--
+    <bannerLeft>
+        <name/>
+        <src/>
+        <alt/>
+        <href/>
+        <border/>
+        <width/>
+        <height/>
+        <title/>
+    </bannerLeft>
+    <bannerRight>
+        <name/>
+        <src/>
+        <alt/>
+        <href/>
+        <border/>
+        <width/>
+        <height/>
+        <title/>
+    </bannerRight>
+    <googleAdSenseClient/>
+    <googleAdSenseSlot/>
+    <googleAnalyticsAccountId/>
+
+    <publishDate position=.. format=.. />
+    <version position=.. />
+    <edit/>
+    <poweredBy>
+        <logo name=.. href=.. img=.. position=.. alt=.. border=.. width=.. height=.. target=.. title=.. />
+    </poweredBy>
+
+    <skin>
+        <groupId/>
+        <artifactId/>
+        <version/>
+    </skin>
+
+    <body>
+        <head/>
+        <links>
+            <item name=.. href=.. img=.. position=.. alt=.. border=.. width=.. height=.. target=.. title=.. />
+        </links>
+        <breadcrumbs>
+            <item name=.. href=.. img=.. position=.. alt=.. border=.. width=.. height=.. target=.. title=.. />
+        </breadcrumbs>
+
+        <menu name=.. inherit=.. inheritAsRef=.. ref=.. img=.. alt=.. position=.. border=.. width=.. height=.. title=.. >
+        <item collapse=.. ref=.. name=.. href=.. img=.. position=.. alt=.. border=.. width=.. height=.. target=.. title=.. >
+        <description/>
+        <item>...recursion...<item>
+        </item>
+        </menu>
+        <footer/>
+    </body>
+
+    <custom/>
+    -->
+</project>
