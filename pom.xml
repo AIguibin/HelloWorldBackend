@@ -1,52 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--https://gitee.com/steadyjack/middleware/tree/master-->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>HelloWorldSpringCloud</artifactId>
+        <groupId>com.aiguibin</groupId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
     <modelVersion>4.0.0</modelVersion>
-
-    <groupId>com.aiguibin</groupId>
-    <artifactId>HelloWorldBackend</artifactId>
+    <artifactId>aiguibin-cloud-service</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
-
-
-
-    <name>HelloWorldBackend</name>
+    <name>aiguibin-cloud-service</name>
     <url>http://maven.apache.org/</url>
     <inceptionYear>2001</inceptionYear>
-
-    <distributionManagement>
-        <site>
-            <id>website</id>
-            <url>scp://webhost.company.com/www/website</url>
-        </site>
-    </distributionManagement>
-
+    <modules>
+        <module>aiguibin-userinfo-provider</module>
+        <module>aiguibin-userinfo-consumer</module>
+        <module>aiguibin-userinfo-restribbon</module>
+    </modules>
     <properties>
-        <skipTests>true</skipTests>
         <java.version>1.8</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
-
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <artifactId>maven-clean-plugin</artifactId>
-                    <version>3.0.0</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-site-plugin</artifactId>
-                    <version>3.7</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-project-info-reports-plugin</artifactId>
-                    <version>2.9</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -64,24 +44,4 @@
             </plugin>
         </plugins>
     </reporting>
-    <repositories>
-        <repository>
-            <id>LocalFile</id>
-            <url>file:E:\Repository\Local</url>
-        </repository>
-        <repository>
-            <id>AIguibinNexus</id>
-            <url>http://127.0.0.1:18081/repository/aiguibin-public</url>
-        </repository>
-    </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>LocalFile</id>
-            <url>file:E:\Repository\Local</url>
-        </pluginRepository>
-        <pluginRepository>
-            <id>AIguibinNexus</id>
-            <url>http://127.0.0.1:18081/repository/aiguibin-public</url>
-        </pluginRepository>
-    </pluginRepositories>
 </project>
