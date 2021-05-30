@@ -1,87 +1,149 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--https://gitee.com/steadyjack/middleware/tree/master-->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>WelcomeToJavaWorld</artifactId>
+        <groupId>com.aiguibin</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.aiguibin</groupId>
-    <artifactId>HelloWorldBackend</artifactId>
-    <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <artifactId>aiguibin-frameweb-ssm</artifactId>
+    <packaging>war</packaging>
 
+    <name>aiguibin-frameweb-ssm-war</name>
+    <url>http://www.example.com</url>
 
-
-    <name>HelloWorldBackend</name>
-    <url>http://maven.apache.org/</url>
-    <inceptionYear>2001</inceptionYear>
-
-    <distributionManagement>
-        <site>
-            <id>website</id>
-            <url>scp://webhost.company.com/www/website</url>
-        </site>
-    </distributionManagement>
-
-    <properties>
-        <skipTests>true</skipTests>
-        <java.version>1.8</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-
+    <dependencies>
+        <!--数据库驱动-->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+        <!--数据库连接池-->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid</artifactId>
+        </dependency>
+        <!--MyBatis相关-->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis-spring</artifactId>
+        </dependency>
+        <!-- jsp/jstl/core 页面标签 -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>jstl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>taglibs</groupId>
+            <artifactId>standard</artifactId>
+        </dependency>
+        <!--日志相关-->
+        <!--log4j2使用Log logger=LogFactory.getLog(Class<?> class)的依赖-->
+        <!--import org.apache.commons.logging.Log;-->
+        <!--import org.apache.commons.logging.LogFactory;-->
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.2</version>
+            <scope>compile</scope>
+        </dependency>
+        <!--log4j2核心依赖-->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.11.1</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>2.11.1</version>
+            <scope>compile</scope>
+        </dependency>
+        <!--log4j2 web核心依赖-->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-web</artifactId>
+            <version>2.11.1</version>
+        </dependency>
+        <!--log4j2与commons-logging衔接必须的的依赖-->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-jcl</artifactId>
+            <version>2.11.1</version>
+        </dependency>
+        <!--log4j2异步日志依赖-->
+        <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+            <version>3.4.2</version>
+        </dependency>
+    </dependencies>
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <artifactId>maven-clean-plugin</artifactId>
-                    <version>3.0.0</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-site-plugin</artifactId>
-                    <version>3.7</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-project-info-reports-plugin</artifactId>
-                    <version>2.9</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
+        <finalName>aiguibin-frameweb-ssm</finalName>
+        <!--资源文件-->
+        <resources>
+            <resource>
+                <directory>src/main/java</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*.properties</include>
+                    <include>**/*.xml</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resource</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*.properties</include>
+                    <include>**/*.xml</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/test/resource</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*.properties</include>
+                    <include>**/*.xml</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-site-plugin</artifactId>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
                 <configuration>
-                    <locales>en,fr</locales>
+                    <httpConnector>
+                        <port>9999</port>
+                        <host>0.0.0.0</host>
+                        <!--
+                        <name></name>
+                         <idleTimeout></idleTimeout>
+                         -->
+                    </httpConnector>
+                    <!--自动刷新-->
+                    <!--If <scanIntervalSeconds> hot reloading when <reload> Default value is "automatic"-->
+                    <scanIntervalSeconds>10</scanIntervalSeconds>
+                    <!--Useful when used in conjunction with the stop or run-forked goals.-->
+                    <stopKey>stop</stopKey>
+                    <stopPort>5555</stopPort>
+                    <!--Hit ENTER on the console to restart-->
+                    <reload>manual</reload>
+                    <dumpOnStart>true</dumpOnStart>
+                    <webApp>
+                        <!--${project.artifactId}-->
+                        <contextPath>/</contextPath>
+                        <!--<descriptor></descriptor>-->
+                    </webApp>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-    <reporting>
-        <plugins>
-            <plugin>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </reporting>
-    <repositories>
-        <repository>
-            <id>LocalFile</id>
-            <url>file:E:\Repository\Local</url>
-        </repository>
-        <repository>
-            <id>AIguibinNexus</id>
-            <url>http://127.0.0.1:18081/repository/aiguibin-public</url>
-        </repository>
-    </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>LocalFile</id>
-            <url>file:E:\Repository\Local</url>
-        </pluginRepository>
-        <pluginRepository>
-            <id>AIguibinNexus</id>
-            <url>http://127.0.0.1:18081/repository/aiguibin-public</url>
-        </pluginRepository>
-    </pluginRepositories>
 </project>
