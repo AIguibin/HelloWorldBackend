@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <!-- 配置 hibernate 的基本属性 -->
+        <!-- 使用sessionFactory.getCurrentSession()来获得Session -->
+        <!-- <property name="hibernate.current_session_context_class">thread</property> -->
+        <!--  **没有配置报createSQLQuery is not valid without active transaction错误** -->
+        <property name="hibernate.current_session_context_class">org.springframework.orm.hibernate5.SpringSessionContext</property>
+        <!-- 数据库方言 -->
+        <property name="dialect">org.hibernate.dialect.MySQL57Dialect</property>
+        <!-- 执行sql时是否在控制台打印 -->
+        <property name="show_sql">true</property>
+        <!-- 是否对sql进行格式化 -->
+        <property name="format_sql">true</property>
+        <!-- 指定自动生成数据表的策略 -->
+        <property name="hbm2ddl.auto">update</property>
+        <!-- 是否自动提交事务，不建议使用，默认false -->
+        <property name="autocommit">false</property>
+        <!-- 二级缓存相关 -->
+    </session-factory>
+    <!--<security context=""/>-->
+</hibernate-configuration>

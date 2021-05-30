@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd"> 
+<beans default-autowire="byName" >
+<!-- 微信解密常用 -->
+	<!--<bean id="weChatCode" class="aiguibin.WeChat.User.WeChatCode" ></bean>
+	<bean id="decryptHttp" class="aiguibin.WeChat.User.DecryptHttp" ></bean>
+	<bean id="weChatDecrypt" class="aiguibin.WeChat.User.WeChatDecrypt" ></bean>
+	
+	<bean id="decryptCode" class="aiguibin.WeChat.User.DecryptCode" >
+		<property name="weChatCode" ref="weChatCode"></property>
+		<property name="decryptHttp" ref="decryptHttp"></property>
+		<property name="weChatDecrypt" ref="weChatDecrypt"></property>
+	</bean>-->
+	<!-- 用户信息 -->
+	<!--<bean id="consumer" class="aiguibin.Envelope.Entitys.Consumer"></bean>
+	<bean id="consumerDao" class="aiguibin.Envelope.MyDao.ConsumerDao"></bean>
+	<bean id="consumerService" class="aiguibin.Envelope.Services.ConsumerService">
+		<property name="consumer" ref="consumer"></property>
+		<property name="decryptCode" ref="decryptCode"></property>
+		<property name="consumerDao" ref="consumerDao"></property>
+	</bean>
+	<bean id="consumerAction" class="aiguibin.Envelope.Action.ConsumerAction">
+		<property name="consumerService" ref="consumerService"></property>
+	</bean>-->
+	
+	<!-- 微信支付 -->
+	<!--<bean id="weChatPayment" class="aiguibin.WeChatPayIndividual.WeChatPayment"></bean>
+	<bean id="weChatPayEnTrade" class="aiguibin.WeChatPayEnterprise.WeChatPayEnTrade"></bean>
+	<bean id="weChatPayService" class="aiguibin.Envelope.Services.WeChatPayService">
+		<property name="weChatPayment" ref="weChatPayment"></property>
+		<property name="weChatPayEnTrade" ref="weChatPayEnTrade"></property>
+	</bean>
+	<bean id="weChatPayAction" class="aiguibin.Envelope.Action.WeChatPayAction">
+		<property name="weChatPayService" ref="weChatPayService"></property>
+	</bean>-->
+	
+	<!-- 微信二维码 -->
+	<!--<bean id="weChatQRcodeService" class="aiguibin.Envelope.Services.WeChatQRcodeService"></bean>
+	<bean id="weChatQRcodeAction" class="aiguibin.Envelope.Action.WeChatQRcodeAction">
+		<property name="weChatQRcodeService" ref="weChatQRcodeService"></property>
+	</bean>-->
+</beans>

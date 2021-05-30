@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+        "http://struts.apache.org/dtds/struts-2.3.dtd">
+<struts>
+    <!-- 国际化配置， 设置全局资源文件名称为 messages -->
+    <constant name="struts.custom.i18n.resources" value="messages"/>
+    <!-- 设置编码格式 -->
+    <constant name="struts.i18n.encoding" value="UTF-8"/>
+    <!-- 当struts的配置文件修改后,系统是否自动重新加载该文件,默认值为false(生产环境下使用),开发阶段最好打开 -->
+    <constant name="struts.configuration.xml.reload" value="false"/>
+    <!--  去除URL访问路径的后缀 -->
+    <constant name="struts.action.extension" value=","/>
+    <!-- 禁止去上级目录，默认目录中搜索(如果namespace配置为空或者/，则访问任何/***命名空间都会去默认命名空间查找) -->
+    <constant name="struts.mapper.alwaysSelectFullNamespace" value="true"/>
+    <!-- 自动动态方法的调用，使用这个数值以后可以这样调用：action！method -->
+    <constant name="struts.enable.DynamicMethodInvocation" value="true"></constant>
+    <!-- 配置上传 -->
+    <bean type="org.apache.struts2.dispatcher.multipart.MultiPartRequest"
+          name="getUPLoad" class="aiguibin.SuperUtil.Commutil.GetUPLoad"
+          scope="default" optional="true "/>
+    <constant name="struts.multipart.parser" value="getUPLoad"/>
+
+
+    <package name="aiguibin.Envelope.Action" extends="struts-default">
+        <!--<action name="weChatPayAction" class="weChatPayAction"></action>-->
+    </package>
+
+
+</struts>
