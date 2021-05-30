@@ -1,0 +1,17 @@
+*{
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.wrapper{
+
+}
+.head{
+    width: 51%;
+    margin: 0 auto;
+}
+.middle .form{
+    width: 51%;
+    margin: 0 auto;
+    left: 20px;
+}

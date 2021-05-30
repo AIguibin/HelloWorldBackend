@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="OFF" monitorInterval="10">
+    <properties>
+        <property name="LOG_HOME">G:/ProLogs</property>
+        <property name="FILE_NAME">aiguibin-dubbo-soa</property>
+        <property name="PATTERN">%highlight{%date{yyyy-MM-dd HH:mm:ss.SSS} %-5level %white{[%5thread]} %cyan{%l}
+            %green{|-----%msg} %n}{FATAL=red, ERROR=red, WARN=yellow, INFO=cyan, DEBUG=white,TRACE=blue}
+        </property>
+    </properties>
+    <Appenders>
+        <!--控制台输出-->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${PATTERN}"/>
+        </Console>
+        <!--文件输出-->
+        <RollingFile name="RollingFile" fileName="${LOG_HOME}/${FILE_NAME}.log"
+                     filePattern="${LOG_HOME}/$${date:yyyy-MM}/${FILE_NAME}-%d{yyyy-MM-dd}-%i.log.gz"
+                     immediateFlush="true" append="true">
+            <PatternLayout
+                    pattern="%date{yyyy-MM-dd HH:mm:ss.SSS} %level - %msg%n"/>
+            <Policies>
+                <!--按时间滚动-->
+                <!--interval的取值与 filePattern后的日期格式相关，精确到天就是interval天，精确到分钟就是interval分-->
+                <TimeBasedTriggeringPolicy interval="10" modulate="true"/>
+                <!--按日志大小滚动 size的取值是带单位的可以使1024KB，也可以是1M-->
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <!--最大保留多少个压缩日志，默认是7个,该值是filePattern中的i的最大值,超过覆盖-->
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+    </Appenders>
+    <Loggers>
+        <AsyncLogger name="com.aiguibin" level="DEBUG" additivity="true">
+            <AppenderRef ref="RollingFile"/>
+        </AsyncLogger>
+        <AsyncRoot level="DEBUG">
+            <AppenderRef ref="Console"/>
+        </AsyncRoot>
+    </Loggers>
+</Configuration>
