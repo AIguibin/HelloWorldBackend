@@ -1,0 +1,31 @@
+/**
+ * 使用allprojects{}来表示gradle项目的聚合分拆
+ */
+allprojects {
+    group 'com.aiguibin'
+    version '1.0-SNAPSHOT'
+
+    apply plugin: 'java'
+
+    sourceCompatibility = 1.8
+/**
+ * GRADLE_USER_HOME指定了.gradle的位置
+ * repositories{}是配置远程仓库地址的
+ * mavenLocal() 表示使用maven的本地仓库，
+ *   --如果有就不去下载直接使用，
+ *   --如果没有则会去其他远程仓库下载到GRADLE_USER_HOME指定的文件夹中
+ *
+ * maven{url "http://127.0.0.1:18081/repository/aiguibin-public/"}
+ *    --使用自己的远程仓库地址，maven{url+空格+字符串地址 }*
+ * jcenter()--等同于 maven{url "https://jcenter.bintray.com/"}
+ */
+    repositories {
+        mavenLocal()
+        maven { url "http://127.0.0.1:18081/repository/aiguibin-public/" }
+    }
+
+    dependencies {
+        testCompile group: 'junit', name: 'junit', version: '4.12'
+        compile group: 'org.springframework', name: 'spring-core', version: '5.0.7.RELEASE'
+    }
+}
