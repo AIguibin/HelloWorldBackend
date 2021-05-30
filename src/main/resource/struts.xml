@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+        "http://struts.apache.org/dtds/struts-2.3.dtd">
+<struts>
+    <!-- 国际化配置， 设置全局资源文件名称为 messages -->
+    <constant name="struts.custom.i18n.resources" value="messages"/>
+    <!-- 设置编码格式 -->
+    <constant name="struts.i18n.encoding" value="UTF-8"/>
+    <!-- 当struts的配置文件修改后,系统是否自动重新加载该文件,默认值为false(生产环境下使用),开发阶段最好打开 -->
+    <constant name="struts.configuration.xml.reload" value="false"/>
+    <!--  去除URL访问路径的后缀,如果指定后缀类型,多个用逗号隔开-->
+    <constant name="struts.action.extension" value=","/>
+    <!-- 禁止去上级目录，默认目录中搜索(如果namespace配置为空或者/，则访问任何/***命名空间都会去默认命名空间查找) -->
+    <constant name="struts.mapper.alwaysSelectFullNamespace" value="true"/>
+    <!-- 自动动态方法的调用，使用这个数值以后可以这样调用：action!method -->
+    <constant name="struts.enable.DynamicMethodInvocation" value="true"/>
+    <!-- 是否使用struts的开发模式。开发模式会有更多的调试信息。默认值为false(生产环境下使用),开发阶段最好打开 -->
+    <constant name="struts.devMode" value="true"/>
+    <!-- 设置浏览器是否缓存静态内容。默认值为true(生产环境下使用),开发阶段最好关闭 -->
+    <constant name="struts.serve.static.browserCache" value="false"/>
+    <!-- 指定由spring负责action对象的创建 -->
+    <constant name="struts.objectFactory" value="spring"/>
+    <!--默认配置所有的结果result页面都存储在WEB-INF/content下，
+    通过设置struts.convention.result.path属性的值改变结果result页面到其他路径-->
+    <constant name="struts.convention.result.path" value="/WEB-INF/pages" />
+    <!-- 配置上传 -->
+    <!--<bean type="org.apache.struts2.dispatcher.multipart.MultiPartRequest"
+          name="getUPLoad" class="aiguibin.SuperUtil.Commutil.GetUPLoad"
+          scope="default" optional="true "/>
+    <constant name="struts.multipart.parser" value="getUPLoad"/>-->
+
+
+    <!--配置action请求映射 namespace默认"/"-->
+    <!--<package name="com.aiguibin.action" extends="struts-default">
+        <action name="weChatPayAction" class="weChatPayAction"></action>
+    </package>-->
+    <!--原本是要在spring的配置文件中定义action的bean,
+    然后在上边package的标签中定义哪些action指向spring中bean的id
+    现在我们加上struts2-convention-plugin.jar可以使用注解指定action,且让spring扫描
+    我们的action包-->
+
+
+
+</struts>

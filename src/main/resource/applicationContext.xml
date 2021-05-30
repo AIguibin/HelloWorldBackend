@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/tx
+       http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!--开启注解扫描-->
+    <context:annotation-config/>
+    <!--扫描包的范围-->
+    <context:component-scan base-package="com.aiguibin.service"/>
+    <context:component-scan base-package="com.aiguibin.action"/>
+    <!--导入资源文件-->
+    <context:property-placeholder location="classpath:database.properties"/>
+    <!--配置数据源-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="url" value="${jdbc.jdbcUrl}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="driverClassName" value="${jdbc.driverClass}"/>
+
+        <!-- 初始化连接池中的连接数 ,default : 3 -->
+        <!-- 连接池中保留的最小连接数 ,default : 3 -->
+        <!-- 连接池中保留的最大连接数, Default: 15 -->
+        <!-- maxIdleTime 60秒内未使用则连接被丢弃,Default: 0 -->
+        <!-- 连接池在获得新连接失败时重试的次数,default : 30 -->
+        <!-- 连接池在获得新连接时的间隔时间。default : 1000 单位ms -->
+        <!-- 连接池为数据源单个Connection缓存的PreparedStatement数 -->
+        <!-- idleConnectionTestPeriod闲置的连接测试周期[秒] -->
+    </bean>
+    <!-- 配置 SessionFactory -->
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"></property>
+        <!--扫描注解方式-->
+        <property name="packagesToScan" value="com.aiguibin.entities"/>
+        <!--加载hibernate主配置文件-->
+        <property name="configLocation" value="classpath:hibernate.cfg.xml"></property>
+        <!--映射实体.hbm.xml方式,非注解方式-->
+        <!--<property name="mappingLocations" value="classpath:aiguibin/Envelope/Entitys/*.hbm.xml"></property>-->
+    </bean>
+    <!--配置GeneralAccessor -->
+    <bean id="generalAccessor" class="com.aiguibin.access.GeneralAccessorImpl">
+
+    </bean>
+    <!--基于注解配置事务管理器-->
+    <bean id="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+    <!--开启事务注解-->
+    <tx:annotation-driven/>
+    <!--导入其他配置文件-->
+    <!--<import resource="classpath:applicationQuartz.xml"/>-->
+    <!--<import resource="classpath:applicationWeChat.xml"/>-->
+</beans>
