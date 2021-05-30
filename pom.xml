@@ -9,9 +9,9 @@
         <relativePath/>
     </parent>
     <groupId>com.aiguibin</groupId>
-    <artifactId>aiguibin-springboot-native</artifactId>
+    <artifactId>aiguibin-springboot-master</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>aiguibin-springboot-native</name>
+    <name>aiguibin-springboot-master</name>
     <description>Demo project for Spring Boot</description>
 
     <properties>
