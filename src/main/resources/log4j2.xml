@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="OFF" monitorInterval="10">
+    <properties>
+        <property name="LOG_HOME">G:/ProLogs</property>
+        <property name="FILE_NAME">aiguibin-frameweb-ssm</property>
+    </properties>
+    <Appenders>
+        <!--控制台输出-->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%date{yyyy-MM-dd HH:mm:ss.SSS} %level [%thread][%file:%line] - %msg%n"/>
+        </Console>
+        <!--文件输出-->
+        <RollingFile name="RollingFile" fileName="${LOG_HOME}/${FILE_NAME}.log"
+                     filePattern="${LOG_HOME}/$${date:yyyy-MM}/${FILE_NAME}-%d{yyyy-MM-dd}-%i.log.gz"
+                     immediateFlush="true" append="true">
+            <PatternLayout
+                    pattern="%date{yyyy-MM-dd HH:mm:ss.SSS} %level [%thread][%file:%line] - %msg%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
+        <!--第一种异步输出配合-->
+        <Async name="AsConsole">
+            <AppenderRef ref="Console"/>
+        </Async>
+        <Async name="AsRollingFile">
+            <AppenderRef ref="RollingFile"/>
+        </Async>
+    </Appenders>
+    <Loggers>
+        <!--生产环境中修改level="INFO"以及不想某个Logger输出到控制台就设置additivity="false"-->
+        <!--第一种异步输出-->
+        <Logger name="com.aiguibin" level="DEBUG" additivity="true">
+            <AppenderRef ref="AsRollingFile"/>
+        </Logger>
+        <Root level="DEBUG">
+            <AppenderRef ref="AsConsole"/>
+        </Root>
+        <!--第二种异步单独使用-->
+        <!--<AsyncLogger name="com.aiguibin" level="DEBUG" additivity="true">
+            <AppenderRef ref="RollingFile"/>
+        </AsyncLogger>
+        <AsyncRoot level="DEBUG">
+            <AppenderRef ref="Console"/>
+        </AsyncRoot>-->
+    </Loggers>
+</Configuration>

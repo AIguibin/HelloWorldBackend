@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN" "http://java.sun.com/dtd/web-app_2_3.dtd" >
-<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="http://java.sun.com/xml/ns/javaee"
+<!--Servlet 3.0 Java EE 6 XML schema, namespace is http://java.sun.com/xml/ns/javaee-->
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
          http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
          id="WebApp_ID" version="3.0">
+    <!--ServletContext -> context-param -> listener-> filter -> servlet-->
     <display-name>Archetype Created Web Application</display-name>
     <!-- 旧版log4j -->
     <context-param>
@@ -18,7 +18,7 @@
     <!--  ContextLoaderListener 加载IOC容器，Spring框架的底层是listener -->
     <context-param>
         <param-name>contextConfigLocation</param-name>
-        <param-value>classpath*:application*.xml</param-value>
+        <param-value>classpath:applicationContext.xml</param-value>
     </context-param>
     <!-- log4j2-begin -->
     <filter>
@@ -50,7 +50,7 @@
     </filter>
     <filter-mapping>
         <filter-name>HiddenHttpMethodFilter</filter-name>
-        <url-pattern>/</url-pattern>
+        <url-pattern>/*</url-pattern>
     </filter-mapping>
     <!-- Bootstraps the root web application context before servlet initialization -->
     <listener>
@@ -67,7 +67,7 @@
         <!--配置一个初始化参数，其作用是加载配置springMvc-->
         <init-param>
             <param-name>contextConfigLocation</param-name>
-            <param-value>classpath*:spring*.xml</param-value>
+            <param-value>classpath:applicationMVC.xml</param-value>
         </init-param>
         <load-on-startup>1</load-on-startup>
     </servlet>
@@ -86,5 +86,7 @@
     </servlet-mapping>
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
+        <welcome-file>index.htm</welcome-file>
+        <welcome-file>index.html</welcome-file>
     </welcome-file-list>
 </web-app>

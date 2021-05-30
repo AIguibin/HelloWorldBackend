@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aiguibin.access.UserInfoDao">
+    <insert id="insertUser" useGeneratedKeys="true"
+            keyProperty="id" parameterType="com.aiguibin.entities.UserInfoEntity">
+	    insert into T_USER_INFO(id,user_name,age,
+  								address_id,register,birthday,update_time)
+	    values (#{id}, #{userName}, #{age},
+	     		#{address},#{register},#{birthday},#{updateTime})
+    </insert>
+	<update id="updateUser" parameterType="com.aiguibin.entities.UserInfoEntity">
+	update T_USER_INFO set user_name=#{userName},age=#{age},address_id=#{address},
+	register=#{register},birthday=#{birthday},update_time=#{updateTime} where id=#{id}
+	</update>
+	<select id="selectUser" resultType="com.aiguibin.entities.UserInfoEntity">
+		select * from T_USER_INFO
+	</select>
+</mapper>
