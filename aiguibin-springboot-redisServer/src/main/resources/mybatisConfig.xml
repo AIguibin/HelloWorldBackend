@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <settings>
+        <!-- 开启驼峰匹配，经典的数据库列名（多个单词时，以下划线连接）到经典java属性名（多个单词时，以驼峰命名） -->
+        <setting name="mapUnderscoreToCamelCase" value="true" />
+    </settings>
+</configuration>
