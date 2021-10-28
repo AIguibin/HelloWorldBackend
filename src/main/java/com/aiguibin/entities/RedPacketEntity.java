@@ -2,7 +2,6 @@ package com.aiguibin.entities;
 
 import lombok.Data;
 
-import javax.persistence.*;
 import java.sql.Timestamp;
 /**
  * 描述： 红包表对应的实体类
