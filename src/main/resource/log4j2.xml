@@ -2,7 +2,7 @@
 <Configuration status="OFF" monitorInterval="10">
     <properties>
         <property name="LOG_HOME">G:/ProLogs</property>
-        <property name="FILE_NAME">aiguibin-common-core</property>
+        <property name="FILE_NAME">aiguibin-frameweb-ssm</property>
     </properties>
     <Appenders>
         <!--控制台输出-->
