@@ -1,8 +1,12 @@
 package com.aiguibin.common.algorithm;
 
+import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import javax.servlet.jsp.tagext.TryCatchFinally;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.Arrays;
 import java.util.List;
 
@@ -94,9 +98,24 @@ public class Complexity {
     }
 
 
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
         int[] array = {0, 1, 0, 3, 16};
         String s = Arrays.toString(moveZero2Array(array));
         System.out.println(s);
+    }*/
+    public static void main(String[] args) {
+        HikariDataSource dataSource=new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:mysql://127.0.0.1:3306/aiguibin_common_tables?serverTimezone=UTC&useUnicode=true&characterEncoding=utf-8&useSSL=false");
+        dataSource.setUsername("root");
+        dataSource.setPassword("P@ssW0rd");
+        try {
+            Connection connection=dataSource.getConnection();
+            PreparedStatement pstmt = connection.prepareStatement("select a.comments,b.column_name,b.data_type,b.data_length from ")
+        }catch (Exception e){
+
+        }finally {
+
+        }
+
     }
 }

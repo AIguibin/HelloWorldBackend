@@ -50,6 +50,22 @@
             <artifactId>log4j-jcl</artifactId>
             <version>2.11.1</version>
         </dependency>
+        <!--连接数据库生成文档-->
+        <dependency>
+            <groupId>cn.smallbun.screw</groupId>
+            <artifactId>screw-core</artifactId>
+            <version>1.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>3.4.5</version>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.11</version>
+        </dependency>
     </dependencies>
     <build>
         <finalName>aiguibin-common-core</finalName>
