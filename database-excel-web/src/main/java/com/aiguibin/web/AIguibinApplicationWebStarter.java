@@ -1,4 +1,4 @@
-package com.aiguibin.springbootnative;
+package com.aiguibin.web;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -6,10 +6,9 @@ import org.springframework.boot.web.servlet.ServletComponentScan;
 
 @ServletComponentScan
 @SpringBootApplication
-public class AiguibinSpringbootNativeApplication {
+public class AIguibinApplicationWebStarter {
 
     public static void main(String[] args) {
-        SpringApplication.run(AiguibinSpringbootNativeApplication.class, args);
+        SpringApplication.run(AIguibinApplicationWebStarter.class, args);
     }
-
 }
