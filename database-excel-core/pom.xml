@@ -10,6 +10,16 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>database-excel-core</artifactId>
-
-
+    <build>
+        <plugins>
+            <!-- 显式覆盖父工程的 spring-boot-maven-plugin 配置 -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip> <!-- 跳过 repackage -->
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
