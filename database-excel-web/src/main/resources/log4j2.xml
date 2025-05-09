@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="OFF" monitorInterval="10">
     <properties>
-        <property name="LOG_HOME">F:/ProLogs</property>
+        <property name="LOG_HOME">G:/ProLogs</property>
         <property name="FILE_NAME">aiguibin-database-excel</property>
         <property name="PATTERN">%highlight{%date{yyyy-MM-dd HH:mm:ss.SSS} %-5level %white{[%5thread]} %cyan{%l}
                         %green{|-----%msg} %n}{FATAL=red, ERROR=red, WARN=yellow, INFO=cyan, DEBUG=white,TRACE=blue}

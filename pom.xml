@@ -4,9 +4,9 @@
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
     <modules>
+        <module>database-excel-core</module>
         <module>database-excel-web</module>
         <module>database-excel-cli</module>
-        <module>database-excel-core</module>
     </modules>
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -98,6 +98,11 @@
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>${poi.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>easyexcel</artifactId>
+            <version>3.1.1</version>
         </dependency>
     </dependencies>
 
