@@ -11,6 +11,19 @@
 
     <groupId>com.aiguibin</groupId>
     <artifactId>database-excel-core</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.tmatesoft.svnkit</groupId>
+            <artifactId>svnkit</artifactId>
+            <version>1.10.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.47</version>
+        </dependency>
+    </dependencies>
     <build>
         <plugins>
             <!-- 显式覆盖父工程的 spring-boot-maven-plugin 配置 -->
