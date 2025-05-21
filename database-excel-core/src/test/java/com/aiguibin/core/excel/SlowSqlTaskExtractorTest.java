@@ -1,53 +1,95 @@
 package com.aiguibin.core.excel;
 
 import com.aiguibin.core.common.FileAccessor;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class SlowSqlTaskExtractorTest {
 
+    @Mock
+    private Log mockLogger;
+
     @TempDir
-    Path tempDir; // 使用JUnit 5的临时目录功能
+    Path tempDir;
 
     @Test
-    void testTabbleListIsExist_ReturnsExpectedPath() {
-        // 模拟静态方法FileAccessor.getProjectRootFolderPath
-        try (MockedStatic<FileAccessor> mockedFileAccessor = Mockito.mockStatic(FileAccessor.class)) {
-            // 定义预期路径
-            String relativePath = "database-excel-core/docs/tableList";
-            Path expectedPath = tempDir.resolve(relativePath);
+    void testTabbleListIsExist_DirectoryNotExists_CreatesDirectory() throws IOException {
+        // 模拟静态方法
+        try (MockedStatic<FileAccessor> mockedFileAccessor = mockStatic(FileAccessor.class);
+             MockedStatic<LogFactory> mockedLogFactory = mockStatic(LogFactory.class);
+             MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
 
-            // 当调用静态方法时返回模拟路径
-            mockedFileAccessor.when(() -> FileAccessor.getProjectRootFolderPath(relativePath))
+            // 配置静态方法返回值
+            Path expectedPath = tempDir.resolve("database-excel-core/docs/tableList");
+            mockedFileAccessor.when(() -> FileAccessor.getProjectRootFolderPath(anyString()))
                     .thenReturn(expectedPath);
+            mockedLogFactory.when(() -> LogFactory.getLog(FileAccessor.class))
+                    .thenReturn(mockLogger);
+            mockedFiles.when(() -> Files.notExists(expectedPath)).thenReturn(true);
 
-            // 调用被测方法
+            // 执行测试方法
             SlowSqlTaskExtractor extractor = new SlowSqlTaskExtractor();
-            Path result = extractor.tabbleListIsExist();
+            extractor.createTaskBySlowSQLAnalyzer();
 
-            // 验证路径是否符合预期
-            assertEquals(expectedPath, result, "返回的路径应与预期一致");
+            // 验证目录创建和日志
+            mockedFiles.verify(() -> Files.createDirectories(expectedPath));
+            verify(mockLogger).info("目录已创建: database-excel-core/docs/tableList");
+            verify(mockLogger).info(expectedPath.toString());
         }
     }
 
     @Test
-    void testTabbleListIsExist_HandlesNullPath() {
-        try (MockedStatic<FileAccessor> mockedFileAccessor = Mockito.mockStatic(FileAccessor.class)) {
-            // 模拟返回null路径
+    void testTabbleListIsExist_DirectoryExists_NoCreation() {
+        try (MockedStatic<FileAccessor> mockedFileAccessor = mockStatic(FileAccessor.class);
+             MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
+
+            Path existingPath = tempDir.resolve("existing-dir");
             mockedFileAccessor.when(() -> FileAccessor.getProjectRootFolderPath(anyString()))
-                    .thenReturn(null);
+                    .thenReturn(existingPath);
+            mockedFiles.when(() -> Files.notExists(existingPath)).thenReturn(false);
 
             SlowSqlTaskExtractor extractor = new SlowSqlTaskExtractor();
-            Path result = extractor.tabbleListIsExist();
+            extractor.createTaskBySlowSQLAnalyzer();
 
-            assertNull(result, "当FileAccessor返回null时，方法应返回null");
+            mockedFiles.verify(() -> Files.createDirectories(existingPath), never());
+            verify(mockLogger, never()).info("目录已创建: database-excel-core/docs/tableList");
+        }
+    }
+
+    @Test
+    void testTabbleListIsExist_CreateDirectoryFails_LogsError() throws IOException {
+        try (MockedStatic<FileAccessor> mockedFileAccessor = mockStatic(FileAccessor.class);
+             MockedStatic<LogFactory> mockedLogFactory = mockStatic(LogFactory.class);
+             MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
+
+            Path targetPath = tempDir.resolve("error-dir");
+            mockedFileAccessor.when(() -> FileAccessor.getProjectRootFolderPath(anyString()))
+                    .thenReturn(targetPath);
+            mockedLogFactory.when(() -> LogFactory.getLog(FileAccessor.class))
+                    .thenReturn(mockLogger);
+            mockedFiles.when(() -> Files.notExists(targetPath)).thenReturn(true);
+            mockedFiles.when(() -> Files.createDirectories(targetPath))
+                    .thenThrow(new IOException("模拟异常"));
+
+            SlowSqlTaskExtractor extractor = new SlowSqlTaskExtractor();
+            extractor.createTaskBySlowSQLAnalyzer();
+
+            verify(mockLogger).info("目录创建失败：\n\r", any(IOException.class));
         }
     }
 }

@@ -62,7 +62,7 @@ public class ExcelHelper {
     /**
      * 检查单个Excel文件
      */
-    private static void checkSingleFile(Path file, Map<Integer, String> expectedSheets) {
+    public static void checkSingleFile(Path file, Map<Integer, String> expectedSheets) {
         try (Workbook workbook = readWorkbook(file)) {
             // 检查Sheet数量
             if (workbook.getNumberOfSheets() < expectedSheets.size()) {
@@ -185,7 +185,7 @@ public class ExcelHelper {
     }
 
 
-    private static String rowToString(Row row) {
+    public static String rowToString(Row row) {
         return StreamSupport.stream(row.spliterator(), false)
                 .map(cell -> cell.toString())
                 .collect(Collectors.joining("|"));
@@ -228,7 +228,7 @@ public class ExcelHelper {
      * @param mergedSheet    合并用的目标Sheet对象
      * @param rowCounter     行号计数器（线程安全）
      */
-    private static void processExcelFile(Path file, Workbook mergedWorkbook, Sheet mergedSheet, AtomicInteger rowCounter) {
+    public static void processExcelFile(Path file, Workbook mergedWorkbook, Sheet mergedSheet, AtomicInteger rowCounter) {
         try (Workbook workbook = readWorkbook(file)) {
             // 获取指定名称的Sheet页（默认"目录"）
             Sheet sourceSheet = workbook.getSheet(DEFAULT_MERGE_SHEET_NAME);
@@ -254,7 +254,7 @@ public class ExcelHelper {
      * @param targetSheet 目标Sheet
      * @param baseRow     当前基础行号（用于行号偏移）
      */
-    private static void processMergedRegions(Sheet sourceSheet, Sheet targetSheet, int baseRow) {
+    public static void processMergedRegions(Sheet sourceSheet, Sheet targetSheet, int baseRow) {
         // 遍历所有合并区域
         for (int i = 0; i < sourceSheet.getNumMergedRegions(); i++) {
             CellRangeAddress mergedRegion = sourceSheet.getMergedRegion(i);
@@ -280,7 +280,7 @@ public class ExcelHelper {
      * @param rowCounter     行号计数器（自动递增）
      * @param targetWorkbook 目标工作簿（用于样式克隆）
      */
-    private static void copySheetData(Sheet sourceSheet, Sheet targetSheet,
+    public static void copySheetData(Sheet sourceSheet, Sheet targetSheet,
                                       AtomicInteger rowCounter, Workbook targetWorkbook) {
         // 遍历源Sheet的每一行
         sourceSheet.forEach(sourceRow -> {
@@ -297,7 +297,7 @@ public class ExcelHelper {
      * @param targetRow      目标行
      * @param targetWorkbook 目标工作簿（用于创建样式）
      */
-    private static void copyRow(Row sourceRow, Row targetRow, Workbook targetWorkbook) {
+    public static void copyRow(Row sourceRow, Row targetRow, Workbook targetWorkbook) {
         targetRow.setHeight(sourceRow.getHeight());  // 复制行高
         // 仅复制前四列（0到3列）
         for (int i = 0; i < 4; i++) {
@@ -316,7 +316,7 @@ public class ExcelHelper {
      * @param targetCell     目标单元格
      * @param targetWorkbook 目标工作簿（用于创建新样式）
      */
-    private static void copyCellStyle(Cell sourceCell, Cell targetCell, Workbook targetWorkbook) {
+    public static void copyCellStyle(Cell sourceCell, Cell targetCell, Workbook targetWorkbook) {
         CellStyle newStyle = targetWorkbook.createCellStyle();
         // 区分XSSF和HSSF格式处理
         if (sourceCell.getCellStyle() instanceof XSSFCellStyle) {
@@ -334,7 +334,7 @@ public class ExcelHelper {
      * @param newStyle       新创建的样式对象
      * @param targetWorkbook 目标工作簿
      */
-    private static void applyBasicStyle(Cell sourceCell, CellStyle newStyle, Workbook targetWorkbook) {
+    public static void applyBasicStyle(Cell sourceCell, CellStyle newStyle, Workbook targetWorkbook) {
         CellStyle sourceStyle = sourceCell.getCellStyle();
         // 克隆字体属性
         Font sourceFont = targetWorkbook.getFontAt(sourceStyle.getFontIndex());
@@ -365,7 +365,7 @@ public class ExcelHelper {
      * @param sourceCell 源单元格
      * @param targetCell 目标单元格
      */
-    private static void copyCellValue(Cell sourceCell, Cell targetCell) {
+    public static void copyCellValue(Cell sourceCell, Cell targetCell) {
         switch (sourceCell.getCellType()) {
             case STRING:
                 // 处理字符串转义（双引号转义）
@@ -399,7 +399,7 @@ public class ExcelHelper {
      * @param value 原始字符串
      * @return 转义后的字符串（"替换为""）
      */
-    private static String escapeStringValue(String value) {
+    public static String escapeStringValue(String value) {
         return value.contains("\"") ?
                 value.replace("\"", "\"\"") :  // 双引号转义
                 value;
@@ -438,9 +438,9 @@ public class ExcelHelper {
         return counter.get();
     }
 
-    private static boolean isExcelFile(Path file) {
+    public static boolean isExcelFile(Path file) {
         String fileName = file.getFileName().toString().toLowerCase();
-        return fileName.endsWith(".xls") || fileName.endsWith(".xlsx");
+        return fileName.endsWith(".xls") || fileName.endsWith(".xlsx") || !fileName.startsWith("~$");
     }
 
     /**
@@ -450,7 +450,7 @@ public class ExcelHelper {
      * @param targetDir  目标目录路径
      * @throws IOException 当文件复制失败时抛出
      */
-    private static void copyFileWithUniqueName(Path sourceFile, Path targetDir) throws IOException {
+    public static void copyFileWithUniqueName(Path sourceFile, Path targetDir) throws IOException {
         // 解析文件名和扩展名
         String originalName = sourceFile.getFileName().toString();
         int dotIndex = originalName.lastIndexOf('.');               // 定位扩展名分隔点
@@ -564,7 +564,7 @@ public class ExcelHelper {
      * @param file      待处理的Excel文件路径
      * @param processor 工作簿处理器
      */
-    private static void processFile(Path file, WorkbookProcessor processor) {
+    public static void processFile(Path file, WorkbookProcessor processor) {
         try {
             // 1. 读取工作簿
             Workbook workbook = readWorkbook(file);
@@ -579,6 +579,117 @@ public class ExcelHelper {
         }
     }
 
+    /**
+     * 导出数据到Excel文件
+     * @param headers     表头数组
+     * @param data        数据集合（二维列表结构）
+     * @param outputStream 输出流（负责写入目标位置）
+     * @throws IOException 可能抛出IO异常
+     */
+    public static void exportToExcel(String[] headers,
+                              List<List<String>> data,
+                              OutputStream outputStream) throws IOException {
+        // 使用try-with-resources确保工作簿资源自动关闭
+        try (Workbook workbook = new XSSFWorkbook()) { // 创建XLSX格式工作簿
+            Sheet sheet = workbook.createSheet("Data"); // 创建工作表
+
+            // 样式预创建（提升性能，避免重复创建）
+            CellStyle headerStyle = createHeaderStyle(workbook); // 表头样式
+            CellStyle contentStyle = createContentStyle(workbook); // 内容样式
+
+            createHeaderRow(sheet, headers, headerStyle); // 生成表头行
+            populateDataRows(sheet, data, contentStyle);  // 填充数据内容
+
+            workbook.write(outputStream); // 将工作簿写入输出流
+        }
+    }
+
+    /**
+     * 创建表头单元格样式
+     * @param workbook 工作簿对象
+     * @return 配置好的表头样式
+     */
+    public static CellStyle createHeaderStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle(); // 创建新样式对象
+
+        // 背景色配置
+        style.setFillForegroundColor(IndexedColors.GREEN.getIndex()); // 设置前景色（填充色）
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);       // 设置填充模式为实心
+
+        // 字体配置
+        Font font = workbook.createFont();          // 创建字体对象
+        font.setColor(IndexedColors.WHITE.getIndex()); // 字体颜色-白色
+        font.setFontName("微软雅黑");                 // 字体名称
+        font.setFontHeightInPoints((short) 12);     // 字号12磅
+        style.setFont(font);                        // 应用字体到样式
+
+        return style;
+    }
+
+    /**
+     * 创建内容单元格样式
+     * @param workbook 工作簿对象
+     * @return 配置好的内容样式
+     */
+    public static CellStyle createContentStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+
+        // 显式设置白色背景（覆盖可能存在的默认样式）
+        style.setFillForegroundColor(IndexedColors.WHITE.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        // 字体配置
+        Font font = workbook.createFont();
+        font.setColor(IndexedColors.BLACK.getIndex()); // 黑色字体
+        font.setFontName("微软雅黑");
+        font.setFontHeightInPoints((short) 10);      // 字号10磅
+        style.setFont(font);
+
+        return style;
+    }
+
+    /**
+     * 创建表头行
+     * @param sheet   工作表对象
+     * @param headers 表头数组
+     * @param style   表头样式
+     */
+    public static void createHeaderRow(Sheet sheet, String[] headers, CellStyle style) {
+        Row headerRow = sheet.createRow(0); // 创建首行（索引0）
+
+        // 遍历表头数组创建单元格
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);       // 创建单元格
+            cell.setCellValue(headers[i]);             // 设置单元格值
+            cell.setCellStyle(style);                   // 应用样式
+
+            // 自动调整列宽（根据内容长度）
+            sheet.autoSizeColumn(i);
+            // 注意：自动列宽对中文支持有限，可考虑手动设置列宽
+        }
+    }
+
+    /**
+     * 填充数据行
+     * @param sheet    工作表对象
+     * @param data     数据集合
+     * @param style    内容样式
+     */
+    public static void populateDataRows(Sheet sheet, List<List<String>> data, CellStyle style) {
+        int rowNum = 1; // 数据从第二行开始（索引1）
+
+        // 遍历每行数据
+        for (List<String> rowData : data) {
+            Row row = sheet.createRow(rowNum++); // 创建行并递增行号
+
+            // 遍历每列数据
+            for (int i = 0; i < rowData.size(); i++) {
+                Cell cell = row.createCell(i);       // 创建单元格
+                cell.setCellValue(rowData.get(i));  // 设置单元格值
+                cell.setCellStyle(style);            // 应用样式
+            }
+        }
+    }
     //------------------------ 接口定义 ------------------------
 
     @FunctionalInterface
