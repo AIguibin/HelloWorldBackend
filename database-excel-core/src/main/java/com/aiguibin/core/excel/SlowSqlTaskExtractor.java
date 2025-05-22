@@ -3,6 +3,7 @@ package com.aiguibin.core.excel;
 
 import com.aiguibin.core.common.ExcelHelper;
 import com.aiguibin.core.common.FileAccessor;
+import com.aiguibin.core.converter.SqlTableNameConverter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.poi.ss.usermodel.Cell;
@@ -57,17 +58,22 @@ public class SlowSqlTaskExtractor {
         logger.debug(tableListPath.toString());
 
 
-
         // 遍历文件夹找出所有的Excel，并把所有文件名写入源文件I列，所属环境库表
         Path slowSqlRootPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_ROOT_PATH);
-        FileAccessor.traverseDirectory(new File(String.valueOf(slowSqlRootPath)),this::processExcelsqlList);
+        FileAccessor.traverseDirectory(new File(String.valueOf(slowSqlRootPath)), this::processExcelsqlList);
         // 复制文件夹
         try {
-            FileAccessor.copyDirectory(SLOW_SQL_STEP_FOUR_PATH,SLOW_SQL_STEP_FIVE_PATH);
+            FileAccessor.copyDirectory(SLOW_SQL_STEP_FOUR_PATH, SLOW_SQL_STEP_FIVE_PATH);
         } catch (IOException e) {
-            logger.debug("复制文件夹失败",e);
+            logger.debug("复制文件夹失败", e);
         }
-        // 增加一个处理类，删除B列值为oceanbase的行
+
+
+        // 增加一个处理类,处理数据
+        Path slowSqlStepFivePath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_FIVE_PATH);
+        FileAccessor.traverseDirectory(new File(String.valueOf(slowSqlStepFivePath)), this::processStepFiveFile);
+
+
 
         // 创建禅道任务文件
         String[] headers = {"序号", "所属执行", "任务类型", "指派给", "任务名称", "任务描述", "预计开始日期", "预计结束日期", "预计工时（小时）", "优先级（1-4）"};
@@ -89,7 +95,7 @@ public class SlowSqlTaskExtractor {
     /**
      * Excel文件处理核心逻辑
      */
-    public  void processExcelsqlList(File file) {
+    public void processExcelsqlList(File file) {
         System.out.println("正在处理: " + file.getAbsolutePath());
 
         try (FileInputStream fis = new FileInputStream(file);
@@ -138,6 +144,62 @@ public class SlowSqlTaskExtractor {
                 System.out.println("  └── 处理成功，文件已保存至: " + newFilePath);
             }
 
+        } catch (IOException e) {
+            System.err.println("  └── 处理失败: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+        }
+    }
+
+    /**
+     * 删除B列值为oceanbase的行处理逻辑
+     * 根据A列SQL语句提取表名到J列
+     */
+    private void processStepFiveFile(File file) {
+        System.out.println("正在执行processStepFiveFile记录: " + file.getAbsolutePath());
+
+        try (FileInputStream fis = new FileInputStream(file);
+             Workbook workbook = new XSSFWorkbook(fis)) {
+
+            Sheet sheet = workbook.getSheet("sqlList");
+            if (sheet == null) {
+                System.err.println("  └── [警告] 缺少sqlList工作表");
+                return;
+            }
+
+
+            // 确定数据起始行（默认跳过首行标题）
+            //int startRowIndex = sheet.getFirstRowNum() == 0 ? 1 : sheet.getFirstRowNum();
+
+            // 逆序遍历避免删除导致的行索引错乱
+            for (int i = sheet.getLastRowNum(); i > 0; i--) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                // 处理B列（索引1）
+                Cell cellB = row.getCell(1);
+                if (cellB == null) continue;
+
+                // 获取单元格值（兼容不同类型）
+                String cellBValue = ExcelHelper.getCellValueAsString(cellB);
+                if ("oceanbase".equalsIgnoreCase(cellBValue.trim())) {
+                    sheet.removeRow(row);
+                    System.out.printf("  └── 删除第%d行: B列值=%s%n", i + 1, cellBValue);
+                    continue;
+                }
+                Cell cellA = row.getCell(0);
+                if (cellA == null) continue;
+
+                // 获取单元格值（兼容不同类型）
+                String cellAValue = ExcelHelper.getCellValueAsString(cellA);
+                //
+                Cell cellJ=row.createCell(9);
+                cellJ.setCellValue(SqlTableNameConverter.getTableName(cellAValue));
+            }
+
+            // 保存修改（覆盖stepFive目录文件）
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                workbook.write(fos);
+                System.out.println("  └── 执行已完成，文件已更新");
+            }
         } catch (IOException e) {
             System.err.println("  └── 处理失败: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
