@@ -1,20 +1,32 @@
 package com.aiguibin.core.converter;
 
 
+import com.aiguibin.core.excel.SlowSqlTaskExtractor;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-
-
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class SqlTableNameConverter {
 
+
+    //日志声明
+    private static final Log logger = LogFactory.getLog(SqlTableNameConverter.class);
+
     public static String getTableName(String sql) {
-        String cleanSql=removeComments(sql.toUpperCase()).trim();
+        String cleanSql = removeComments(sql.toUpperCase()).trim();
         String tableName = getTableNameByRegex(cleanSql);
         if (null == tableName || tableName.length() == 0 || "" == tableName) {
             tableName = getMainTableName(cleanSql);
         }
+        if (null == tableName || tableName.length() == 0 || "" == tableName) {
+            tableName = getTableNameByKeywords(cleanSql);
+        }
+
         return tableName;
     }
 
@@ -30,17 +42,14 @@ public class SqlTableNameConverter {
             return processInsert(sql);
         } else {
             System.out.println(sql);
-            throw new IllegalArgumentException("Unsupported SQL type");
+            return null;
         }
     }
 
     public static String removeComments(String sql) {
         // 去除外层括号（最多处理3层）
-
-            if (sql.startsWith("(") ) {
-                sql = sql.substring(1, sql.length()).trim();
-                sql.indexOf(")");
-
+        if (sql.startsWith("(")) {
+            sql = removeOutermostParentheses(sql);
         }
         // 匹配注释时保留关键结构（处理括号后紧跟注释的情况）
         String noMultiLine = sql
@@ -57,6 +66,42 @@ public class SqlTableNameConverter {
                 .replaceAll("\\n", " ")
                 .replaceAll("\\s+", " ")
                 .trim();
+    }
+
+
+    // 预定义需要识别的SQL关键字列表（按长度降序排列）
+    private static final List<String> SQL_KEYWORDS = Arrays.asList(
+            "SELECT", "CREATE", "UPDATE", "INSERT", "DELETE",
+            "ALTER", "DROP", "TRUNCATE", "MERGE", "WITH",
+            "CALL", "EXPLAIN", "DESCRIBE", "BEGIN", "DECLARE"
+    );
+
+    public static String trimBeforeFirstKeyword(String sql) {
+        if (sql == null || sql.isEmpty()) return sql;
+
+        // 准备关键字列表（小写+长度降序）
+        List<String> sortedKeywords = SQL_KEYWORDS.stream()
+                .map(String::toLowerCase)
+                .sorted((a, b) -> b.length() - a.length())
+                .collect(Collectors.toList());
+
+        // 计算最小关键字长度
+        int minLen = sortedKeywords.get(sortedKeywords.size() - 1).length();
+
+        // 遍历每个字符位置
+        for (int i = 0; i <= sql.length() - minLen; i++) {
+            // 检查所有可能的关键字
+            for (String kw : sortedKeywords) {
+                int endPos = i + kw.length();
+                if (endPos > sql.length()) continue;
+
+                String segment = sql.substring(i, endPos).toLowerCase();
+                if (segment.equals(kw)) {
+                    return sql.substring(i); // 找到第一个匹配位置
+                }
+            }
+        }
+        return ""; // 未找到关键字返回空
     }
 
     public static String processUpdate(String sql) {
@@ -125,6 +170,45 @@ public class SqlTableNameConverter {
         return -1;
     }
 
+    public static String removeOutermostParentheses(String sql) {
+        if (sql == null || sql.isEmpty()) {
+            return sql;
+        }
+
+        // 检查是否以'('开头
+        if (sql.charAt(0) != '(') {
+            return sql;
+        }
+
+        int depth = 0;
+        int endIndex = -1;
+
+        // 遍历字符寻找匹配的闭合括号
+        for (int i = 0; i < sql.length(); i++) {
+            char c = sql.charAt(i);
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                depth--;
+
+                // 当depth归零时找到匹配的闭合括号
+                if (depth == 0) {
+                    endIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // 如果没有找到匹配的闭合括号，返回原字符串
+        if (endIndex == -1) {
+            return sql;
+        }
+
+        // 构建新字符串：去除外层括号 + 保留剩余内容
+        return sql.substring(1, endIndex) + sql.substring(endIndex + 1);
+    }
+
+
     public static String sanitizeTableName(String tableName) {
         return tableName.replaceAll("[\"`]", "");
     }
@@ -151,7 +235,8 @@ public class SqlTableNameConverter {
         } else if (upperSql.startsWith("ALTER TABLE ")) {
             return extractFromAlter(upperSql);
         } else {
-            throw new IllegalArgumentException("Unsupported SQL type");
+           logger.debug(upperSql);
+           return null;
         }
     }
 
@@ -335,5 +420,119 @@ public class SqlTableNameConverter {
             }
         }
         return false;
+    }
+
+
+    /**
+     * 根据关键字获取表名
+     * @param sql
+     * @return
+     */
+    public static String getTableNameByKeywords(String sql) {
+        String[] keywords = {"SELECT", "UPDATE", "INSERT", "DELETE", "ALTER",
+                "CREATE", "TRUNCATE", "MERGE", "DROP"};
+
+        String firstKeyword = findFirstKeyword(sql, keywords);
+        if (firstKeyword == null) return null;
+
+        try {
+            switch (firstKeyword) {
+                case "SELECT":
+                    return processSelect(sql);
+                case "UPDATE":
+                    return processUpdateSql(sql);
+                case "INSERT":
+                    return processInsertSql(sql);
+                case "DELETE":
+                    return processDeleteSql(sql);
+                case "ALTER":
+                case "CREATE":
+                case "DROP":
+                    return processSchemaObject(sql, "TABLE");
+                case "TRUNCATE":
+                    return processTruncate(sql);
+                default:
+                    throw new IllegalArgumentException("Unsupported SQL type");
+            }
+        } catch (Exception e) {
+            logger.debug("Unsupported SQL: "+sql,e);
+            throw new IllegalArgumentException("Unsupported SQL type");
+        }
+    }
+
+
+    private static String findFirstKeyword(String sql, String[] keywords) {
+        Pattern pattern = Pattern.compile("\\b(" + String.join("|", keywords) + ")\\b");
+        Matcher matcher = pattern.matcher(sql);
+        return matcher.find() ? matcher.group(1) : null;
+    }
+
+    private static String processSelect(String sql) {
+        int fromIndex = sql.indexOf("FROM");
+        if (fromIndex == -1) return null;
+
+        String fromPart = sql.substring(fromIndex + 4).trim();
+        return parseFromClause(fromPart);
+    }
+
+    private static String parseFromClause(String fromClause) {
+        if (fromClause.startsWith("(")) {
+            int end = findMatchingParenthesis(fromClause);
+            if (end == -1) return getFirstIdentifier(fromClause);
+            String subquery = fromClause.substring(1, end).trim();
+            return extractTableName(subquery);
+        }
+        return getFirstIdentifier(fromClause);
+    }
+
+    private static int findMatchingParenthesis(String s) {
+        int stack = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '(') stack++;
+            else if (c == ')') {
+                stack--;
+                if (stack == 0) return i;
+            }
+        }
+        return -1;
+    }
+
+    private static String getFirstIdentifier(String s) {
+        Matcher matcher = Pattern.compile("^[^\\s,)(]+").matcher(s);
+        return matcher.find() ? matcher.group().replaceAll("\\.$", "") : null;
+    }
+
+    private static String processUpdateSql(String sql) {
+        String updatePart = sql.substring(6).trim();
+        return getFirstIdentifier(updatePart);
+    }
+
+    private static String processInsertSql(String sql) {
+        int intoIndex = sql.indexOf("INTO");
+        if (intoIndex == -1) return null;
+        return getFirstIdentifier(sql.substring(intoIndex + 4).trim());
+    }
+
+    private static String processDeleteSql(String sql) {
+        int fromIndex = sql.indexOf("FROM");
+        if (fromIndex != -1) {
+            return parseFromClause(sql.substring(fromIndex + 4).trim());
+        }
+        return getFirstIdentifier(sql.substring(6).trim());
+    }
+
+    private static String processSchemaObject(String sql, String objectType) {
+        int tableIndex = sql.indexOf(objectType);
+        if (tableIndex == -1) return null;
+        return getFirstIdentifier(sql.substring(tableIndex + objectType.length()).trim());
+    }
+
+    private static String processTruncate(String sql) {
+        int tableIndex = sql.indexOf("TABLE");
+        if (tableIndex != -1) {
+            return getFirstIdentifier(sql.substring(tableIndex + 5).trim());
+        }
+        return getFirstIdentifier(sql.substring(8).trim());
     }
 }
