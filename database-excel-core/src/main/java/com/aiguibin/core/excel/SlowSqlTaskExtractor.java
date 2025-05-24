@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -92,6 +93,14 @@ public class SlowSqlTaskExtractor {
         }
     }
 
+
+    /**
+     * 读取Excel文件返回指定SHEET或SHEETS
+     */
+
+    public static List<Sheet> sheetList(Path file,Sheet sheet){
+        return new ArrayList<>();
+    }
 
     /**
      * Excel文件处理核心逻辑
