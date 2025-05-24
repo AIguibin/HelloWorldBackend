@@ -2,6 +2,8 @@ package com.aiguibin.core.converter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -22,6 +24,9 @@ import java.util.stream.Stream;
  * 发送给江山入禅道任务
  */
 public class LogToExcelConverter {
+
+
+    public static final Log logger = LogFactory.getLog(LogToExcelConverter.class);
 
     private static final Pattern JSON_PATTERN = Pattern.compile("\\{.*}");
     private static final String ROOT_PATH = "F:\\Desktop\\非功能优化\\慢接口优化\\";
@@ -50,7 +55,7 @@ public class LogToExcelConverter {
             }
             workbook.close();
 
-            System.out.println("Excel文件生成完成：" + EXCEL_FILE);
+            logger.debug("Excel文件生成完成：" + EXCEL_FILE);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -121,7 +126,7 @@ public class LogToExcelConverter {
                         }
                     }
                 } catch (Exception e) {
-                    System.err.println("解析失败: " + line);
+                    logger.debug("解析失败: " + line);
                 }
             });
         } catch (IOException e) {

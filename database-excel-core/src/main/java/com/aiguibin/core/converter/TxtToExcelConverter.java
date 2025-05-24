@@ -3,6 +3,9 @@ package com.aiguibin.core.converter;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
@@ -24,6 +27,9 @@ class DataModel {
 }
 
 public class TxtToExcelConverter {
+
+    public static final Log logger = LogFactory.getLog(TxtToExcelConverter.class);
+
     public static void main(String[] args) {
         String inputFilePath = "F:\\Desktop\\output1.txt";
         String outputFilePath = "F:\\Desktop\\output1.xlsx";
@@ -56,7 +62,7 @@ public class TxtToExcelConverter {
                     .sheet("Sheet1")
                     .doWrite(dataList);
 
-            System.out.println("Excel文件已生成：" + outputFilePath);
+            logger.debug("Excel文件已生成：" + outputFilePath);
 
         } catch (Exception e) {
             e.printStackTrace();

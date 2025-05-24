@@ -8,6 +8,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -19,14 +20,19 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class ExcelHelper {
-    private static final Log logger = LogFactory.getLog(ExcelHelper.class);
+    public static final Log logger = LogFactory.getLog(ExcelHelper.class);
 
 
-    private static final String DEFAULT_MERGE_SHEET_NAME = "目录";
+    public static final String DEFAULT_MERGE_SHEET_NAME = "目录";
 
+    @FunctionalInterface
+    public interface WorkbookProcessor {
+        void process(Workbook workbook);
+    }
 
     /**
      * 检查Excel文件中的Sheet名称及顺序是否符合预期规范
@@ -281,7 +287,7 @@ public class ExcelHelper {
      * @param targetWorkbook 目标工作簿（用于样式克隆）
      */
     public static void copySheetData(Sheet sourceSheet, Sheet targetSheet,
-                                      AtomicInteger rowCounter, Workbook targetWorkbook) {
+                                     AtomicInteger rowCounter, Workbook targetWorkbook) {
         // 遍历源Sheet的每一行
         sourceSheet.forEach(sourceRow -> {
             // 创建新行并递增行号
@@ -490,8 +496,6 @@ public class ExcelHelper {
         Files.copy(sourceFile, targetFile);
     }
 
-    //------------------------ 核心处理方法 ------------------------
-
     /**
      * 处理工作簿（支持自定义处理策略）
      *
@@ -598,14 +602,15 @@ public class ExcelHelper {
 
     /**
      * 导出数据到Excel文件
-     * @param headers     表头数组
-     * @param data        数据集合（二维列表结构）
+     *
+     * @param headers      表头数组
+     * @param data         数据集合（二维列表结构）
      * @param outputStream 输出流（负责写入目标位置）
      * @throws IOException 可能抛出IO异常
      */
     public static void exportToExcel(String[] headers,
-                              List<List<String>> data,
-                              OutputStream outputStream) throws IOException {
+                                     List<List<String>> data,
+                                     OutputStream outputStream) throws IOException {
         // 使用try-with-resources确保工作簿资源自动关闭
         try (Workbook workbook = new XSSFWorkbook()) { // 创建XLSX格式工作簿
             Sheet sheet = workbook.createSheet("Data"); // 创建工作表
@@ -623,6 +628,7 @@ public class ExcelHelper {
 
     /**
      * 创建表头单元格样式
+     *
      * @param workbook 工作簿对象
      * @return 配置好的表头样式
      */
@@ -645,6 +651,7 @@ public class ExcelHelper {
 
     /**
      * 创建内容单元格样式
+     *
      * @param workbook 工作簿对象
      * @return 配置好的内容样式
      */
@@ -667,6 +674,7 @@ public class ExcelHelper {
 
     /**
      * 创建表头行
+     *
      * @param sheet   工作表对象
      * @param headers 表头数组
      * @param style   表头样式
@@ -688,9 +696,10 @@ public class ExcelHelper {
 
     /**
      * 填充数据行
-     * @param sheet    工作表对象
-     * @param data     数据集合
-     * @param style    内容样式
+     *
+     * @param sheet 工作表对象
+     * @param data  数据集合
+     * @param style 内容样式
      */
     public static void populateDataRows(Sheet sheet, List<List<String>> data, CellStyle style) {
         int rowNum = 1; // 数据从第二行开始（索引1）
@@ -707,10 +716,207 @@ public class ExcelHelper {
             }
         }
     }
-    //------------------------ 接口定义 ------------------------
 
-    @FunctionalInterface
-    public interface WorkbookProcessor {
-        void process(Workbook workbook);
+    /**
+     * 删除A列SQL语句重复的行（保留第一个出现的行）
+     *
+     * @param sheet 要处理的工作表对象
+     */
+    public static void removeDuplicateSqlRows(Sheet sheet,int column) {
+        DataFormatter formatter = new DataFormatter();
+        Set<String> sqlSet = new HashSet<>();
+        List<Integer> rowsToDelete = new ArrayList<>();
+
+        // 遍历所有数据行（从第1行开始）
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            if (row == null) continue;
+
+            // 获取A列单元格内容
+            Cell cell = row.getCell(column);
+            String sql = formatter.formatCellValue(cell).trim();
+
+            // 检测重复
+            if (sqlSet.contains(sql)) {
+                rowsToDelete.add(i);
+            } else {
+                sqlSet.add(sql);
+            }
+        }
+
+        // 倒序删除重复行
+        Collections.sort(rowsToDelete, Collections.reverseOrder());
+        for (int rowIndex : rowsToDelete) {
+            Row row = sheet.getRow(rowIndex);
+            if (row != null) {
+                // 删除行并移动后续行
+                int lastRowNum = sheet.getLastRowNum();
+                sheet.removeRow(row);
+                if (rowIndex < lastRowNum) {
+                    sheet.shiftRows(rowIndex + 1, lastRowNum, -1);
+                }
+            }
+        }
+    }
+
+    /**
+     * 将文件夹中所有Excel文件的指定Sheet页内容导出到文本文件（递归遍历子目录）
+     *
+     * @param directory     Excel文件所在根目录
+     * @param sheetNames    需要导出的Sheet名称列表
+     * @param outputFile    输出的文本文件路径
+     * @param delimiter     列分隔符（如逗号、制表符）
+     * @param includeHeader 是否包含表头
+     * @throws IOException 当文件读写失败时抛出
+     */
+    public static void exportSheetsToText(Path directory, List<String> sheetNames,
+                                          Path outputFile, String delimiter, boolean includeHeader) throws IOException {
+        // 递归收集所有Excel文件
+        List<Path> excelFiles = collectExcelFiles(directory);
+
+        // 若输出文件不存在则创建
+        if (!Files.exists(outputFile)) {
+            Files.createDirectories(outputFile.getParent());
+            Files.createFile(outputFile);
+        }
+
+        // 清空旧文件内容（首次写入覆盖，后续追加）
+        boolean isFirstFile = true;
+        for (Path file : excelFiles) {
+            try (Workbook workbook = readWorkbook(file)) {
+                for (String sheetName : sheetNames) {
+                    Sheet sheet = workbook.getSheet(sheetName);
+                    if (sheet == null) {
+                        logger.warn("文件 " + file.getFileName() + " 中未找到Sheet: " + sheetName);
+                        continue;
+                    }
+
+                    // 转换为文本行
+                    List<String> lines = convertSheetToText(sheet, delimiter, includeHeader);
+
+                    // 首次写入覆盖，后续追加
+                    Files.write(
+                            outputFile,
+                            lines,
+                            isFirstFile ? StandardOpenOption.TRUNCATE_EXISTING : StandardOpenOption.APPEND
+                    );
+                    isFirstFile = false;
+                }
+            } catch (Exception e) {
+                logger.error("处理文件失败: " + file, e);
+            }
+        }
+    }
+
+    /**
+     * 将Sheet内容转换为文本行
+     *
+     * @param sheet     工作表对象
+     * @param delimiter 列分隔符
+     * @return 文本行列表
+     */
+    public static List<String> convertSheetToText(Sheet sheet, String delimiter, boolean includeHeader) {
+        List<String> lines = new ArrayList<>();
+        int startRow = includeHeader ? sheet.getFirstRowNum() : sheet.getFirstRowNum() + 1;
+
+        // 遍历每一行
+        for (int rowNum = startRow; rowNum <= sheet.getLastRowNum(); rowNum++) {
+            Row row = sheet.getRow(rowNum);
+            if (row == null) continue;
+
+            // 将行数据拼接为字符串
+            String line = StreamSupport.stream(row.spliterator(), false)
+                    .map(cell -> getCellValueAsString(cell).replace(delimiter, "\\" + delimiter)) // 转义分隔符
+                    .collect(Collectors.joining(delimiter));
+            lines.add(line);
+        }
+        return lines;
+    }
+    /**
+     * 递归收集目录下所有Excel文件
+     */
+    public static List<Path> collectExcelFiles(Path directory) throws IOException {
+        List<Path> excelFiles = new ArrayList<>();
+        Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                if (isExcelFile(file)) {
+                    excelFiles.add(file);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                logger.error("文件访问失败: " + file, exc);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return excelFiles;
+    }
+
+    /**
+     * 将文本文件转换为Excel文件（支持自定义表头样式）
+     *
+     * @param textFilePath   输入的文本文件路径
+     * @param delimiter      列分隔符（需与文本文件一致）
+     * @param outputExcel    输出的Excel文件路径
+     * @param headers        表头数组（需与列数匹配）
+     * @throws IOException   当文件读写失败时抛出
+     */
+    public static void convertTextToExcel(Path textFilePath, String delimiter,
+                                          Path outputExcel, String[] headers) throws IOException {
+        // 读取文本文件内容
+        List<List<String>> data = readTextFile(textFilePath, delimiter);
+
+        // 创建Excel并应用表头样式
+        try (FileOutputStream fos = new FileOutputStream(outputExcel.toFile())) {
+            exportToExcel(headers, data, fos);
+        }
+    }
+
+    /**
+     * 读取文本文件并解析为二维数据列表
+     */
+    public static List<List<String>> readTextFile(Path textFilePath, String delimiter) throws IOException {
+        List<List<String>> data = new ArrayList<>();
+        try (Stream<String> lines = Files.lines(textFilePath)) {
+            lines.forEach(line -> {
+                // 处理转义符（如\| -> |）
+                String unescapedLine = line.replace("\\" + delimiter, delimiter);
+                List<String> row = Arrays.asList(unescapedLine.split(delimiter, -1)); // -1保留空值
+                data.add(row);
+            });
+        }
+        return data;
+    }
+
+
+    /**
+     * 读取Excel文件返回指定SHEET或SHEETS
+     */
+
+    public static List<Sheet> sheetList(Path filePath,String [] sheetNames){
+        List<Sheet> sheets = new ArrayList<>();
+        if (!isExcelFile(filePath)) {
+            logger.warn("文件非Excel格式: " + filePath.getFileName());
+            return sheets;
+        }
+
+        try (Workbook workbook = readWorkbook(filePath)) {
+            for (String sheetName : sheetNames) {
+                Sheet sheet = workbook.getSheet(sheetName);
+                if (sheet != null) {
+                    sheets.add(sheet);
+                } else {
+                    logger.warn("Sheet '" + sheetName + "' 不存在于文件: " + filePath.getFileName());
+                }
+            }
+        } catch (IOException e) {
+            logger.error("读取Excel文件失败: " + filePath, e);
+        } catch (IllegalArgumentException e) {
+            logger.error("文件格式错误或损坏: " + filePath, e);
+        }
+        return sheets;
     }
 }

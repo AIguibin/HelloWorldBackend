@@ -1,5 +1,9 @@
 package com.aiguibin.core.converter;
 
+import com.aiguibin.core.common.ExcelHelper;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -9,6 +13,10 @@ import java.nio.file.attribute.BasicFileAttributes;
  */
 
 public class ExcelFileCollector {
+
+
+    public static final Log logger = LogFactory.getLog(ExcelFileCollector.class);
+
     public static void main(String[] args) throws IOException {
         // 源目录路径
         Path sourceDir = Paths.get("F:\\Desktop\\AD-天阳架构实施之数据库设计");
@@ -49,7 +57,7 @@ public class ExcelFileCollector {
             }
         });
 
-        System.out.println("Excel文件收集完成！");
+        logger.debug("Excel文件收集完成！");
     }
 
     // 生成唯一文件名的方法

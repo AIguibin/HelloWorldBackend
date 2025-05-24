@@ -41,7 +41,7 @@ public class SqlTableNameConverter {
         } else if (sql.startsWith("INSERT")) {  // 新增INSERT分支
             return processInsert(sql);
         } else {
-            System.out.println(sql);
+            logger.debug(sql);
             return null;
         }
     }

@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -36,6 +35,9 @@ public class SlowSqlTaskExtractor {
     // 初步筛选慢SQL根路径
     private static final String SLOW_SQL_ROOT_PATH = "database-excel-core/docs/slowSQL";
 
+
+    // 慢SQL文件处理添加所属环境库表文件名
+    private static final String SLOW_SQL_STEP_THREE_PATH = "database-excel-core/docs/stageList/stepThreeSlowSQL";
     // 慢SQL文件处理添加所属环境库表文件名
     private static final String SLOW_SQL_STEP_FOUR_PATH = "database-excel-core/docs/stageList/stepFourSlowSQL";
 
@@ -59,7 +61,6 @@ public class SlowSqlTaskExtractor {
         }
         logger.debug(tableListPath.toString());
 
-
         // 遍历文件夹找出所有的Excel，并把所有文件名写入源文件I列，所属环境库表
         Path slowSqlRootPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_ROOT_PATH);
         FileAccessor.traverseDirectory(new File(String.valueOf(slowSqlRootPath)), this::processExcelsqlList);
@@ -76,9 +77,8 @@ public class SlowSqlTaskExtractor {
         FileAccessor.traverseDirectory(new File(String.valueOf(slowSqlStepFivePath)), this::processStepFiveFile);
 
 
-
         // 创建禅道任务文件
-        String[] headers = {"序号", "所属执行", "任务类型", "指派给", "任务名称", "任务描述", "预计开始日期", "预计结束日期", "预计工时（小时）", "优先级（1-4）"};
+        String[] taskHeaders = {"序号", "所属执行", "任务类型", "指派给", "任务名称", "任务描述", "预计开始日期", "预计结束日期", "预计工时（小时）", "优先级（1-4）"};
         List<List<String>> data = Arrays.asList(
                 Arrays.asList("张三", "28", "技术部"),
                 Arrays.asList("李四", "35", "市场部"),
@@ -86,7 +86,7 @@ public class SlowSqlTaskExtractor {
         );
 
         try (FileOutputStream fos = new FileOutputStream(String.valueOf(FileAccessor.getProjectRootFolderPath(TASK_LIST_FILE_EXCEL)))) {
-            ExcelHelper.exportToExcel(headers, data, fos);
+            ExcelHelper.exportToExcel(taskHeaders, data, fos);
             logger.debug("Excel文件生成成功！");
         } catch (IOException e) {
             logger.debug("Excel文件生成失败：\n\r", e);
@@ -95,27 +95,42 @@ public class SlowSqlTaskExtractor {
 
 
     /**
-     * 读取Excel文件返回指定SHEET或SHEETS
+     * 多个Excel文件转成单个Excel文件，中间使用text
+     * Convert multiple Excel files into a single Excel file, using text in the middle
      */
-
-    public static List<Sheet> sheetList(Path file,Sheet sheet){
-        return new ArrayList<>();
+    public static void multipleExcelToSigleToExcelByText(Path sourcePath, Path middleTextPath, Path targetExcelPath,
+                                                         List<String> sheetNames, String[] headers, String delimiter) {
+        try {
+            // 递归遍历文件夹，导出指定Sheet到文本
+            ExcelHelper.exportSheetsToText(sourcePath, sheetNames, middleTextPath, delimiter, false);
+            logger.debug("文本合并完成: " + middleTextPath);
+            // 与文本文件的分隔符一致
+            ExcelHelper.convertTextToExcel(middleTextPath, delimiter, targetExcelPath, headers);
+            logger.debug("Excel文件生成成功: " + targetExcelPath);
+        } catch (IOException e) {
+            logger.error("合并文本失败或生成Excel失败", e);
+        }
     }
 
     /**
      * Excel文件处理核心逻辑
      */
     public void processExcelsqlList(File file) {
-        System.out.println("正在处理: " + file.getAbsolutePath());
-
+        logger.debug("正在处理: " + file.getAbsolutePath());
+        if (!ExcelHelper.isExcelFile(Paths.get(file.getAbsolutePath()))) {
+            return;
+        }
         try (FileInputStream fis = new FileInputStream(file);
              Workbook workbook = new XSSFWorkbook(fis)) {
 
+
             Sheet sheet = workbook.getSheet("sqlList");
             if (sheet == null) {
-                System.err.println("  └── [警告] 缺少sqlList工作表");
+                logger.debug("  └── [警告] 缺少sqlList工作表");
                 return;
             }
+            // 删除重复行
+            ExcelHelper.removeDuplicateSqlRows(sheet,0);
 
             // 添加表头
             Row headerRow = sheet.getRow(0);
@@ -141,7 +156,7 @@ public class SlowSqlTaskExtractor {
             try {
                 Files.createDirectories(stepFourSlowSqlPath); // 确保目录存在
             } catch (IOException e) {
-                System.err.println("  └── 目录创建失败: " + stepFourSlowSqlPath + " - " + e.getMessage());
+                logger.debug("  └── 目录创建失败: " + stepFourSlowSqlPath + " - " + e.getMessage());
                 return;
             }
 
@@ -151,11 +166,11 @@ public class SlowSqlTaskExtractor {
             // 保存到新路径
             try (FileOutputStream fos = new FileOutputStream(newFilePath.toFile())) {
                 workbook.write(fos);
-                System.out.println("  └── 处理成功，文件已保存至: " + newFilePath);
+                logger.debug("  └── 处理成功，文件已保存至: " + newFilePath);
             }
 
         } catch (IOException e) {
-            System.err.println("  └── 处理失败: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            logger.debug("  └── 处理失败: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
     }
 
@@ -164,14 +179,14 @@ public class SlowSqlTaskExtractor {
      * 根据A列SQL语句提取表名到J列
      */
     private void processStepFiveFile(File file) {
-        System.out.println("正在执行processStepFiveFile记录: " + file.getAbsolutePath());
+        logger.debug("正在执行processStepFiveFile记录: " + file.getAbsolutePath());
         if (ExcelHelper.isExcelFile(Paths.get(file.getAbsolutePath()))) {
             try (FileInputStream fis = new FileInputStream(file);
                  Workbook workbook = new XSSFWorkbook(fis)) {
 
                 Sheet sheet = workbook.getSheet("sqlList");
                 if (sheet == null) {
-                    System.err.println("  └── [警告] 缺少sqlList工作表");
+                    logger.debug("  └── [警告] 缺少sqlList工作表");
                     return;
                 }
 
@@ -194,7 +209,7 @@ public class SlowSqlTaskExtractor {
                         String cellBValue = ExcelHelper.getCellValueAsString(cellB).trim();
                         if ("oceanbase".equalsIgnoreCase(cellBValue)) {
                             sheet.removeRow(row);
-                            System.out.printf("  └── 删除第%d行: B列值=%s%n", i + 1, cellBValue);
+                            logger.debug("  └── [警告] 删除第"+i+"行:,B列值= "+ cellBValue);
                             continue; // 删除后跳过后续处理
                         }
                     }
@@ -209,13 +224,13 @@ public class SlowSqlTaskExtractor {
                     // 提取表名并校验结果
                     String tableName = SqlTableNameConverter.getTableName(sql);
                     if (tableName == null || tableName.isEmpty()) {
-                        System.err.printf("  └── [警告] 第%d行无法提取表名: %s%n", i + 1, sql);
+                        logger.debug("  └── [警告] 第"+i+"行无法提取表名: "+ sql);
                         continue;
                     }
 
                     Cell cellJ = row.createCell(9);
                     cellJ.setCellValue(tableName);
-                    System.out.printf("  └── 赋值第%d行: J列值=%s%n", i + 1, tableName);
+                    logger.debug("  └── 赋值第"+i+1+"%d行: J列值="+tableName);
                 }
 
                 // 自动调整列宽（可选）
@@ -224,11 +239,10 @@ public class SlowSqlTaskExtractor {
                 // 保存修改
                 try (FileOutputStream fos = new FileOutputStream(file)) {
                     workbook.write(fos);
-                    System.out.println("  └── 执行已完成，文件已更新");
+                    logger.debug("  └── 执行已完成，文件已更新");
                 }
             } catch (Exception e) {
-                System.err.println("  └── 处理失败: " + e.getClass().getSimpleName() + " - " + e.getMessage());
-                e.printStackTrace();
+                logger.debug("  └── 处理失败: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             }
         }
     }
