@@ -4,6 +4,7 @@ package com.aiguibin.core.excel;
 import com.aiguibin.core.common.ExcelHelper;
 import com.aiguibin.core.common.FileAccessor;
 import com.aiguibin.core.converter.SqlTableNameConverter;
+import com.alibaba.fastjson.JSONArray;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.poi.ss.usermodel.Cell;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -130,7 +132,7 @@ public class SlowSqlTaskExtractor {
                 return;
             }
             // 删除重复行
-            ExcelHelper.removeDuplicateSqlRows(sheet,0);
+            ExcelHelper.removeDuplicateSqlRows(sheet, 0);
 
             // 添加表头
             Row headerRow = sheet.getRow(0);
@@ -209,7 +211,7 @@ public class SlowSqlTaskExtractor {
                         String cellBValue = ExcelHelper.getCellValueAsString(cellB).trim();
                         if ("oceanbase".equalsIgnoreCase(cellBValue)) {
                             sheet.removeRow(row);
-                            logger.debug("  └── [警告] 删除第"+i+"行:,B列值= "+ cellBValue);
+                            logger.debug("  └── [警告] 删除第" + i + "行:,B列值= " + cellBValue);
                             continue; // 删除后跳过后续处理
                         }
                     }
@@ -224,13 +226,22 @@ public class SlowSqlTaskExtractor {
                     // 提取表名并校验结果
                     String tableName = SqlTableNameConverter.getTableName(sql);
                     if (tableName == null || tableName.isEmpty()) {
-                        logger.debug("  └── [警告] 第"+i+"行无法提取表名: "+ sql);
+                        logger.debug("  └── [警告] 第" + i + "行无法提取表名: " + sql);
                         continue;
+                    }
+                    try {
+                        if (tableName.indexOf(".") > 0) {
+                            String[] tableNames = tableName.split("\\.");
+                            tableName = tableNames[1];
+                            logger.info(String.format(" └── 表名称：%s,表名数组：%s", tableName, JSONArray.toJSONString(tableNames)));
+                        }
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        logger.error(sql, e);
                     }
 
                     Cell cellJ = row.createCell(9);
                     cellJ.setCellValue(tableName);
-                    logger.debug("  └── 赋值第"+i+1+"%d行: J列值="+tableName);
+                    logger.debug("  └── 赋值第" + i + 1 + "%d行: J列值=" + tableName);
                 }
 
                 // 自动调整列宽（可选）

@@ -29,12 +29,6 @@ public class FileAccessor {
     public static Path getProjectRootFolderPath(String folderName) {
         // 拼接自定义文件夹路径
         Path projectRootFolderPath=Paths.get(projectRoot, folderName);
-        // 检查文件夹是否存在
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("警告：%s目录不存在！", folderName));
-            // 或更简洁的写法（依赖日志库是否支持参数化）：
-            // logger.debug("警告：{}目录不存在！", folderName);
-        }
         return projectRootFolderPath;
     }
 
@@ -45,6 +39,10 @@ public class FileAccessor {
     public static void ensureDirectoryExists(String directoryPath) throws IOException {
         Path dir = Paths.get(directoryPath);
         if (Files.notExists(dir)) {
+            // 检查文件夹是否存在
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("警告：%s目录不存在！", dir));
+            }
             Files.createDirectories(dir);
             logger.info("目录已创建: " + directoryPath);
         }

@@ -40,8 +40,10 @@
         </AsyncLogger>
         <AsyncLogger name="org.springframework" level="INFO" additivity="true">
             <AppenderRef ref="RollingFile"/>
-        </AsyncLogger>org.thymeleaf
-
+        </AsyncLogger>
+        <AsyncLogger name="org.apache.poi" level="INFO" additivity="true">
+            <AppenderRef ref="RollingFile"/>
+        </AsyncLogger>
         <AsyncRoot level="DEBUG" includeLocation="true">
             <AppenderRef ref="Console"/>
         </AsyncRoot>
