@@ -20,9 +20,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.aiguibin.core.common.ExcelHelper.isExcelFile;
+import static com.aiguibin.core.common.ExcelHelper.readWorkbook;
 
 /**
  * 读取慢SQL文件，匹配表名称，输出禅道任务，自动创建禅道任务
@@ -30,6 +32,8 @@ import java.util.List;
 public class SlowSqlTaskExtractor {
     //日志声明
     private static final Log logger = LogFactory.getLog(SlowSqlTaskExtractor.class);
+    // 指定目录名称
+    private static final Set<String> SHEET_NAMES = new HashSet<>(Arrays.asList("目录"));
     // 数据库设计文档路径
     private static final String TABLE_LIST_DIR = "database-excel-core/docs/tableList";
     // 禅道任务文档输出路径
@@ -38,7 +42,7 @@ public class SlowSqlTaskExtractor {
     private static final String SLOW_SQL_ROOT_PATH = "database-excel-core/docs/slowSQL";
 
 
-    // 慢SQL文件处理添加所属环境库表文件名
+    // 慢SQL文件处理
     private static final String SLOW_SQL_STEP_THREE_PATH = "database-excel-core/docs/stageList/stepThreeSlowSQL";
     // 慢SQL文件处理添加所属环境库表文件名
     private static final String SLOW_SQL_STEP_FOUR_PATH = "database-excel-core/docs/stageList/stepFourSlowSQL";
@@ -61,7 +65,25 @@ public class SlowSqlTaskExtractor {
             }
             logger.debug("目录已创建: " + TABLE_LIST_DIR);
         }
-        logger.debug(tableListPath.toString());
+        logger.debug("当前正在处理目录" + tableListPath.toString());
+
+        // 检查文件夹下所有的Excel文件中是否存在指定的SHEET页
+
+        int errorSheetCount = ExcelHelper.checkSheetsInDirectory(FileAccessor.getProjectRootFolderPath(TABLE_LIST_DIR), SHEET_NAMES, true);
+        logger.debug("文件指定目录不存在的数量：" + errorSheetCount);
+
+        //
+
+        Path sourcePath = FileAccessor.getProjectRootFolderPath(TABLE_LIST_DIR);
+        Path middleTextPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_THREE_PATH + "/table_name_middle.txt");
+        Path targetExcelPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_THREE_PATH + "/table_name_target.xlsx");
+        List<String> sheetNames = Arrays.asList("目录");
+        String[] headers = {"序号", "微服务中心", "表名", "表中文名", "表注释"};
+        int[] columnsToExport = {0, 1, 2, 3, 4};
+        String delimiter = "|";
+
+        multipleExcelToSigleToExcelByText(sourcePath, middleTextPath, tableListPath, sheetNames, headers, delimiter, columnsToExport);
+
 
         // 遍历文件夹找出所有的Excel，并把所有文件名写入源文件I列，所属环境库表
         Path slowSqlRootPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_ROOT_PATH);
@@ -95,18 +117,24 @@ public class SlowSqlTaskExtractor {
         }
     }
 
-
     /**
-     * 多个Excel文件转成单个Excel文件，中间使用text
-     * Convert multiple Excel files into a single Excel file, using text in the middle
+     * 多个Excel文件转成单个Excel文件，中间使用text（支持指定列导出）
+     * Convert multiple Excel files into a single Excel file with specified columns, using text in the middle
+     *
+     * @param columnsToExport 需要导出的列索引数组（如B列为1，D列为3）
      */
     public static void multipleExcelToSigleToExcelByText(Path sourcePath, Path middleTextPath, Path targetExcelPath,
-                                                         List<String> sheetNames, String[] headers, String delimiter) {
+                                                         List<String> sheetNames, String[] headers, String delimiter,
+                                                         int[] columnsToExport, int... columnsToReplaceNewlines) {
         try {
-            // 递归遍历文件夹，导出指定Sheet到文本
-            ExcelHelper.exportSheetsToText(sourcePath, sheetNames, middleTextPath, delimiter, false);
-            logger.debug("文本合并完成: " + middleTextPath);
-            // 与文本文件的分隔符一致
+            // 递归导出指定列到文本
+            ExcelHelper.exportSheetsToText(
+                    sourcePath, sheetNames, middleTextPath,
+                    delimiter, false, columnsToExport, columnsToReplaceNewlines
+            );
+            logger.debug("指定列文本合并完成: " + middleTextPath);
+
+            // 文本转Excel（需确保headers与导出的列顺序一致）
             ExcelHelper.convertTextToExcel(middleTextPath, delimiter, targetExcelPath, headers);
             logger.debug("Excel文件生成成功: " + targetExcelPath);
         } catch (IOException e) {
@@ -119,7 +147,7 @@ public class SlowSqlTaskExtractor {
      */
     public void processExcelsqlList(File file) {
         logger.debug("正在处理: " + file.getAbsolutePath());
-        if (!ExcelHelper.isExcelFile(Paths.get(file.getAbsolutePath()))) {
+        if (!isExcelFile(Paths.get(file.getAbsolutePath()))) {
             return;
         }
         try (FileInputStream fis = new FileInputStream(file);
@@ -179,10 +207,11 @@ public class SlowSqlTaskExtractor {
     /**
      * 删除B列值为oceanbase的行处理逻辑
      * 根据A列SQL语句提取表名到J列
+     * 处理J列库.表的情况
      */
     private void processStepFiveFile(File file) {
         logger.debug("正在执行processStepFiveFile记录: " + file.getAbsolutePath());
-        if (ExcelHelper.isExcelFile(Paths.get(file.getAbsolutePath()))) {
+        if (isExcelFile(Paths.get(file.getAbsolutePath()))) {
             try (FileInputStream fis = new FileInputStream(file);
                  Workbook workbook = new XSSFWorkbook(fis)) {
 

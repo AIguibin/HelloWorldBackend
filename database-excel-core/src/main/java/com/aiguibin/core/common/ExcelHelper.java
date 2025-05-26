@@ -767,20 +767,27 @@ public class ExcelHelper {
      * @param outputFile    输出的文本文件路径
      * @param delimiter     列分隔符（如逗号、制表符）
      * @param includeHeader 是否包含表头
+     * @param columnsToExport 导出指定列
+     * @param columnsToReplaceNewlines 指定列去掉换行符为空格
      * @throws IOException 当文件读写失败时抛出
      */
+    /**
+     * 递归导出指定Sheet的指定列到文本文件
+     */
     public static void exportSheetsToText(Path directory, List<String> sheetNames,
-                                          Path outputFile, String delimiter, boolean includeHeader) throws IOException {
-        // 递归收集所有Excel文件
-        List<Path> excelFiles = collectExcelFiles(directory);
+                                          Path outputFile, String delimiter, boolean includeHeader,
+                                          int[] columnsToExport, int... columnsToReplaceNewlines) throws IOException {
+        // 参数校验
+        if (columnsToExport == null || columnsToExport.length == 0) {
+            throw new IllegalArgumentException("必须指定要导出的列索引");
+        }
 
-        // 若输出文件不存在则创建
+        List<Path> excelFiles = collectExcelFiles(directory);
         if (!Files.exists(outputFile)) {
             Files.createDirectories(outputFile.getParent());
             Files.createFile(outputFile);
         }
 
-        // 清空旧文件内容（首次写入覆盖，后续追加）
         boolean isFirstFile = true;
         for (Path file : excelFiles) {
             try (Workbook workbook = readWorkbook(file)) {
@@ -790,11 +797,12 @@ public class ExcelHelper {
                         logger.warn("文件 " + file.getFileName() + " 中未找到Sheet: " + sheetName);
                         continue;
                     }
+                    // 转换时仅处理指定列
+                    List<String> lines = convertSheetToText(
+                            sheet, delimiter, includeHeader,
+                            columnsToExport, columnsToReplaceNewlines
+                    );
 
-                    // 转换为文本行
-                    List<String> lines = convertSheetToText(sheet, delimiter, includeHeader);
-
-                    // 首次写入覆盖，后续追加
                     Files.write(
                             outputFile,
                             lines,
@@ -815,20 +823,28 @@ public class ExcelHelper {
      * @param delimiter 列分隔符
      * @return 文本行列表
      */
-    public static List<String> convertSheetToText(Sheet sheet, String delimiter, boolean includeHeader) {
+    public static List<String> convertSheetToText(Sheet sheet, String delimiter, boolean includeHeader,
+                                                   int[] columnsToExport, int... columnsToReplaceNewlines) {
         List<String> lines = new ArrayList<>();
         int startRow = includeHeader ? sheet.getFirstRowNum() : sheet.getFirstRowNum() + 1;
+        Set<Integer> replaceNewlineColumns = Arrays.stream(columnsToReplaceNewlines).boxed().collect(Collectors.toSet());
 
-        // 遍历每一行
         for (int rowNum = startRow; rowNum <= sheet.getLastRowNum(); rowNum++) {
             Row row = sheet.getRow(rowNum);
             if (row == null) continue;
 
-            // 将行数据拼接为字符串
-            String line = StreamSupport.stream(row.spliterator(), false)
-                    .map(cell -> getCellValueAsString(cell).replace(delimiter, "\\" + delimiter)) // 转义分隔符
-                    .collect(Collectors.joining(delimiter));
-            lines.add(line);
+            List<String> cellValues = new ArrayList<>();
+            for (int colIndex : columnsToExport) {
+                Cell cell = row.getCell(colIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                String value = getCellValueAsString(cell);
+
+                // 处理指定列的换行符替换
+                if (replaceNewlineColumns.contains(colIndex)) {
+                    value = value.replace("\n", " ");
+                }
+                cellValues.add(value.replace(delimiter, "\\" + delimiter));
+            }
+            lines.add(String.join(delimiter, cellValues));
         }
         return lines;
     }
@@ -866,10 +882,15 @@ public class ExcelHelper {
      */
     public static void convertTextToExcel(Path textFilePath, String delimiter,
                                           Path outputExcel, String[] headers) throws IOException {
-        // 读取文本文件内容
         List<List<String>> data = readTextFile(textFilePath, delimiter);
+        List<String> rowData=data.get(0);
+        // 校验数据列数与headers一致
+        if (!data.isEmpty() && data.get(0).size() != headers.length) {
+            throw new IllegalArgumentException(
+                    "文本文件列数(" + data.get(0).size() + ")与表头数量(" + headers.length + ")不匹配"
+            );
+        }
 
-        // 创建Excel并应用表头样式
         try (FileOutputStream fos = new FileOutputStream(outputExcel.toFile())) {
             exportToExcel(headers, data, fos);
         }
@@ -882,9 +903,9 @@ public class ExcelHelper {
         List<List<String>> data = new ArrayList<>();
         try (Stream<String> lines = Files.lines(textFilePath)) {
             lines.forEach(line -> {
-                // 处理转义符（如\| -> |）
-                String unescapedLine = line.replace("\\" + delimiter, delimiter);
-                List<String> row = Arrays.asList(unescapedLine.split(delimiter, -1)); // -1保留空值
+                List<String> row = Arrays.stream(line.split(delimiter))
+                        .map(s -> s.replace("\\" + delimiter, delimiter)) // 还原转义符
+                        .collect(Collectors.toList());
                 data.add(row);
             });
         }
@@ -918,5 +939,60 @@ public class ExcelHelper {
             logger.error("文件格式错误或损坏: " + filePath, e);
         }
         return sheets;
+    }
+
+
+    /**
+     * 递归检查目录下所有Excel文件是否包含指定的Sheet集合，缺失时打印文件路径及缺失的Sheet名称
+     *
+     * @param directory    要检查的目录路径
+     * @param sheetNames   需要检查的Sheet名称集合
+     * @param isRecursive  是否递归子目录
+     * @return 存在缺失Sheet的文件数量
+     */
+    public static int checkSheetsInDirectory(Path directory, Set<String> sheetNames, boolean isRecursive) {
+        final AtomicInteger errorCount = new AtomicInteger(0);
+
+        try {
+            Files.walk(directory, isRecursive ? Integer.MAX_VALUE : 1)
+                    .filter(Files::isRegularFile)
+                    .filter(ExcelHelper::isExcelFile)
+                    .forEach(file -> {
+                        if (!checkSheetsExistence(file, sheetNames)) {
+                            errorCount.incrementAndGet();
+                        }
+                    });
+        } catch (IOException e) {
+            logger.error("遍历目录失败: " + directory, e);
+        }
+
+        return errorCount.get();
+    }
+
+    /**
+     * 检查单个Excel文件是否存在指定Sheet（私有方法，供目录检查调用）
+     */
+    public static boolean checkSheetsExistence(Path filePath, Set<String> sheetNames) {
+        if (!isExcelFile(filePath)) {
+            logger.debug("文件非Excel格式: " + filePath.getFileName());
+            return false;
+        }
+
+        try (Workbook workbook = readWorkbook(filePath)) {
+            Set<String> missingSheets = new HashSet<>(sheetNames);
+            for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+                missingSheets.remove(workbook.getSheetName(i));
+            }
+
+            if (!missingSheets.isEmpty()) {
+                logger.debug("[Sheet缺失] 文件: " + filePath
+                        + " - 缺失Sheet: " + String.join(", ", missingSheets));
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            logger.error("检查文件失败: " + filePath, e);
+            return false;
+        }
     }
 }
