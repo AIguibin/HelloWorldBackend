@@ -601,51 +601,95 @@ public class ExcelHelper {
     }
 
     /**
-     * 导出数据到Excel文件
+     * 将数据导出到Excel文件并写入输出流
      *
-     * @param headers      表头数组
-     * @param data         数据集合（二维列表结构）
-     * @param outputStream 输出流（负责写入目标位置）
-     * @throws IOException 可能抛出IO异常
+     * @param headers      表头数组，定义各列标题
+     * @param data         二维数据集合，外层List表示行，内层List表示列
+     * @param outputStream 输出流，用于写入生成的Excel文件
+     * @throws IOException 当发生I/O错误时抛出
+     * @示例 <pre>{@code
+     * String[] headers = {"ID", "名称", "价格"};
+     * List<List<String>> data = Arrays.asList(
+     *     Arrays.asList("1", "商品A", "100"),
+     *     Arrays.asList("2", "商品B", "200")
+     * );
+     * try (FileOutputStream fos = new FileOutputStream("report.xlsx")) {
+     *     ExcelExporter.exportToExcel(headers, data, fos);
+     * }
+     * }</pre>
      */
     public static void exportToExcel(String[] headers,
                                      List<List<String>> data,
                                      OutputStream outputStream) throws IOException {
         // 使用try-with-resources确保工作簿资源自动关闭
         try (Workbook workbook = new XSSFWorkbook()) { // 创建XLSX格式工作簿
-            Sheet sheet = workbook.createSheet("Data"); // 创建工作表
+            Sheet sheet = workbook.createSheet("Data"); // 创建默认工作表
 
-            // 样式预创建（提升性能，避免重复创建）
-            CellStyle headerStyle = createHeaderStyle(workbook); // 表头样式
-            CellStyle contentStyle = createContentStyle(workbook); // 内容样式
+            // 预定义字体和样式（提升性能，避免重复创建）
+            Font headerFont = createHeaderFont(workbook);   // 表头字体
+            Font contentFont = createContentFont(workbook); // 内容字体
+            CellStyle headerStyle = createHeaderStyle(workbook, headerFont); // 表头样式
+            CellStyle contentStyle = createContentStyle(workbook, contentFont); // 内容样式
 
             createHeaderRow(sheet, headers, headerStyle); // 生成表头行
             populateDataRows(sheet, data, contentStyle);  // 填充数据内容
+            autoSizeColumns(sheet, headers.length);       // 自动调整列宽
 
             workbook.write(outputStream); // 将工作簿写入输出流
         }
+    }
+
+
+    /**
+     * 创建表头字体样式
+     *
+     * @param workbook 工作簿对象
+     * @return 配置完成的字体对象
+     * @实现说明 - 字体加粗，12号字
+     * - 字体优先使用「WPS灵秀黑」，若不可用则回退到「微软雅黑」
+     */
+    private static Font createHeaderFont(Workbook workbook) {
+        Font font = workbook.createFont();
+        font.setBold(true); // 加粗
+        font.setFontHeightInPoints((short) 12); // 字号
+
+        // 字体回退策略
+        if (isFontAvailable("WPS灵秀黑")) {
+            font.setFontName("WPS灵秀黑");
+        } else {
+            font.setFontName("微软雅黑"); // 兼容性回退
+        }
+        return font;
+    }
+
+    /**
+     * 创建内容字体样式
+     *
+     * @param workbook 工作簿对象
+     * @return 配置完成的字体对象
+     * @注意 字体策略与表头保持一致，确保视觉统一
+     */
+    private static Font createContentFont(Workbook workbook) {
+        Font font = workbook.createFont();
+        font.setFontHeightInPoints((short) 10); // 内容字号
+        font.setFontName(
+                isFontAvailable("WPS灵秀黑") ? "WPS灵秀黑" : "微软雅黑" // 继承表头策略
+        );
+        return font;
     }
 
     /**
      * 创建表头单元格样式
      *
      * @param workbook 工作簿对象
-     * @return 配置好的表头样式
+     * @param font     表头字体
+     * @return 配置完成的单元格样式
      */
-    public static CellStyle createHeaderStyle(Workbook workbook) {
-        CellStyle style = workbook.createCellStyle(); // 创建新样式对象
-
-        // 背景色配置
-        style.setFillForegroundColor(IndexedColors.GREEN.getIndex()); // 设置前景色（填充色）
-        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);       // 设置填充模式为实心
-
-        // 字体配置
-        Font font = workbook.createFont();          // 创建字体对象
-        font.setColor(IndexedColors.WHITE.getIndex()); // 字体颜色-白色
-        font.setFontName("微软雅黑");                 // 字体名称
-        font.setFontHeightInPoints((short) 12);     // 字号12磅
-        style.setFont(font);                        // 应用字体到样式
-
+    private static CellStyle createHeaderStyle(Workbook workbook, Font font) {
+        CellStyle style = workbook.createCellStyle();
+        style.setFont(font); // 应用字体
+        style.setAlignment(HorizontalAlignment.CENTER); // 水平居中
+        style.setVerticalAlignment(VerticalAlignment.CENTER); // 垂直居中
         return style;
     }
 
@@ -653,21 +697,27 @@ public class ExcelHelper {
      * 创建内容单元格样式
      *
      * @param workbook 工作簿对象
-     * @return 配置好的内容样式
+     * @param font     内容字体
+     * @return 配置完成的单元格样式
+     * @样式特性 - 浅绿色细边框（IndexedColors.AQUA）
+     * - 继承内容字体配置
      */
-    public static CellStyle createContentStyle(Workbook workbook) {
+    private static CellStyle createContentStyle(Workbook workbook, Font font) {
         CellStyle style = workbook.createCellStyle();
-
-        // 显式设置白色背景（覆盖可能存在的默认样式）
-        style.setFillForegroundColor(IndexedColors.WHITE.getIndex());
-        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
-        // 字体配置
-        Font font = workbook.createFont();
-        font.setColor(IndexedColors.BLACK.getIndex()); // 黑色字体
-        font.setFontName("微软雅黑");
-        font.setFontHeightInPoints((short) 10);      // 字号10磅
         style.setFont(font);
+
+        // 统一边框样式配置
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+
+        // 设置边框颜色（浅绿色）
+        short aqua = IndexedColors.AQUA.getIndex();
+        style.setTopBorderColor(aqua);
+        style.setBottomBorderColor(aqua);
+        style.setLeftBorderColor(aqua);
+        style.setRightBorderColor(aqua);
 
         return style;
     }
@@ -678,19 +728,15 @@ public class ExcelHelper {
      * @param sheet   工作表对象
      * @param headers 表头数组
      * @param style   表头样式
+     * @实现细节 - 固定在第0行创建表头
+     * - 根据headers数组长度创建对应列数
      */
-    public static void createHeaderRow(Sheet sheet, String[] headers, CellStyle style) {
-        Row headerRow = sheet.createRow(0); // 创建首行（索引0）
-
-        // 遍历表头数组创建单元格
+    private static void createHeaderRow(Sheet sheet, String[] headers, CellStyle style) {
+        Row headerRow = sheet.createRow(0); // 首行作为表头
         for (int i = 0; i < headers.length; i++) {
-            Cell cell = headerRow.createCell(i);       // 创建单元格
-            cell.setCellValue(headers[i]);             // 设置单元格值
-            cell.setCellStyle(style);                   // 应用样式
-
-            // 自动调整列宽（根据内容长度）
-            sheet.autoSizeColumn(i);
-            // 注意：自动列宽对中文支持有限，可考虑手动设置列宽
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]); // 设置列标题
+            cell.setCellStyle(style);      // 应用样式
         }
     }
 
@@ -698,23 +744,73 @@ public class ExcelHelper {
      * 填充数据行
      *
      * @param sheet 工作表对象
-     * @param data  数据集合
-     * @param style 内容样式
+     * @param data  二维数据集合
+     * @param style 内容单元格样式
+     * @注意 - 数据从第2行开始写入（索引1）
+     * - 允许不同行的列数不一致，但可能导致表格错位
      */
-    public static void populateDataRows(Sheet sheet, List<List<String>> data, CellStyle style) {
-        int rowNum = 1; // 数据从第二行开始（索引1）
-
-        // 遍历每行数据
+    private static void populateDataRows(Sheet sheet, List<List<String>> data, CellStyle style) {
+        int rowNum = 1; // 数据起始行索引
         for (List<String> rowData : data) {
-            Row row = sheet.createRow(rowNum++); // 创建行并递增行号
-
-            // 遍历每列数据
+            Row row = sheet.createRow(rowNum++);
             for (int i = 0; i < rowData.size(); i++) {
-                Cell cell = row.createCell(i);       // 创建单元格
-                cell.setCellValue(rowData.get(i));  // 设置单元格值
-                cell.setCellStyle(style);            // 应用样式
+                Cell cell = row.createCell(i);
+                String value = rowData.get(i);
+                cell.setCellValue(value != null ? value : ""); // 空值处理
+                cell.setCellStyle(style);
             }
         }
+    }
+
+    /**
+     * 自动调整列宽（适配中文）
+     *
+     * @param sheet       工作表对象
+     * @param columnCount 需要调整的列数
+     *
+     * @实现原理
+     * 1. 调用autoSizeColumn获取基础宽度
+     * 2. 对宽度进行1.2倍补偿（中文字符宽度补偿）
+     * 3. 强制限制列宽不超过Excel允许的最大值255字符
+     */
+    private static void autoSizeColumns(Sheet sheet, int columnCount) {
+        final int MAX_COLUMN_WIDTH = 255 * 256; // Excel列宽上限 (255字符 x 256单位)
+
+        for (int i = 0; i < columnCount; i++) {
+            sheet.autoSizeColumn(i); // 自动计算基础宽度
+
+            int baseWidth = sheet.getColumnWidth(i);
+            int adjustedWidth = (int)(baseWidth * 1.2); // 中文宽度补偿
+
+            // 强制限制列宽不超过最大值
+            if (adjustedWidth > MAX_COLUMN_WIDTH) {
+                adjustedWidth = MAX_COLUMN_WIDTH;
+            } else if (adjustedWidth < 0) {
+                adjustedWidth = 0; // 防止负值
+            }
+
+            sheet.setColumnWidth(i, adjustedWidth);
+        }
+    }
+
+
+    /**
+     * 检测字体可用性（模拟实现）
+     *
+     * @param fontName 字体名称
+     * @return 字体是否可用
+     * @注意 实际开发中应使用以下代码检测：
+     * <pre>{@code
+     * GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+     * return Arrays.stream(ge.getAvailableFontFamilyNames())
+     *             .anyMatch(name -> name.equals(fontName));
+     * }</pre>
+     */
+    private static boolean isFontAvailable(String fontName) {
+        // 模拟逻辑：Windows系统认为存在灵秀黑字体
+        return fontName.contains("灵秀黑") ?
+                System.getProperty("os.name").contains("Windows") :
+                true; // 其他字体默认存在
     }
 
     /**
@@ -722,7 +818,7 @@ public class ExcelHelper {
      *
      * @param sheet 要处理的工作表对象
      */
-    public static void removeDuplicateSqlRows(Sheet sheet,int column) {
+    public static void removeDuplicateSqlRows(Sheet sheet, int column) {
         DataFormatter formatter = new DataFormatter();
         Set<String> sqlSet = new HashSet<>();
         List<Integer> rowsToDelete = new ArrayList<>();
@@ -824,7 +920,7 @@ public class ExcelHelper {
      * @return 文本行列表
      */
     public static List<String> convertSheetToText(Sheet sheet, String delimiter, boolean includeHeader,
-                                                   int[] columnsToExport, int... columnsToReplaceNewlines) {
+                                                  int[] columnsToExport, int... columnsToReplaceNewlines) {
         List<String> lines = new ArrayList<>();
         int startRow = includeHeader ? sheet.getFirstRowNum() : sheet.getFirstRowNum() + 1;
         Set<Integer> replaceNewlineColumns = Arrays.stream(columnsToReplaceNewlines).boxed().collect(Collectors.toSet());
@@ -844,10 +940,14 @@ public class ExcelHelper {
                 }
                 cellValues.add(value.replace(delimiter, "\\" + delimiter));
             }
-            lines.add(String.join(delimiter, cellValues));
+            String trimStr = String.join("", cellValues).trim();
+            if (trimStr.length() > 0) {
+                lines.add(String.join(delimiter, cellValues).toUpperCase());
+            }
         }
         return lines;
     }
+
     /**
      * 递归收集目录下所有Excel文件
      */
@@ -874,16 +974,15 @@ public class ExcelHelper {
     /**
      * 将文本文件转换为Excel文件（支持自定义表头样式）
      *
-     * @param textFilePath   输入的文本文件路径
-     * @param delimiter      列分隔符（需与文本文件一致）
-     * @param outputExcel    输出的Excel文件路径
-     * @param headers        表头数组（需与列数匹配）
-     * @throws IOException   当文件读写失败时抛出
+     * @param textFilePath 输入的文本文件路径
+     * @param delimiter    列分隔符（需与文本文件一致）
+     * @param outputExcel  输出的Excel文件路径
+     * @param headers      表头数组（需与列数匹配）
+     * @throws IOException 当文件读写失败时抛出
      */
     public static void convertTextToExcel(Path textFilePath, String delimiter,
                                           Path outputExcel, String[] headers) throws IOException {
         List<List<String>> data = readTextFile(textFilePath, delimiter);
-        List<String> rowData=data.get(0);
         // 校验数据列数与headers一致
         if (!data.isEmpty() && data.get(0).size() != headers.length) {
             throw new IllegalArgumentException(
@@ -917,7 +1016,7 @@ public class ExcelHelper {
      * 读取Excel文件返回指定SHEET或SHEETS
      */
 
-    public static List<Sheet> sheetList(Path filePath,String [] sheetNames){
+    public static List<Sheet> sheetList(Path filePath, String[] sheetNames) {
         List<Sheet> sheets = new ArrayList<>();
         if (!isExcelFile(filePath)) {
             logger.warn("文件非Excel格式: " + filePath.getFileName());
@@ -945,9 +1044,9 @@ public class ExcelHelper {
     /**
      * 递归检查目录下所有Excel文件是否包含指定的Sheet集合，缺失时打印文件路径及缺失的Sheet名称
      *
-     * @param directory    要检查的目录路径
-     * @param sheetNames   需要检查的Sheet名称集合
-     * @param isRecursive  是否递归子目录
+     * @param directory   要检查的目录路径
+     * @param sheetNames  需要检查的Sheet名称集合
+     * @param isRecursive 是否递归子目录
      * @return 存在缺失Sheet的文件数量
      */
     public static int checkSheetsInDirectory(Path directory, Set<String> sheetNames, boolean isRecursive) {

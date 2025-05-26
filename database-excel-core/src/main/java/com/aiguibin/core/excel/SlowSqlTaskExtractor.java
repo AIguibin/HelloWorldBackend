@@ -80,9 +80,9 @@ public class SlowSqlTaskExtractor {
         List<String> sheetNames = Arrays.asList("目录");
         String[] headers = {"序号", "微服务中心", "表名", "表中文名", "表注释"};
         int[] columnsToExport = {0, 1, 2, 3, 4};
-        String delimiter = "|";
+        String delimiter = "@";
 
-        multipleExcelToSigleToExcelByText(sourcePath, middleTextPath, tableListPath, sheetNames, headers, delimiter, columnsToExport);
+        multipleExcelToSigleToExcelByText(sourcePath, middleTextPath, targetExcelPath, sheetNames, headers, delimiter, columnsToExport);
 
 
         // 遍历文件夹找出所有的Excel，并把所有文件名写入源文件I列，所属环境库表
