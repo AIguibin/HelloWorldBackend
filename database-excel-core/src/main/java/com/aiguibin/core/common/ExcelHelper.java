@@ -623,7 +623,7 @@ public class ExcelHelper {
                                      OutputStream outputStream) throws IOException {
         // 使用try-with-resources确保工作簿资源自动关闭
         try (Workbook workbook = new XSSFWorkbook()) { // 创建XLSX格式工作簿
-            Sheet sheet = workbook.createSheet("Data"); // 创建默认工作表
+            Sheet sheet = workbook.createSheet("table"); // 创建默认工作表
 
             // 预定义字体和样式（提升性能，避免重复创建）
             Font headerFont = createHeaderFont(workbook);   // 表头字体
@@ -808,7 +808,7 @@ public class ExcelHelper {
      */
     private static boolean isFontAvailable(String fontName) {
         // 模拟逻辑：Windows系统认为存在灵秀黑字体
-        return fontName.contains("灵秀黑") ?
+        return fontName.contains("WPS灵秀黑") ?
                 System.getProperty("os.name").contains("Windows") :
                 true; // 其他字体默认存在
     }
@@ -941,7 +941,7 @@ public class ExcelHelper {
                 cellValues.add(value.replace(delimiter, "\\" + delimiter));
             }
             String trimStr = String.join("", cellValues).trim();
-            if (trimStr.length() > 0) {
+            if (trimStr.length() > 0 && cellValues.get(1).length()>0 && cellValues.get(2).length()>0) {
                 lines.add(String.join(delimiter, cellValues).toUpperCase());
             }
         }
