@@ -21,10 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.aiguibin.core.common.ExcelHelper.isExcelFile;
-import static com.aiguibin.core.common.ExcelHelper.readWorkbook;
 
 /**
  * 读取慢SQL文件，匹配表名称，输出禅道任务，自动创建禅道任务
@@ -36,12 +34,9 @@ public class SlowSqlTaskExtractor {
     private static final Set<String> SHEET_NAMES = new HashSet<>(Arrays.asList("目录"));
     // 数据库设计文档路径
     private static final String TABLE_LIST_DIR = "database-excel-core/docs/tableList";
-    // 禅道任务文档输出路径
-    private static final String TASK_LIST_FILE_EXCEL = "database-excel-core/docs/taskerList/taskFileList.xlsx";
+
     // 初步筛选慢SQL根路径
     private static final String SLOW_SQL_ROOT_PATH = "database-excel-core/docs/slowSQL";
-
-
     // 慢SQL文件处理
     private static final String SLOW_SQL_STEP_THREE_PATH = "database-excel-core/docs/stageList/stepThreeSlowSQL";
     // 慢SQL文件处理添加所属环境库表文件名
@@ -49,6 +44,11 @@ public class SlowSqlTaskExtractor {
 
     // 慢SQL文件处理添加所属环境库表文件名
     private static final String SLOW_SQL_STEP_FIVE_PATH = "database-excel-core/docs/stageList/stepFiveSlowSQL";
+
+    // 慢SQL文件处理添加所属环境库表文件名
+    private static final String SLOW_SQL_STEP_SIX_PATH = "database-excel-core/docs/stageList/stepSixSlowSQL";
+    // 禅道任务文档输出路径
+    private static final String TASK_LIST_FILE_EXCEL = "database-excel-core/docs/taskerList/taskFileList.xlsx";
 
     /**
      * @return
@@ -68,12 +68,10 @@ public class SlowSqlTaskExtractor {
         logger.debug("当前正在处理目录" + tableListPath.toString());
 
         // 检查文件夹下所有的Excel文件中是否存在指定的SHEET页
-
         int errorSheetCount = ExcelHelper.checkSheetsInDirectory(FileAccessor.getProjectRootFolderPath(TABLE_LIST_DIR), SHEET_NAMES, true);
         logger.debug("文件指定目录不存在的数量：" + errorSheetCount);
 
-        //
-
+        // 把所有的数据库表设计文档中的目录合并成一个Excel文件，取制定列，主要获取表名所属能力中心
         Path sourcePath = FileAccessor.getProjectRootFolderPath(TABLE_LIST_DIR);
         Path middleTextPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_THREE_PATH + "/table_name_middle.txt");
         Path targetExcelPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_THREE_PATH + "/table_name_target.xlsx");
@@ -82,8 +80,11 @@ public class SlowSqlTaskExtractor {
         int[] columnsToExport = {0, 1, 2, 3, 4};
         String delimiter = "@";
 
-        multipleExcelToSigleToExcelByText(sourcePath, middleTextPath, targetExcelPath, sheetNames, headers, delimiter, columnsToExport);
+        // 多个Excel文件转成单个Excel文件，中间使用text（支持指定列导出）
+        ExcelHelper.multipleExcelToSigleToExcelByText(sourcePath, middleTextPath, targetExcelPath, sheetNames, headers, delimiter, columnsToExport);
 
+        // 添加负责人table_name_target.xlsx
+        ExcelHelper.addResponsibleColumns(targetExcelPath, 1, 5, 6);
 
         // 遍历文件夹找出所有的Excel，并把所有文件名写入源文件I列，所属环境库表
         Path slowSqlRootPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_ROOT_PATH);
@@ -101,6 +102,22 @@ public class SlowSqlTaskExtractor {
         FileAccessor.traverseDirectory(new File(String.valueOf(slowSqlStepFivePath)), this::processStepFiveFile);
 
 
+        Path sourceDirPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_FIVE_PATH);
+        Path outputFilePath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_SIX_PATH + "/slow_sql_pre_task.xlsx");
+        String[] sourceSheetNames = {"sqlList"};
+        // 合并目录中多个Excel文件中的多个sheet页到一个新路径新文件新sheet页中
+        try {
+            ExcelHelper.mergeDirSheetsToNewOneSheet(sourceDirPath, outputFilePath, sourceSheetNames, -1, -1);
+        } catch (IOException e) {
+            logger.error("合并目录中多个Excel文件中的多个sheet页到一个新路径新文件新sheet页出错！", e);
+        }
+
+
+        Path searchedExcelPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_THREE_PATH + "/table_name_target.xlsx");
+        Path modifiedExcelPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_SIX_PATH + "/slow_sql_pre_task.xlsx");
+        // 调用ExcelHelper的通用方法
+        // ExcelHelper.excelVlookupUpdate(searchedExcelPath,null,2,Arrays.asList(5, 6),modifiedExcelPath, null,9, Arrays.asList(10, 11),false);
+
         // 创建禅道任务文件
         String[] taskHeaders = {"序号", "所属执行", "任务类型", "指派给", "任务名称", "任务描述", "预计开始日期", "预计结束日期", "预计工时（小时）", "优先级（1-4）"};
         List<List<String>> data = Arrays.asList(
@@ -114,31 +131,6 @@ public class SlowSqlTaskExtractor {
             logger.debug("Excel文件生成成功！");
         } catch (IOException e) {
             logger.debug("Excel文件生成失败：\n\r", e);
-        }
-    }
-
-    /**
-     * 多个Excel文件转成单个Excel文件，中间使用text（支持指定列导出）
-     * Convert multiple Excel files into a single Excel file with specified columns, using text in the middle
-     *
-     * @param columnsToExport 需要导出的列索引数组（如B列为1，D列为3）
-     */
-    public static void multipleExcelToSigleToExcelByText(Path sourcePath, Path middleTextPath, Path targetExcelPath,
-                                                         List<String> sheetNames, String[] headers, String delimiter,
-                                                         int[] columnsToExport, int... columnsToReplaceNewlines) {
-        try {
-            // 递归导出指定列到文本
-            ExcelHelper.exportSheetsToText(
-                    sourcePath, sheetNames, middleTextPath,
-                    delimiter, false, columnsToExport, columnsToReplaceNewlines
-            );
-            logger.debug("指定列文本合并完成: " + middleTextPath);
-
-            // 文本转Excel（需确保headers与导出的列顺序一致）
-            ExcelHelper.convertTextToExcel(middleTextPath, delimiter, targetExcelPath, headers);
-            logger.debug("Excel文件生成成功: " + targetExcelPath);
-        } catch (IOException e) {
-            logger.error("合并文本失败或生成Excel失败", e);
         }
     }
 
@@ -270,7 +262,7 @@ public class SlowSqlTaskExtractor {
 
                     Cell cellJ = row.createCell(9);
                     cellJ.setCellValue(tableName);
-                    logger.debug("  └── 赋值第" + i + 1 + "%d行: J列值=" + tableName);
+                    logger.debug("  └── 赋值第" + i + 1 + "行: J列值=" + tableName);
                 }
 
                 // 自动调整列宽（可选）

@@ -203,23 +203,29 @@ public class ExcelHelper {
      *
      * @param sourceDir  源目录
      * @param outputFile 输出文件路径
-     * @param sheetName  需要合并的Sheet名称（默认"目录"）
+     * @param sheetNames  需要合并的Sheet名称（默认"目录"）
      */
-    public static void mergeSheets(Path sourceDir, Path outputFile, String sheetName) throws IOException {
-        String targetSheetName = sheetName != null ? sheetName : DEFAULT_MERGE_SHEET_NAME;
+    public static void mergeDirSheetsToNewOneSheet(Path sourceDir, Path outputFile, String[] sheetNames,int startColumn, int endColumn) throws IOException {
+
+        // 参数校验
+        if (sheetNames == null || sheetNames.length == 0) {
+            throw new IllegalArgumentException("至少需要指定一个Sheet名称");
+        }
 
         if (Files.exists(outputFile) && !Files.deleteIfExists(outputFile)) {
             throw new IOException("无法删除旧文件: " + outputFile);
         }
 
         try (Workbook mergedWorkbook = new XSSFWorkbook()) {
-            Sheet mergedSheet = mergedWorkbook.createSheet(targetSheetName);
+            Sheet mergedSheet = mergedWorkbook.createSheet("result");
+            // 全局行计数器
             AtomicInteger rowCounter = new AtomicInteger(0);
 
             Files.walk(sourceDir)
                     .filter(Files::isRegularFile)
                     .filter(ExcelHelper::isExcelFile)
-                    .forEach(file -> processExcelFile(file, mergedWorkbook, mergedSheet, rowCounter));
+                    .sorted() // 保证处理顺序一致性
+                    .forEach(file -> processExcelFile(file, sheetNames, mergedWorkbook, mergedSheet, rowCounter,startColumn,endColumn));
 
             saveWorkbook(mergedWorkbook, outputFile);
             logger.info("合并完成，结果已保存至：" + outputFile.toAbsolutePath());
@@ -234,19 +240,22 @@ public class ExcelHelper {
      * @param mergedSheet    合并用的目标Sheet对象
      * @param rowCounter     行号计数器（线程安全）
      */
-    public static void processExcelFile(Path file, Workbook mergedWorkbook, Sheet mergedSheet, AtomicInteger rowCounter) {
+    public static void processExcelFile(Path file, String[] sheetNames,Workbook mergedWorkbook, Sheet mergedSheet, AtomicInteger rowCounter,  int startColumn, int endColumn) {
         try (Workbook workbook = readWorkbook(file)) {
-            // 获取指定名称的Sheet页（默认"目录"）
-            Sheet sourceSheet = workbook.getSheet(DEFAULT_MERGE_SHEET_NAME);
-            if (sourceSheet == null) {
-                logger.warn("跳过无目标Sheet的文件: " + file.getFileName());
-                return;
+            // 处理每个指定的Sheet
+            for (String sheetName : sheetNames) {
+                Sheet sourceSheet = workbook.getSheet(sheetName);
+                if (sourceSheet == null) {
+                    logger.warn("跳过无目标Sheet的文件: " + file.getFileName());
+                    return;
+                }
+
+                // 先处理合并区域（需要基于当前行号调整）
+                processMergedRegions(sourceSheet, mergedSheet, rowCounter.get() ,startColumn,endColumn);
+                // 再复制数据内容（自动递增行号）
+                copySheetData(sourceSheet, mergedSheet, rowCounter, mergedWorkbook,startColumn,endColumn);
             }
 
-            // 先处理合并区域（需要基于当前行号调整）
-            processMergedRegions(sourceSheet, mergedSheet, rowCounter.get());
-            // 再复制数据内容（自动递增行号）
-            copySheetData(sourceSheet, mergedSheet, rowCounter, mergedWorkbook);
 
         } catch (Exception e) {
             logger.error("处理文件失败: " + file, e);
@@ -260,19 +269,26 @@ public class ExcelHelper {
      * @param targetSheet 目标Sheet
      * @param baseRow     当前基础行号（用于行号偏移）
      */
-    public static void processMergedRegions(Sheet sourceSheet, Sheet targetSheet, int baseRow) {
+    public static void processMergedRegions(Sheet sourceSheet, Sheet targetSheet, int baseRow, int startColumn, int endColumn) {
+
         // 遍历所有合并区域
         for (int i = 0; i < sourceSheet.getNumMergedRegions(); i++) {
             CellRangeAddress mergedRegion = sourceSheet.getMergedRegion(i);
-            // 过滤掉不在前四列（0-3列）的合并区域
-            if (mergedRegion.getLastColumn() < 0 || mergedRegion.getFirstColumn() > 3) continue;
+            if (startColumn >= 0 && endColumn > 0 && startColumn < endColumn) {
+                // 过滤掉不在前四列（0-3列）的合并区域
+                if (mergedRegion.getLastColumn() < startColumn || mergedRegion.getFirstColumn() > endColumn) continue;
+            } else {
+                startColumn = -1;
+                endColumn = -1;
+            }
 
-            // 创建调整后的合并区域（行号偏移，列范围限制在0-3）
+
+            // 创建调整后的合并区域（行号偏移，列范围限制）
             CellRangeAddress adjustedRegion = new CellRangeAddress(
                     mergedRegion.getFirstRow() + baseRow,  // 起始行偏移
                     mergedRegion.getLastRow() + baseRow,   // 结束行偏移
-                    Math.max(mergedRegion.getFirstColumn(), 0),  // 列起始不小于0
-                    Math.min(mergedRegion.getLastColumn(), 3)   // 列结束不大于3
+                    startColumn < 0 ? mergedRegion.getFirstColumn() : Math.max(mergedRegion.getFirstColumn(), startColumn),
+                    endColumn < 0 ? mergedRegion.getLastColumn() : Math.min(mergedRegion.getLastColumn(), endColumn)
             );
             targetSheet.addMergedRegion(adjustedRegion);
         }
@@ -287,13 +303,22 @@ public class ExcelHelper {
      * @param targetWorkbook 目标工作簿（用于样式克隆）
      */
     public static void copySheetData(Sheet sourceSheet, Sheet targetSheet,
-                                     AtomicInteger rowCounter, Workbook targetWorkbook) {
+                                     AtomicInteger rowCounter, Workbook targetWorkbook,int startColumn, int endColumn) {
         // 遍历源Sheet的每一行
         sourceSheet.forEach(sourceRow -> {
             // 创建新行并递增行号
             Row targetRow = targetSheet.createRow(rowCounter.getAndIncrement());
-            copyRow(sourceRow, targetRow, targetWorkbook);
+            copyRow(sourceRow, targetRow, targetWorkbook, startColumn,endColumn);
         });
+
+        // 确定数据起始行（默认跳过首行标题）
+        // int startRowIndex = rowCounter.getAndIncrement() > 0 ? 1 : sourceSheet.getFirstRowNum();
+        // for (int i = startRowIndex; i <= sourceSheet.getLastRowNum(); i++) {
+        //     Row sourceRow = sourceSheet.getRow(i);
+        //     if (sourceRow == null) continue;
+        //     Row targetRow = targetSheet.createRow(rowCounter.getAndIncrement());
+        //     copyRow(sourceRow, targetRow, targetWorkbook, startColumn,endColumn);
+        // }
     }
 
     /**
@@ -303,16 +328,27 @@ public class ExcelHelper {
      * @param targetRow      目标行
      * @param targetWorkbook 目标工作簿（用于创建样式）
      */
-    public static void copyRow(Row sourceRow, Row targetRow, Workbook targetWorkbook) {
+    public static void copyRow(Row sourceRow, Row targetRow,Workbook targetWorkbook, int startColumn, int endColumn) {
+        if (){}
         targetRow.setHeight(sourceRow.getHeight());  // 复制行高
-        // 仅复制前四列（0到3列）
-        for (int i = 0; i < 4; i++) {
-            // 获取单元格（不存在则创建空单元格）
-            Cell sourceCell = sourceRow.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-            Cell targetCell = targetRow.createCell(i);
-            copyCellStyle(sourceCell, targetCell, targetWorkbook);  // 复制样式
-            copyCellValue(sourceCell, targetCell);                  // 复制值
+        if (startColumn >= 0 && endColumn > 0 && startColumn < endColumn) {
+            // 仅复制前四列（0到3列）
+            for (int i = startColumn; i < endColumn; i++) {
+                // 获取单元格（不存在则创建空单元格）
+                Cell sourceCell = sourceRow.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                Cell targetCell = targetRow.createCell(i);
+                copyCellStyle(sourceCell, targetCell, targetWorkbook);  // 复制样式
+                copyCellValue(sourceCell, targetCell);                  // 复制值
+            }
+        } else {
+            for (int j = sourceRow.getFirstCellNum(); j < sourceRow.getLastCellNum(); j++) {
+                Cell sourceCell = sourceRow.getCell(j, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                Cell targetCell = targetRow.createCell(j);
+                copyCellStyle(sourceCell, targetCell, targetWorkbook);  // 复制样式
+                copyCellValue(sourceCell, targetCell);                  // 复制值
+            }
         }
+
     }
 
     /**
@@ -572,10 +608,12 @@ public class ExcelHelper {
      * @throws IOException 当文件写入失败时抛出
      */
     public static void saveWorkbook(Workbook workbook, Path outputPath,
-                                    OpenOption... options) throws IOException {
+                                    OpenOption... options) {
         // 使用try-with-resources确保自动关闭输出流
         try (OutputStream os = Files.newOutputStream(outputPath, options)) {
             workbook.write(os);  // 写入工作簿内容
+        }catch (Exception e){
+            logger.error(String.format("文件写入失败时抛出,输出文件路径:s%",outputPath.toString()),e);
         }
     }
 
@@ -632,186 +670,13 @@ public class ExcelHelper {
             CellStyle contentStyle = createContentStyle(workbook, contentFont); // 内容样式
 
             createHeaderRow(sheet, headers, headerStyle); // 生成表头行
-            populateDataRows(sheet, data, contentStyle);  // 填充数据内容
+            populateDataRows(sheet, headers, data, contentStyle);  // 填充数据内容
             autoSizeColumns(sheet, headers.length);       // 自动调整列宽
 
             workbook.write(outputStream); // 将工作簿写入输出流
         }
     }
 
-
-    /**
-     * 创建表头字体样式
-     *
-     * @param workbook 工作簿对象
-     * @return 配置完成的字体对象
-     * @实现说明 - 字体加粗，12号字
-     * - 字体优先使用「WPS灵秀黑」，若不可用则回退到「微软雅黑」
-     */
-    private static Font createHeaderFont(Workbook workbook) {
-        Font font = workbook.createFont();
-        font.setBold(true); // 加粗
-        font.setFontHeightInPoints((short) 12); // 字号
-
-        // 字体回退策略
-        if (isFontAvailable("WPS灵秀黑")) {
-            font.setFontName("WPS灵秀黑");
-        } else {
-            font.setFontName("微软雅黑"); // 兼容性回退
-        }
-        return font;
-    }
-
-    /**
-     * 创建内容字体样式
-     *
-     * @param workbook 工作簿对象
-     * @return 配置完成的字体对象
-     * @注意 字体策略与表头保持一致，确保视觉统一
-     */
-    private static Font createContentFont(Workbook workbook) {
-        Font font = workbook.createFont();
-        font.setFontHeightInPoints((short) 10); // 内容字号
-        font.setFontName(
-                isFontAvailable("WPS灵秀黑") ? "WPS灵秀黑" : "微软雅黑" // 继承表头策略
-        );
-        return font;
-    }
-
-    /**
-     * 创建表头单元格样式
-     *
-     * @param workbook 工作簿对象
-     * @param font     表头字体
-     * @return 配置完成的单元格样式
-     */
-    private static CellStyle createHeaderStyle(Workbook workbook, Font font) {
-        CellStyle style = workbook.createCellStyle();
-        style.setFont(font); // 应用字体
-        style.setAlignment(HorizontalAlignment.CENTER); // 水平居中
-        style.setVerticalAlignment(VerticalAlignment.CENTER); // 垂直居中
-        return style;
-    }
-
-    /**
-     * 创建内容单元格样式
-     *
-     * @param workbook 工作簿对象
-     * @param font     内容字体
-     * @return 配置完成的单元格样式
-     * @样式特性 - 浅绿色细边框（IndexedColors.AQUA）
-     * - 继承内容字体配置
-     */
-    private static CellStyle createContentStyle(Workbook workbook, Font font) {
-        CellStyle style = workbook.createCellStyle();
-        style.setFont(font);
-
-        // 统一边框样式配置
-        style.setBorderTop(BorderStyle.THIN);
-        style.setBorderBottom(BorderStyle.THIN);
-        style.setBorderLeft(BorderStyle.THIN);
-        style.setBorderRight(BorderStyle.THIN);
-
-        // 设置边框颜色（浅绿色）
-        short aqua = IndexedColors.AQUA.getIndex();
-        style.setTopBorderColor(aqua);
-        style.setBottomBorderColor(aqua);
-        style.setLeftBorderColor(aqua);
-        style.setRightBorderColor(aqua);
-
-        return style;
-    }
-
-    /**
-     * 创建表头行
-     *
-     * @param sheet   工作表对象
-     * @param headers 表头数组
-     * @param style   表头样式
-     * @实现细节 - 固定在第0行创建表头
-     * - 根据headers数组长度创建对应列数
-     */
-    private static void createHeaderRow(Sheet sheet, String[] headers, CellStyle style) {
-        Row headerRow = sheet.createRow(0); // 首行作为表头
-        for (int i = 0; i < headers.length; i++) {
-            Cell cell = headerRow.createCell(i);
-            cell.setCellValue(headers[i]); // 设置列标题
-            cell.setCellStyle(style);      // 应用样式
-        }
-    }
-
-    /**
-     * 填充数据行
-     *
-     * @param sheet 工作表对象
-     * @param data  二维数据集合
-     * @param style 内容单元格样式
-     * @注意 - 数据从第2行开始写入（索引1）
-     * - 允许不同行的列数不一致，但可能导致表格错位
-     */
-    private static void populateDataRows(Sheet sheet, List<List<String>> data, CellStyle style) {
-        int rowNum = 1; // 数据起始行索引
-        for (List<String> rowData : data) {
-            Row row = sheet.createRow(rowNum++);
-            for (int i = 0; i < rowData.size(); i++) {
-                Cell cell = row.createCell(i);
-                String value = rowData.get(i);
-                cell.setCellValue(value != null ? value : ""); // 空值处理
-                cell.setCellStyle(style);
-            }
-        }
-    }
-
-    /**
-     * 自动调整列宽（适配中文）
-     *
-     * @param sheet       工作表对象
-     * @param columnCount 需要调整的列数
-     *
-     * @实现原理
-     * 1. 调用autoSizeColumn获取基础宽度
-     * 2. 对宽度进行1.2倍补偿（中文字符宽度补偿）
-     * 3. 强制限制列宽不超过Excel允许的最大值255字符
-     */
-    private static void autoSizeColumns(Sheet sheet, int columnCount) {
-        final int MAX_COLUMN_WIDTH = 255 * 256; // Excel列宽上限 (255字符 x 256单位)
-
-        for (int i = 0; i < columnCount; i++) {
-            sheet.autoSizeColumn(i); // 自动计算基础宽度
-
-            int baseWidth = sheet.getColumnWidth(i);
-            int adjustedWidth = (int)(baseWidth * 1.2); // 中文宽度补偿
-
-            // 强制限制列宽不超过最大值
-            if (adjustedWidth > MAX_COLUMN_WIDTH) {
-                adjustedWidth = MAX_COLUMN_WIDTH;
-            } else if (adjustedWidth < 0) {
-                adjustedWidth = 0; // 防止负值
-            }
-
-            sheet.setColumnWidth(i, adjustedWidth);
-        }
-    }
-
-
-    /**
-     * 检测字体可用性（模拟实现）
-     *
-     * @param fontName 字体名称
-     * @return 字体是否可用
-     * @注意 实际开发中应使用以下代码检测：
-     * <pre>{@code
-     * GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-     * return Arrays.stream(ge.getAvailableFontFamilyNames())
-     *             .anyMatch(name -> name.equals(fontName));
-     * }</pre>
-     */
-    private static boolean isFontAvailable(String fontName) {
-        // 模拟逻辑：Windows系统认为存在灵秀黑字体
-        return fontName.contains("WPS灵秀黑") ?
-                System.getProperty("os.name").contains("Windows") :
-                true; // 其他字体默认存在
-    }
 
     /**
      * 删除A列SQL语句重复的行（保留第一个出现的行）
@@ -941,7 +806,7 @@ public class ExcelHelper {
                 cellValues.add(value.replace(delimiter, "\\" + delimiter));
             }
             String trimStr = String.join("", cellValues).trim();
-            if (trimStr.length() > 0 && cellValues.get(1).length()>0 && cellValues.get(2).length()>0) {
+            if (trimStr.length() > 0 && cellValues.get(1).length() > 0 && cellValues.get(2).length() > 0) {
                 lines.add(String.join(delimiter, cellValues).toUpperCase());
             }
         }
@@ -1092,6 +957,480 @@ public class ExcelHelper {
         } catch (Exception e) {
             logger.error("检查文件失败: " + filePath, e);
             return false;
+        }
+    }
+
+    /**
+     * 多个Excel文件转成单个Excel文件，中间使用text（支持指定列导出）
+     * Convert multiple Excel files into a single Excel file with specified columns, using text in the middle
+     *
+     * @param columnsToExport 需要导出的列索引数组（如B列为1，D列为3）
+     */
+    public static void multipleExcelToSigleToExcelByText(Path sourcePath, Path middleTextPath, Path targetExcelPath,
+                                                         List<String> sheetNames, String[] headers, String delimiter,
+                                                         int[] columnsToExport, int... columnsToReplaceNewlines) {
+        try {
+            // 递归导出指定列到文本
+            exportSheetsToText(
+                    sourcePath, sheetNames, middleTextPath,
+                    delimiter, false, columnsToExport, columnsToReplaceNewlines
+            );
+            logger.debug("指定列文本合并完成: " + middleTextPath);
+
+            // 文本转Excel（需确保headers与导出的列顺序一致）
+            convertTextToExcel(middleTextPath, delimiter, targetExcelPath, headers);
+            logger.debug("Excel文件生成成功: " + targetExcelPath);
+        } catch (IOException e) {
+            logger.error("合并文本失败或生成Excel失败", e);
+        }
+    }
+
+    /**
+     * 为已存在的Excel文件添加负责人列
+     *
+     * @param excelFile      目标Excel文件路径
+     * @param centerColIndex 微服务中心列的索引（从0开始）
+     * @param enColIndex     负责人英文名新列的索引
+     * @param cnColIndex     负责人中文名新列的索引
+     */
+    public static void addResponsibleColumns(Path excelFile, int centerColIndex, int enColIndex, int cnColIndex) {
+        try (Workbook workbook = readWorkbook(excelFile)) {
+            Sheet sheet = workbook.getSheetAt(0); // 第一个sheet
+
+            // 添加表头
+            Row headerRow = sheet.getRow(0);
+            if (headerRow == null) headerRow = sheet.createRow(0);
+
+            // 确保列存在（创建列）
+            if (headerRow.getCell(enColIndex) == null) {
+                headerRow.createCell(enColIndex).setCellValue("负责人英文名");
+            }
+            if (headerRow.getCell(cnColIndex) == null) {
+                headerRow.createCell(cnColIndex).setCellValue("负责人中文名");
+            }
+
+            // 填充数据
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                String center = getCellValueAsString(row.getCell(centerColIndex));
+                ResponsibleMapping.ResponsibleInfo responsible = ResponsibleMapping.getResponsible(center);
+
+                // 创建负责人列单元格
+                Cell enCell = row.createCell(enColIndex);
+                enCell.setCellValue(responsible.getEnName());
+
+                Cell cnCell = row.createCell(cnColIndex);
+                cnCell.setCellValue(responsible.getCnName());
+            }
+
+            // 自动调整列宽
+            autoSizeColumns(sheet, Math.max(enColIndex, cnColIndex) + 1);
+
+            // 保存修改
+            saveWorkbook(workbook, excelFile, StandardOpenOption.TRUNCATE_EXISTING);
+            logger.info("负责人列添加成功: " + excelFile);
+        } catch (Exception e) {
+            logger.error("添加负责人列失败: " + excelFile, e);
+        }
+    }
+
+
+    /**
+     * Excel Vlookup式列更新
+     *
+     * @param mappingFile      映射关系文件
+     * @param mappingSheetName 映射文件sheet名称（null=第一个sheet）
+     * @param mappingKeyCol    映射文件匹配键列索引（0-based）
+     * @param mappingValueCols 映射文件取值列索引列表
+     * @param sourceDir        源文件目录
+     * @param sourceSheetName  源文件sheet名称
+     * @param sourceKeyCol     源文件匹配键列索引
+     * @param sourceValueCols  源文件目标列索引列表
+     * @param caseSensitive    是否区分大小写
+     */
+    public static void excelVlookupUpdate(
+            Path mappingFile,
+            String mappingSheetName,
+            int mappingKeyCol,
+            List<Integer> mappingValueCols,
+            Path sourceDir,
+            String sourceSheetName,
+            int sourceKeyCol,
+            List<Integer> sourceValueCols,
+            boolean caseSensitive) {
+
+        // 参数校验
+        if (mappingValueCols.size() != sourceValueCols.size()) {
+            logger.error(String.format("列数量不匹配: 映射值列={}, 目标值列={}", mappingValueCols.size(), sourceValueCols.size()));
+            return;
+        }
+
+        // 1. 构建映射字典
+        Map<String, List<String>> mappingDict = buildMappingDict(
+                mappingFile, mappingSheetName, mappingKeyCol, mappingValueCols, caseSensitive);
+
+        // 2. 处理目录中的文件
+        processFiles(sourceDir, sourceSheetName, sourceKeyCol, sourceValueCols, mappingDict, caseSensitive);
+    }
+
+    public static Map<String, List<String>> buildMappingDict(
+            Path mappingFile, String sheetName, int keyCol, List<Integer> valueCols, boolean caseSensitive) {
+
+        Map<String, List<String>> dict = new HashMap<>();
+
+        try (Workbook workbook = readWorkbook(mappingFile)) {
+            Sheet sheet = getSheet(workbook, sheetName);
+            if (sheet == null) return dict;
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) { // 从第2行开始
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                // 获取键
+                Cell keyCell = row.getCell(keyCol);
+                if (keyCell == null) continue;
+                String key = normalizeKey(getCellValueAsString(keyCell), caseSensitive);
+                if (key.isEmpty()) continue;
+
+                // 获取值列表
+                List<String> values = new ArrayList<>();
+                for (int colIndex : valueCols) {
+                    Cell valueCell = row.getCell(colIndex);
+                    values.add(valueCell != null ? getCellValueAsString(valueCell) : "");
+                }
+
+                dict.put(key, values);
+            }
+        } catch (Exception e) {
+            logger.error("构建映射字典失败: " + mappingFile, e);
+        }
+        return dict;
+    }
+
+    public static void processFiles(
+            Path sourceDir, String sheetName, int keyCol, List<Integer> targetCols,
+            Map<String, List<String>> mappingDict, boolean caseSensitive) {
+
+        try {
+            Files.walk(sourceDir)
+                    .filter(path -> isExcelFile(path) && !Files.isDirectory(path))
+                    .forEach(file -> processSingleFile(file, sheetName, keyCol, targetCols, mappingDict, caseSensitive));
+        } catch (IOException e) {
+            logger.error("遍历目录失败: " + sourceDir, e);
+        }
+    }
+
+    public static void processSingleFile(
+            Path file, String sheetName, int keyCol, List<Integer> targetCols,
+            Map<String, List<String>> mappingDict, boolean caseSensitive) {
+
+        try (Workbook workbook = WorkbookFactory.create(file.toFile())) {
+            Sheet sheet = getSheet(workbook, sheetName);
+            if (sheet == null) return;
+
+            boolean updated = false;
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) { // 从第2行开始
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                // 获取键
+                Cell keyCell = row.getCell(keyCol);
+                if (keyCell == null) continue;
+                String key = normalizeKey(getCellValueAsString(keyCell), caseSensitive);
+                if (key.isEmpty()) continue;
+
+                // 查找映射值
+                List<String> values = mappingDict.get(key);
+                if (values == null) continue;
+
+                // 更新目标列
+                for (int j = 0; j < targetCols.size(); j++) {
+                    int targetCol = targetCols.get(j);
+                    String value = values.get(j);
+
+                    Cell targetCell = row.getCell(targetCol);
+                    if (targetCell == null) {
+                        targetCell = row.createCell(targetCol);
+                    }
+                    targetCell.setCellValue(value);
+                }
+                updated = true;
+            }
+
+            // 保存有修改的文件
+            if (updated) {
+                try (FileOutputStream fos = new FileOutputStream(file.toFile())) {
+                    workbook.write(fos);
+                    logger.debug(String.format("文件更新成功: {}", file.getFileName()));
+                }
+            }
+        } catch (Exception e) {
+            logger.error("处理文件失败: " + file.getFileName(), e);
+        }
+    }
+
+    public static String normalizeKey(String key, boolean caseSensitive) {
+        key = key.trim();
+        return caseSensitive ? key : key.toUpperCase();
+    }
+
+    public static Sheet getSheet(Workbook workbook, String sheetName) {
+        if (sheetName == null || sheetName.trim().isEmpty()) {
+            return workbook.getSheetAt(0);
+        }
+        Sheet sheet = workbook.getSheet(sheetName);
+        if (sheet == null) {
+            logger.warn(String.format("Sheet不存在: {}", sheetName));
+        }
+        return sheet;
+    }
+
+
+    // ======
+
+    /**
+     * 创建表头字体样式
+     *
+     * @param workbook 工作簿对象
+     * @return 配置完成的字体对象
+     * @实现说明 - 字体加粗，12号字
+     * - 字体优先使用「WPS灵秀黑」，若不可用则回退到「微软雅黑」
+     */
+    public static Font createHeaderFont(Workbook workbook) {
+        Font font = workbook.createFont();
+        font.setBold(true); // 加粗
+        font.setFontHeightInPoints((short) 12); // 字号
+
+        // 字体回退策略
+        if (isFontAvailable("WPS灵秀黑")) {
+            font.setFontName("WPS灵秀黑");
+        } else {
+            font.setFontName("微软雅黑"); // 兼容性回退
+        }
+        return font;
+    }
+
+    /**
+     * 创建内容字体样式
+     *
+     * @param workbook 工作簿对象
+     * @return 配置完成的字体对象
+     * @注意 字体策略与表头保持一致，确保视觉统一
+     */
+    public static Font createContentFont(Workbook workbook) {
+        Font font = workbook.createFont();
+        font.setFontHeightInPoints((short) 10); // 内容字号
+        font.setFontName(
+                isFontAvailable("WPS灵秀黑") ? "WPS灵秀黑" : "微软雅黑" // 继承表头策略
+        );
+        return font;
+    }
+
+    /**
+     * 检测字体可用性（模拟实现）
+     *
+     * @param fontName 字体名称
+     * @return 字体是否可用
+     * @注意 实际开发中应使用以下代码检测：
+     * <pre>{@code
+     * GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+     * return Arrays.stream(ge.getAvailableFontFamilyNames())
+     *             .anyMatch(name -> name.equals(fontName));
+     * }</pre>
+     */
+    public static boolean isFontAvailable(String fontName) {
+        // 模拟逻辑：Windows系统认为存在灵秀黑字体
+        return !fontName.contains("WPS灵秀黑") || System.getProperty("os.name").contains("Windows"); // 其他字体默认存在
+    }
+
+    /**
+     * 创建表头单元格样式
+     *
+     * @param workbook 工作簿对象
+     * @param font     表头字体
+     * @return 配置完成的单元格样式
+     */
+    public static CellStyle createHeaderStyle(Workbook workbook, Font font) {
+        CellStyle style = workbook.createCellStyle();
+        style.setFont(font);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+
+        // 新增：设置背景色为深绿色
+        style.setFillForegroundColor(IndexedColors.GREEN.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        // 新增：设置字体颜色为白色
+        Font whiteFont = workbook.createFont();
+        whiteFont.setColor(IndexedColors.WHITE.getIndex());
+        whiteFont.setBold(true);
+        whiteFont.setFontHeightInPoints((short) 12);
+        whiteFont.setFontName(font.getFontName());
+        style.setFont(whiteFont);
+
+        // 新增：设置边框（浅绿色细边框）
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        short aqua = IndexedColors.AQUA.getIndex();
+        style.setTopBorderColor(aqua);
+        style.setBottomBorderColor(aqua);
+        style.setLeftBorderColor(aqua);
+        style.setRightBorderColor(aqua);
+
+        return style;
+    }
+
+    /**
+     * 创建内容单元格样式
+     *
+     * @param workbook 工作簿对象
+     * @param font     内容字体
+     * @return 配置完成的单元格样式
+     * @样式特性 - 浅绿色细边框（IndexedColors.AQUA）
+     * - 继承内容字体配置
+     */
+    public static CellStyle createContentStyle(Workbook workbook, Font font) {
+        CellStyle style = workbook.createCellStyle();
+        style.setFont(font);
+
+        // 新增：设置边框（浅绿色细边框）
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        short aqua = IndexedColors.AQUA.getIndex();
+        style.setTopBorderColor(aqua);
+        style.setBottomBorderColor(aqua);
+        style.setLeftBorderColor(aqua);
+        style.setRightBorderColor(aqua);
+
+        return style;
+    }
+
+    /**
+     * 自动调整列宽（适配中文）
+     *
+     * @param sheet       工作表对象
+     * @param columnCount 需要调整的列数
+     * @实现原理 1. 调用autoSizeColumn获取基础宽度
+     * 2. 对宽度进行1.2倍补偿（中文字符宽度补偿）
+     * 3. 强制限制列宽不超过Excel允许的最大值50-255字符
+     */
+    public static void autoSizeColumns(Sheet sheet, int columnCount) {
+        final int MAX_COLUMN_WIDTH = 50 * 256; // 限制最大列宽为50字符
+
+        for (int i = 0; i < columnCount; i++) {
+            sheet.autoSizeColumn(i);
+            int currentWidth = sheet.getColumnWidth(i);
+            int adjustedWidth = (int) (currentWidth * 1.2); // 中文宽度补偿
+
+            // 强制限制列宽不超过50字符
+            if (adjustedWidth > MAX_COLUMN_WIDTH) {
+                sheet.setColumnWidth(i, MAX_COLUMN_WIDTH);
+            } else if (adjustedWidth < 0) {
+                sheet.setColumnWidth(i, 0);
+            } else {
+                sheet.setColumnWidth(i, adjustedWidth);
+            }
+        }
+    }
+
+    /**
+     * 创建表头行
+     *
+     * @param sheet   工作表对象
+     * @param headers 表头数组
+     * @param style   表头样式
+     * @实现细节 - 固定在第0行创建表头
+     * - 根据headers数组长度创建对应列数
+     */
+    public static void createHeaderRow(Sheet sheet, String[] headers, CellStyle style) {
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(style);
+        }
+    }
+
+
+    /**
+     * 填充数据行
+     *
+     * @param sheet   工作表对象
+     * @param headers 表头数组
+     * @param data    二维数据集合
+     * @param style   内容单元格样式
+     * @注意 - 数据从第2行开始写入（索引1）
+     * - 允许不同行的列数不一致，但可能导致表格错位
+     */
+    public static void populateDataRows(Sheet sheet, String[] headers, List<List<String>> data, CellStyle style) {
+        int rowNum = 1;
+        for (List<String> rowData : data) {
+            Row row = sheet.createRow(rowNum++);
+            for (int i = 0; i < rowData.size(); i++) {
+                Cell cell = row.createCell(i);
+                cell.setCellValue(rowData.get(i) != null ? rowData.get(i) : "");
+                cell.setCellStyle(style); // 应用统一的边框样式
+            }
+        }
+
+        // 新增：设置最外层边框加粗
+        int lastRow = sheet.getLastRowNum();
+        int lastCol = headers.length - 1;
+        // 整个数据区域
+        // setThickBorder(sheet, 0, 0, lastRow, lastCol);
+    }
+
+    // 新增：设置指定区域的外边框加粗
+    public static void setThickBorder(Sheet sheet, CellStyle noumalStyle, int firstRow, int firstCol, int lastRow, int lastCol) {
+        try {
+            // 设置上边框
+            for (int col = firstCol; col <= lastCol; col++) {
+                Cell cell = sheet.getRow(firstRow).getCell(col);
+                CellStyle style = cell.getCellStyle();
+                if (style != null) {
+                    style.setBorderTop(BorderStyle.MEDIUM);
+                    cell.setCellStyle(style);
+                }
+            }
+
+            // 设置下边框
+            for (int col = firstCol; col <= lastCol; col++) {
+                Cell cell = sheet.getRow(lastRow).getCell(col);
+                CellStyle style = cell.getCellStyle();
+                if (style != null) {
+                    style.setBorderBottom(BorderStyle.MEDIUM);
+                    cell.setCellStyle(style);
+                }
+            }
+
+            // 设置左边框
+            for (int row = firstRow; row <= lastRow; row++) {
+                Cell cell = sheet.getRow(row).getCell(firstCol);
+                CellStyle style = cell.getCellStyle();
+                if (style != null) {
+                    style.setBorderLeft(BorderStyle.MEDIUM);
+                    cell.setCellStyle(style);
+                }
+            }
+
+            // 设置右边框
+            for (int row = firstRow; row <= lastRow; row++) {
+                Cell cell = sheet.getRow(row).getCell(lastCol);
+                CellStyle style = cell.getCellStyle();
+                if (style != null) {
+                    style.setBorderRight(BorderStyle.MEDIUM);
+                    cell.setCellStyle(style);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("设置最外层边框加粗出错！！！");
         }
     }
 }
