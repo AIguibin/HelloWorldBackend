@@ -203,9 +203,9 @@ public class ExcelHelper {
      *
      * @param sourceDir  源目录
      * @param outputFile 输出文件路径
-     * @param sheetNames  需要合并的Sheet名称（默认"目录"）
+     * @param sheetNames 需要合并的Sheet名称（默认"目录"）
      */
-    public static void mergeDirSheetsToNewOneSheet(Path sourceDir, Path outputFile, String[] sheetNames,int startColumn, int endColumn) throws IOException {
+    public static void mergeDirSheetsToNewOneSheet(Path sourceDir, Path outputFile, String[] sheetNames, int startColumn, int endColumn) throws IOException {
 
         // 参数校验
         if (sheetNames == null || sheetNames.length == 0) {
@@ -225,7 +225,7 @@ public class ExcelHelper {
                     .filter(Files::isRegularFile)
                     .filter(ExcelHelper::isExcelFile)
                     .sorted() // 保证处理顺序一致性
-                    .forEach(file -> processExcelFile(file, sheetNames, mergedWorkbook, mergedSheet, rowCounter,startColumn,endColumn));
+                    .forEach(file -> processExcelFile(file, sheetNames, mergedWorkbook, mergedSheet, rowCounter, startColumn, endColumn));
 
             saveWorkbook(mergedWorkbook, outputFile);
             logger.info("合并完成，结果已保存至：" + outputFile.toAbsolutePath());
@@ -240,7 +240,7 @@ public class ExcelHelper {
      * @param mergedSheet    合并用的目标Sheet对象
      * @param rowCounter     行号计数器（线程安全）
      */
-    public static void processExcelFile(Path file, String[] sheetNames,Workbook mergedWorkbook, Sheet mergedSheet, AtomicInteger rowCounter,  int startColumn, int endColumn) {
+    public static void processExcelFile(Path file, String[] sheetNames, Workbook mergedWorkbook, Sheet mergedSheet, AtomicInteger rowCounter, int startColumn, int endColumn) {
         try (Workbook workbook = readWorkbook(file)) {
             // 处理每个指定的Sheet
             for (String sheetName : sheetNames) {
@@ -251,9 +251,9 @@ public class ExcelHelper {
                 }
 
                 // 先处理合并区域（需要基于当前行号调整）
-                processMergedRegions(sourceSheet, mergedSheet, rowCounter.get() ,startColumn,endColumn);
+                processMergedRegions(sourceSheet, mergedSheet, rowCounter.get(), startColumn, endColumn);
                 // 再复制数据内容（自动递增行号）
-                copySheetData(sourceSheet, mergedSheet, rowCounter, mergedWorkbook,startColumn,endColumn);
+                copySheetData(sourceSheet, mergedSheet, rowCounter, mergedWorkbook, startColumn, endColumn);
             }
 
 
@@ -303,12 +303,12 @@ public class ExcelHelper {
      * @param targetWorkbook 目标工作簿（用于样式克隆）
      */
     public static void copySheetData(Sheet sourceSheet, Sheet targetSheet,
-                                     AtomicInteger rowCounter, Workbook targetWorkbook,int startColumn, int endColumn) {
+                                     AtomicInteger rowCounter, Workbook targetWorkbook, int startColumn, int endColumn) {
         // 遍历源Sheet的每一行
         sourceSheet.forEach(sourceRow -> {
             // 创建新行并递增行号
             Row targetRow = targetSheet.createRow(rowCounter.getAndIncrement());
-            copyRow(sourceRow, targetRow, targetWorkbook, startColumn,endColumn);
+            copyRow(sourceRow, targetRow, targetWorkbook, startColumn, endColumn);
         });
 
         // 确定数据起始行（默认跳过首行标题）
@@ -328,27 +328,30 @@ public class ExcelHelper {
      * @param targetRow      目标行
      * @param targetWorkbook 目标工作簿（用于创建样式）
      */
-    public static void copyRow(Row sourceRow, Row targetRow,Workbook targetWorkbook, int startColumn, int endColumn) {
-        if (){}
-        targetRow.setHeight(sourceRow.getHeight());  // 复制行高
-        if (startColumn >= 0 && endColumn > 0 && startColumn < endColumn) {
-            // 仅复制前四列（0到3列）
-            for (int i = startColumn; i < endColumn; i++) {
-                // 获取单元格（不存在则创建空单元格）
-                Cell sourceCell = sourceRow.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                Cell targetCell = targetRow.createCell(i);
-                copyCellStyle(sourceCell, targetCell, targetWorkbook);  // 复制样式
-                copyCellValue(sourceCell, targetCell);                  // 复制值
-            }
-        } else {
-            for (int j = sourceRow.getFirstCellNum(); j < sourceRow.getLastCellNum(); j++) {
-                Cell sourceCell = sourceRow.getCell(j, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                Cell targetCell = targetRow.createCell(j);
-                copyCellStyle(sourceCell, targetCell, targetWorkbook);  // 复制样式
-                copyCellValue(sourceCell, targetCell);                  // 复制值
+    public static void copyRow(Row sourceRow, Row targetRow, Workbook targetWorkbook, int startColumn, int endColumn) {
+        if (targetRow.getRowNum() > 0 && sourceRow.getRowNum() != 0) {
+            targetRow.setHeight(sourceRow.getHeight());  // 复制行高
+            if (startColumn >= 0 && endColumn > 0 && startColumn < endColumn) {
+                // 仅复制前四列（0到3列）
+                for (int i = startColumn; i < endColumn; i++) {
+                    // 获取单元格（不存在则创建空单元格）
+                    copyCell(sourceRow, targetRow, targetWorkbook, i);
+                }
+            } else {
+                for (int j = sourceRow.getFirstCellNum(); j < sourceRow.getLastCellNum(); j++) {
+                    copyCell(sourceRow, targetRow, targetWorkbook, j);
+                }
             }
         }
 
+
+    }
+
+    public static void copyCell(Row sourceRow, Row targetRow, Workbook targetWorkbook, int column) {
+        Cell sourceCell = sourceRow.getCell(column, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+        Cell targetCell = targetRow.createCell(column);
+        copyCellStyle(sourceCell, targetCell, targetWorkbook);  // 复制样式
+        copyCellValue(sourceCell, targetCell);                  // 复制值
     }
 
     /**
@@ -612,8 +615,8 @@ public class ExcelHelper {
         // 使用try-with-resources确保自动关闭输出流
         try (OutputStream os = Files.newOutputStream(outputPath, options)) {
             workbook.write(os);  // 写入工作簿内容
-        }catch (Exception e){
-            logger.error(String.format("文件写入失败时抛出,输出文件路径:s%",outputPath.toString()),e);
+        } catch (Exception e) {
+            logger.error(String.format("文件写入失败时抛出,输出文件路径:%s", outputPath.toString()), e);
         }
     }
 

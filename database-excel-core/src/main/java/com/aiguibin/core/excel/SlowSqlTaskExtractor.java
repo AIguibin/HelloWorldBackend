@@ -116,7 +116,7 @@ public class SlowSqlTaskExtractor {
         Path searchedExcelPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_THREE_PATH + "/table_name_target.xlsx");
         Path modifiedExcelPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_SIX_PATH + "/slow_sql_pre_task.xlsx");
         // 调用ExcelHelper的通用方法
-        // ExcelHelper.excelVlookupUpdate(searchedExcelPath,null,2,Arrays.asList(5, 6),modifiedExcelPath, null,9, Arrays.asList(10, 11),false);
+         ExcelHelper.excelVlookupUpdate(searchedExcelPath,null,2,Arrays.asList(5, 6),modifiedExcelPath, null,9, Arrays.asList(10, 11),false);
 
         // 创建禅道任务文件
         String[] taskHeaders = {"序号", "所属执行", "任务类型", "指派给", "任务名称", "任务描述", "预计开始日期", "预计结束日期", "预计工时（小时）", "优先级（1-4）"};
