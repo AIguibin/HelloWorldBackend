@@ -3,6 +3,7 @@ package com.aiguibin.core.common;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
@@ -590,15 +591,24 @@ public class ExcelHelper {
 
     /**
      * 读取Excel文件并创建Workbook对象
+     * POI的安全机制检测到Excel文件的压缩比异常（Zip bomb）
      *
      * @param file Excel文件路径
      * @return 解析后的Workbook对象
      * @throws IOException 当文件读取失败时抛出
      */
+
     public static Workbook readWorkbook(Path file) throws IOException {
-        // 使用try-with-resources确保自动关闭输入流
+        // 设置安全阈值允许低压缩率文件
+        ZipSecureFile.setMinInflateRatio(0.0001); // 将阈值降低到0.001
+
         try (InputStream is = Files.newInputStream(file)) {
-            return WorkbookFactory.create(is);  // 自动识别xls/xlsx格式
+            return WorkbookFactory.create(is);
+        } catch (Exception e) {
+            throw new IOException("读取工作簿失败: " + file, e);
+        } finally {
+            // 恢复默认值（可选）
+             ZipSecureFile.setMinInflateRatio(0.01);
         }
     }
 
