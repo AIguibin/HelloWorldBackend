@@ -1,4 +1,4 @@
-package com.aiguibin.core.excel;
+package com.aiguibin.core.extractor;
 
 
 import com.aiguibin.core.common.ExcelHelper;
@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static com.aiguibin.core.common.ExcelHelper.isExcelFile;
@@ -51,7 +53,7 @@ public class SlowSqlTaskExtractor {
     private static final String TASK_LIST_FILE_EXCEL = "database-excel-core/docs/taskerList/taskFileList.xlsx";
 
     /**
-     * @return
+     *
      */
     public void createTaskBySlowSQLAnalyzer() {
 
@@ -105,10 +107,10 @@ public class SlowSqlTaskExtractor {
         Path sourceDirPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_FIVE_PATH);
         Path outputFilePath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_SIX_PATH + "/slow_sql_pre_task.xlsx");
         String[] sourceSheetNames = {"sqlList"};
-        int[] skipEmptyCellOfColumn={0};
+        int[] skipEmptyCellOfColumn = {0};
         // 合并目录中多个Excel文件中的多个sheet页到一个新路径新文件新sheet页中
         try {
-            ExcelHelper.mergeDirSheetsToNewOneSheet(sourceDirPath, outputFilePath, sourceSheetNames, -1, -1,true,skipEmptyCellOfColumn);
+            ExcelHelper.mergeDirSheetsToNewOneSheet(sourceDirPath, outputFilePath, sourceSheetNames, -1, -1, true, skipEmptyCellOfColumn);
         } catch (IOException e) {
             logger.error("合并目录中多个Excel文件中的多个sheet页到一个新路径新文件新sheet页出错！", e);
         }
@@ -117,21 +119,82 @@ public class SlowSqlTaskExtractor {
         Path searchedExcelPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_THREE_PATH + "/table_name_target.xlsx");
         Path modifiedExcelPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_SIX_PATH + "/slow_sql_pre_task.xlsx");
         // 调用ExcelHelper的通用方法
-         ExcelHelper.excelVlookupUpdate(searchedExcelPath,null,2,Arrays.asList(5, 6),modifiedExcelPath, null,9, Arrays.asList(10, 11),false);
+        ExcelHelper.excelVlookupUpdate(searchedExcelPath, null, 2, Arrays.asList(5, 6, 1), modifiedExcelPath, null, 9, Arrays.asList(10, 11, 12), false);
 
+
+        // 增加一个处理类,处理数据
+        Path slowSqlStepSixPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_SIX_PATH);
+        FileAccessor.traverseDirectory(new File(String.valueOf(slowSqlStepSixPath)), this::processStepSixFile);
+
+    }
+
+    public static void createZenPathTask(List<List<String>> data) {
         // 创建禅道任务文件
         String[] taskHeaders = {"序号", "所属执行", "任务类型", "指派给", "任务名称", "任务描述", "预计开始日期", "预计结束日期", "预计工时（小时）", "优先级（1-4）"};
-        List<List<String>> data = Arrays.asList(
-                Arrays.asList("张三", "28", "技术部"),
-                Arrays.asList("李四", "35", "市场部"),
-                Arrays.asList("王五", "32", "财务部")
-        );
-
         try (FileOutputStream fos = new FileOutputStream(String.valueOf(FileAccessor.getProjectRootFolderPath(TASK_LIST_FILE_EXCEL)))) {
             ExcelHelper.exportToExcel(taskHeaders, data, fos);
             logger.debug("Excel文件生成成功！");
         } catch (IOException e) {
-            logger.debug("Excel文件生成失败：\n\r", e);
+            logger.debug("Excel文件生成失败：\r\n", e);
+        }
+    }
+
+    public void processStepSixFile(File file) {
+        logger.debug("正在处理: " + file.getAbsolutePath());
+        if (!isExcelFile(Paths.get(file.getAbsolutePath()))) {
+            return;
+        }
+        // 获取当前日期
+        LocalDate currentDate = LocalDate.now();
+        // 加7天
+        LocalDate futureDate = currentDate.plusDays(7);
+        // 定义日期格式器
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        // 格式化日期
+        String formatCurrentDate = currentDate.format(formatter);
+        // 格式化日期
+        String formatFutureDate = futureDate.format(formatter);
+        Map<String,Object> resStringObjectMap=new HashMap<>();
+        List<List<String>> sheetData=new ArrayList<>();
+        try {
+            Workbook workbook=ExcelHelper.readWorkbook(Paths.get(file.getAbsolutePath()));
+            Sheet sheet = workbook.getSheet("result");
+            for (int i = 1; i < sheet.getLastRowNum(); i++) {
+                List<String> nativeValues=new ArrayList<>();
+                List<String> finalValues=new ArrayList<>();
+                Row row = sheet.getRow(i);
+                if (row.getLastCellNum()<13){
+                    continue;
+                }
+                for (int j = 0; j < row.getLastCellNum(); j++) {
+                    String cellValue = ExcelHelper.getCellValueAsString(row.getCell(j)).trim();
+                    nativeValues.add(cellValue);
+                }
+                String serialNumber= "";
+                String parentTask="系统开发";
+                String taskType="开发";
+                String assignedTo=nativeValues.get(10);
+                String taskName=nativeValues.get(12)+"-性能优化-耗时："+nativeValues.get(4)+",最大返回行数："+nativeValues.get(5)+",序号："+String.valueOf(i);
+                String taskDescription="所属环境库：\r\n"+nativeValues.get(8)+"\r\n所属数据库："+nativeValues.get(1)+"\r\n慢SQL脚本：\r\n"+nativeValues.get(0);
+                String estimatedStartDate=formatCurrentDate;
+                String estimatedEndDate=formatFutureDate;
+                String estimatedDurationHours ="8";
+                String priority="2";
+                finalValues.add(serialNumber);
+                finalValues.add(parentTask);
+                finalValues.add(taskType);
+                finalValues.add(assignedTo);
+                finalValues.add(taskName);
+                finalValues.add(taskDescription);
+                finalValues.add(estimatedStartDate);
+                finalValues.add(estimatedEndDate);
+                finalValues.add(estimatedDurationHours);
+                finalValues.add(priority);
+                sheetData.add(finalValues);
+            }
+            createZenPathTask(sheetData);
+        } catch (IOException e) {
+            logger.debug(String.format("创建禅道任务失败!!!"),e);
         }
     }
 
@@ -149,7 +212,7 @@ public class SlowSqlTaskExtractor {
 
             Sheet sheet = workbook.getSheet("sqlList");
             if (sheet == null) {
-                logger.debug("  └── [警告] 缺少sqlList工作表");
+                logger.debug("[警告] 缺少sqlList工作表");
                 return;
             }
             // 删除重复行
@@ -179,7 +242,7 @@ public class SlowSqlTaskExtractor {
             try {
                 Files.createDirectories(stepFourSlowSqlPath); // 确保目录存在
             } catch (IOException e) {
-                logger.debug("  └── 目录创建失败: " + stepFourSlowSqlPath + " - " + e.getMessage());
+                logger.debug("目录创建失败: " + stepFourSlowSqlPath + " - " + e.getMessage());
                 return;
             }
 
@@ -189,11 +252,11 @@ public class SlowSqlTaskExtractor {
             // 保存到新路径
             try (FileOutputStream fos = new FileOutputStream(newFilePath.toFile())) {
                 workbook.write(fos);
-                logger.debug("  └── 处理成功，文件已保存至: " + newFilePath);
+                logger.debug("处理成功，文件已保存至: " + newFilePath);
             }
 
         } catch (IOException e) {
-            logger.debug("  └── 处理失败: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            logger.debug("处理失败: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
     }
 
@@ -210,7 +273,7 @@ public class SlowSqlTaskExtractor {
 
                 Sheet sheet = workbook.getSheet("sqlList");
                 if (sheet == null) {
-                    logger.debug("  └── [警告] 缺少sqlList工作表");
+                    logger.debug("[警告] 缺少sqlList工作表");
                     return;
                 }
 
@@ -233,7 +296,7 @@ public class SlowSqlTaskExtractor {
                         String cellBValue = ExcelHelper.getCellValueAsString(cellB).trim();
                         if ("oceanbase".equalsIgnoreCase(cellBValue)) {
                             sheet.removeRow(row);
-                            logger.debug("  └── [警告] 删除第" + i + "行:,B列值= " + cellBValue);
+                            logger.debug("[警告] 删除第" + i + "行:,B列值= " + cellBValue);
                             continue; // 删除后跳过后续处理
                         }
                     }
@@ -248,7 +311,7 @@ public class SlowSqlTaskExtractor {
                     // 提取表名并校验结果
                     String tableName = SqlTableNameConverter.getTableName(sql);
                     if (tableName == null || tableName.isEmpty()) {
-                        logger.debug("  └── [警告] 第" + i + "行无法提取表名: " + sql);
+                        logger.debug("[警告] 第" + i + "行无法提取表名: " + sql);
                         continue;
                     }
                     try {
@@ -263,7 +326,7 @@ public class SlowSqlTaskExtractor {
 
                     Cell cellJ = row.createCell(9);
                     cellJ.setCellValue(tableName);
-                    logger.debug("  └── 赋值第" + i + 1 + "行: J列值=" + tableName);
+                    logger.debug("赋值第" + i + 1 + "行: J列值=" + tableName);
                 }
 
                 // 自动调整列宽（可选）
@@ -272,10 +335,10 @@ public class SlowSqlTaskExtractor {
                 // 保存修改
                 try (FileOutputStream fos = new FileOutputStream(file)) {
                     workbook.write(fos);
-                    logger.debug("  └── 执行已完成，文件已更新");
+                    logger.debug("执行已完成，文件已更新");
                 }
             } catch (Exception e) {
-                logger.debug("  └── 处理失败: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+                logger.debug("处理失败: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             }
         }
     }

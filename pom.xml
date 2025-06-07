@@ -33,7 +33,8 @@
         <svnkit.version>1.10.3</svnkit.version>
         <tomcat.version>9.0.85</tomcat.version>
         <disruptor.version>3.4.4</disruptor.version>
-        <poi.version>5.2.3</poi.version>
+        <poi.version>5.2.5</poi.version>
+        <compress.version>1.25.0</compress.version>
         <easyexcel.version>3.1.1</easyexcel.version>
     </properties>
 
@@ -46,6 +47,11 @@
                 <version>${springBoot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${compress.version}</version>
             </dependency>
 
             <!-- Third-party dependencies -->

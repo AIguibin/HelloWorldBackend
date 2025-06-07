@@ -1,6 +1,7 @@
 package com.aiguibin.core.excel;
 
 import com.aiguibin.core.common.FileAccessor;
+import com.aiguibin.core.extractor.SlowSqlTaskExtractor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.jupiter.api.Test;
