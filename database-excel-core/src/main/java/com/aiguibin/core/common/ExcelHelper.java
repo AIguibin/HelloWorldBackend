@@ -206,7 +206,7 @@ public class ExcelHelper {
      * @param outputFile 输出文件路径
      * @param sheetNames 需要合并的Sheet名称（默认"目录"）
      */
-    public static void mergeDirSheetsToNewOneSheet(Path sourceDir, Path outputFile, String[] sheetNames, int startColumn, int endColumn) throws IOException {
+    public static void mergeDirSheetsToNewOneSheet(Path sourceDir, Path outputFile, String[] sheetNames, int startColumn, int endColumn, boolean isNewStyle) throws IOException {
 
         // 参数校验
         if (sheetNames == null || sheetNames.length == 0) {
@@ -226,7 +226,7 @@ public class ExcelHelper {
                     .filter(Files::isRegularFile)
                     .filter(ExcelHelper::isExcelFile)
                     .sorted() // 保证处理顺序一致性
-                    .forEach(file -> processExcelFile(file, sheetNames, mergedWorkbook, mergedSheet, rowCounter, startColumn, endColumn));
+                    .forEach(file -> processExcelFile(file, sheetNames, mergedWorkbook, mergedSheet, rowCounter, startColumn, endColumn, isNewStyle));
 
             saveWorkbook(mergedWorkbook, outputFile);
             logger.info("合并完成，结果已保存至：" + outputFile.toAbsolutePath());
@@ -241,7 +241,7 @@ public class ExcelHelper {
      * @param mergedSheet    合并用的目标Sheet对象
      * @param rowCounter     行号计数器（线程安全）
      */
-    public static void processExcelFile(Path file, String[] sheetNames, Workbook mergedWorkbook, Sheet mergedSheet, AtomicInteger rowCounter, int startColumn, int endColumn) {
+    public static void processExcelFile(Path file, String[] sheetNames, Workbook mergedWorkbook, Sheet mergedSheet, AtomicInteger rowCounter, int startColumn, int endColumn, boolean isNewStyle) {
         try (Workbook workbook = readWorkbook(file)) {
             // 处理每个指定的Sheet
             for (String sheetName : sheetNames) {
@@ -304,13 +304,29 @@ public class ExcelHelper {
      * @param targetWorkbook 目标工作簿（用于样式克隆）
      */
     public static void copySheetData(Sheet sourceSheet, Sheet targetSheet,
-                                     AtomicInteger rowCounter, Workbook targetWorkbook, int startColumn, int endColumn) {
-        // 遍历源Sheet的每一行
-        sourceSheet.forEach(sourceRow -> {
-            // 创建新行并递增行号
-            Row targetRow = targetSheet.createRow(rowCounter.getAndIncrement());
-            copyRow(sourceRow, targetRow, targetWorkbook, startColumn, endColumn);
-        });
+                                     AtomicInteger rowCounter, Workbook targetWorkbook, int startColumn, int endColumn, boolean isNewStyle) {
+        //
+        if (isNewStyle){
+            // 创建样式（只创建一次）
+            Font headerFont = createHeaderFont(targetWorkbook);
+            Font contentFont = createContentFont(targetWorkbook);
+            CellStyle headerStyle = createHeaderStyle(targetWorkbook, headerFont);
+            CellStyle contentStyle = createContentStyle(targetWorkbook, contentFont);
+            // 遍历源sheet
+            sourceSheet.forEach(sourceRow -> {
+                // 创建新行并递增行号
+                Row targetRow = targetSheet.createRow(rowCounter.getAndIncrement());
+                // 根据行类型应用不同样式
+                boolean isHeaderRow = (rowCounter.getAndIncrement() == 0);
+                copyRow(sourceRow, targetRow, targetWorkbook, startColumn, endColumn, isHeaderRow ? headerStyle : contentStyle);
+            });
+        }else {
+            sourceSheet.forEach(sourceRow -> {
+                // 创建新行并递增行号
+                Row targetRow = targetSheet.createRow(rowCounter.getAndIncrement());
+                copyRow(sourceRow, targetRow, targetWorkbook, startColumn, endColumn,null);
+            });
+        }
 
         // 确定数据起始行（默认跳过首行标题）
         // int startRowIndex = rowCounter.getAndIncrement() > 0 ? 1 : sourceSheet.getFirstRowNum();
@@ -329,18 +345,18 @@ public class ExcelHelper {
      * @param targetRow      目标行
      * @param targetWorkbook 目标工作簿（用于创建样式）
      */
-    public static void copyRow(Row sourceRow, Row targetRow, Workbook targetWorkbook, int startColumn, int endColumn) {
-        if (targetRow.getRowNum() > 0 && sourceRow.getRowNum() != 0) {
-            targetRow.setHeight(sourceRow.getHeight());  // 复制行高
+    public static void copyRow(Row sourceRow, Row targetRow, Workbook targetWorkbook, int startColumn, int endColumn, CellStyle cellStyle) {
+
+        if ((targetRow.getRowNum() == 0 && sourceRow.getRowNum() == 0) || (targetRow.getRowNum() > 0 && sourceRow.getRowNum() != 0)) {
             if (startColumn >= 0 && endColumn > 0 && startColumn < endColumn) {
                 // 仅复制前四列（0到3列）
                 for (int i = startColumn; i < endColumn; i++) {
                     // 获取单元格（不存在则创建空单元格）
-                    copyCell(sourceRow, targetRow, targetWorkbook, i);
+                    copyCell(sourceRow, targetRow, targetWorkbook, i,cellStyle);
                 }
             } else {
                 for (int j = sourceRow.getFirstCellNum(); j < sourceRow.getLastCellNum(); j++) {
-                    copyCell(sourceRow, targetRow, targetWorkbook, j);
+                    copyCell(sourceRow, targetRow, targetWorkbook, j,cellStyle);
                 }
             }
         }
@@ -348,7 +364,7 @@ public class ExcelHelper {
 
     }
 
-    public static void copyCell(Row sourceRow, Row targetRow, Workbook targetWorkbook, int column) {
+    public static void copyCell(Row sourceRow, Row targetRow, Workbook targetWorkbook, int column, CellStyle cellStyle) {
         Cell sourceCell = sourceRow.getCell(column, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
         Cell targetCell = targetRow.createCell(column);
         copyCellStyle(sourceCell, targetCell, targetWorkbook);  // 复制样式
