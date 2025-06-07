@@ -1,5 +1,6 @@
 package com.aiguibin.core.common;
 
+import com.aiguibin.core.dictionary.superintendentDict;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -328,7 +329,6 @@ public class ExcelHelper {
                 }
 
                 int targetRowIndex = rowCounter.getAndIncrement();
-
                 boolean rowIsNotNullByColumn = skipEmptyCellOfColumn.length == rowValue.size();
                 boolean isCreatetargetRow = targetRowIndex == 0 ? true : sourceRow.getRowNum() == 0 ? false : rowIsNotNullByColumn;
                 if (isCreatetargetRow) {
@@ -337,7 +337,7 @@ public class ExcelHelper {
                     // 根据行类型应用不同样式
                     boolean isHeaderRow = (targetRowIndex == 0);
                     copyRow(sourceRow, targetRow, targetWorkbook, startColumn, endColumn, isHeaderRow ? headerStyle : contentStyle);
-                }else{
+                } else {
                     rowCounter.set(targetRowIndex);
                 }
 
@@ -1065,7 +1065,7 @@ public class ExcelHelper {
                 if (row == null) continue;
 
                 String center = getCellValueAsString(row.getCell(centerColIndex));
-                ResponsibleMapping.ResponsibleInfo responsible = ResponsibleMapping.getResponsible(center);
+                superintendentDict.superintendentInfo responsible = superintendentDict.getSuperintendent(center);
 
                 // 创建负责人列单元格
                 Cell enCell = row.createCell(enColIndex);
@@ -1113,7 +1113,7 @@ public class ExcelHelper {
 
         // 参数校验
         if (mappingValueCols.size() != sourceValueCols.size()) {
-            logger.error(String.format("列数量不匹配: 映射值列={}, 目标值列={}", mappingValueCols.size(), sourceValueCols.size()));
+            logger.error(String.format("列数量不匹配: 映射值列=%s, 目标值列=%s", mappingValueCols.size(), sourceValueCols.size()));
             return;
         }
 
@@ -1212,10 +1212,14 @@ public class ExcelHelper {
 
             // 保存有修改的文件
             if (updated) {
-                try (FileOutputStream fos = new FileOutputStream(file.toFile())) {
+                Path tempFile = Files.createTempFile("excel_temp_", ".xlsx");
+                logger.debug(String.format("临时文件目录: %s", tempFile.toString()));
+                try (FileOutputStream fos = new FileOutputStream(tempFile.toFile())) {
                     workbook.write(fos);
-                    logger.debug(String.format("文件更新成功: {}", file.getFileName()));
                 }
+                // 替换原文件
+                Files.move(tempFile, file, StandardCopyOption.REPLACE_EXISTING);
+                logger.debug(String.format("文件更新成功: %s", file.getFileName()));
             }
         } catch (Exception e) {
             logger.error("处理文件失败: " + file.getFileName(), e);

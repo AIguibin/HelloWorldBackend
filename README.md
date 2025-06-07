@@ -34,19 +34,19 @@
 excel-db-sync/
 ├── excel-core/               # 核心模块
 │   ├── src/main/java
-│   │   └── com/example/core/
+│   │ com/example/core/
 │   │       ├── excel/        # Excel处理核心逻辑
 │   │       ├── db/           # 数据库操作核心
-│   │       └── converter/    # 数据转换器
+│   │     converter/    # 数据转换器
 ├── excel-web/                # Web模块
 │   ├── src/main/java
-│   │   └── com/example/web/
+│   │ com/example/web/
 │   │       ├── controller/   # API接口
 │   │       ├── dto/          # 数据传输对象
-│   │       └── config/       # 配置类
-│   └── src/main/resources
+│   │     config/       # 配置类
+│ src/main/resources
 │       ├── static/           # 前端资源
-│       └── templates/        # 模板文件（可选）
+│     templates/        # 模板文件（可选）
 ├── excel-cli/                # 命令行模块（可选）
 └── pom.xml
 ```
