@@ -105,9 +105,10 @@ public class SlowSqlTaskExtractor {
         Path sourceDirPath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_FIVE_PATH);
         Path outputFilePath = FileAccessor.getProjectRootFolderPath(SLOW_SQL_STEP_SIX_PATH + "/slow_sql_pre_task.xlsx");
         String[] sourceSheetNames = {"sqlList"};
+        int[] skipEmptyCellOfColumn={0};
         // 合并目录中多个Excel文件中的多个sheet页到一个新路径新文件新sheet页中
         try {
-            ExcelHelper.mergeDirSheetsToNewOneSheet(sourceDirPath, outputFilePath, sourceSheetNames, -1, -1);
+            ExcelHelper.mergeDirSheetsToNewOneSheet(sourceDirPath, outputFilePath, sourceSheetNames, -1, -1,true,skipEmptyCellOfColumn);
         } catch (IOException e) {
             logger.error("合并目录中多个Excel文件中的多个sheet页到一个新路径新文件新sheet页出错！", e);
         }
