@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="OFF" monitorInterval="10">
     <properties>
-        <property name="LOG_HOME">G:/ProLogs</property>
+        <property name="LOG_HOME">${sys:user.dir}/logs</property>
         <property name="FILE_NAME">aiguibin-database-excel</property>
-        <property name="PATTERN">%highlight{%date{yyyy-MM-dd HH:mm:ss.SSS} %-5level %white{[%5thread]} %cyan{%l}
-                        %green{|-----%msg} %n}{FATAL=red, ERROR=red, WARN=yellow, INFO=cyan, DEBUG=white,TRACE=blue}
+        <property name="PATTERN">%highlight{ %date{yyyy-MM-dd HH:mm:ss.SSS} %-5level %white{[%5thread]} %cyan{%l}
+            %green{└──|-----%msg}%n}{FATAL=red, ERROR=red, WARN=yellow, INFO=cyan, DEBUG=white,TRACE=blue}
         </property>
     </properties>
     <Appenders>
@@ -14,7 +14,7 @@
         </Console>
         <!--文件输出-->
         <RollingFile name="RollingFile" fileName="${LOG_HOME}/${FILE_NAME}.log"
-                     filePattern="${LOG_HOME}/$${date:yyyy-MM}/${FILE_NAME}-%d{yyyy-MM-dd}-%i.log.gz"
+                     filePattern="${LOG_HOME}/$${date:yyyy-MM}/${FILE_NAME}-%d{yyyy-MM-dd}-%i.log"
                      immediateFlush="true" append="true">
             <PatternLayout pattern="${PATTERN}"/>
             <Policies>
@@ -40,10 +40,11 @@
         </AsyncLogger>
         <AsyncLogger name="org.springframework" level="INFO" additivity="true">
             <AppenderRef ref="RollingFile"/>
-        </AsyncLogger>org.thymeleaf
+        </AsyncLogger>
 
         <AsyncRoot level="DEBUG" includeLocation="true">
             <AppenderRef ref="Console"/>
+            <AppenderRef ref="RollingFile"/>
         </AsyncRoot>
     </Loggers>
 </Configuration>
