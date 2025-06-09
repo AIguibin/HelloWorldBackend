@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class superintendentDict {
+public class SuperintendentDict {
 
     private static final Map<String, superintendentInfo> MAPPING = new HashMap<>();
 

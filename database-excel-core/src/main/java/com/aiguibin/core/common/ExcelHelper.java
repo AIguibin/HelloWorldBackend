@@ -1,6 +1,6 @@
 package com.aiguibin.core.common;
 
-import com.aiguibin.core.dictionary.superintendentDict;
+import com.aiguibin.core.dictionary.SuperintendentDict;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -1065,7 +1065,7 @@ public class ExcelHelper {
                 if (row == null) continue;
 
                 String center = getCellValueAsString(row.getCell(centerColIndex));
-                superintendentDict.superintendentInfo responsible = superintendentDict.getSuperintendent(center);
+                SuperintendentDict.superintendentInfo responsible = SuperintendentDict.getSuperintendent(center);
 
                 // 创建负责人列单元格
                 Cell enCell = row.createCell(enColIndex);
