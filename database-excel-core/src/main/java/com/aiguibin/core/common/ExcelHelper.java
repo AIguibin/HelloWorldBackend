@@ -723,6 +723,7 @@ public class ExcelHelper {
             populateDataRows(sheet, headers, data, contentStyle);  // 填充数据内容
             autoSizeColumns(sheet, headers.length);       // 自动调整列宽
 
+
             workbook.write(outputStream); // 将工作簿写入输出流
         }
     }
@@ -1335,7 +1336,10 @@ public class ExcelHelper {
         style.setBottomBorderColor(aqua);
         style.setLeftBorderColor(aqua);
         style.setRightBorderColor(aqua);
-
+        // 设置垂直居中
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        // 设置水平居中
+        style.setAlignment(HorizontalAlignment.CENTER);
         return style;
     }
 
@@ -1362,6 +1366,12 @@ public class ExcelHelper {
         style.setBottomBorderColor(aqua);
         style.setLeftBorderColor(aqua);
         style.setRightBorderColor(aqua);
+        // 关键：设置单元格样式启用自动换行
+        style.setWrapText(true);
+        // 2. 设置垂直居中
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        // 3. （可选）设置水平居中
+        // style.setAlignment(HorizontalAlignment.CENTER);
 
         return style;
     }

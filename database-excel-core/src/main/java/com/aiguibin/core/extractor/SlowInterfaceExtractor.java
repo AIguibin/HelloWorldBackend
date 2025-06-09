@@ -2,6 +2,7 @@ package com.aiguibin.core.extractor;
 
 import com.aiguibin.core.common.ExcelHelper;
 import com.aiguibin.core.common.FileAccessor;
+import com.aiguibin.core.dictionary.InterfaceManageDict;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -40,12 +41,12 @@ public class SlowInterfaceExtractor {
     // 路径配置
     private static final String SLOW_INTERFACE_ROOT_PATH = "database-excel-core/docs/gateway";
     private static final String SLOW_INTERFACE_STEP_ONE_PATH = "database-excel-core/docs/stageList/stepOneSlowInterface";
-    private static final String SLOW_INTERFACE_STEP_TWO_EXCEL = "database-excel-core/docs/stageList/stepTwoSlowInterface/slow_interfaces.xlsx";
+    private static final String SLOW_INTERFACE_STEP_TWO_EXCEL = "database-excel-core/docs/stageList/stepTwoSlowInterface";
     private static final String TASK_LIST_FILE_EXCEL = "database-excel-core/docs/taskerList/slowInterfaceTaskFileList.xlsx";
 
     // 日志解析配置
     private static final Pattern JSON_PATTERN = Pattern.compile("\\{.*}");
-    private static final String[] EXCEL_HEADERS = {"序号", "请求方法", "服务中心", "接口地址", "耗时(ms)", "能力中心", "负责人"};
+    private static final String[] EXCEL_HEADERS = {"序号", "请求方法", "服务中心", "接口地址", "耗时(ms)", "能力中心中文", "负责人英文", "负责人中文"};
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     // 禅道任务配置
@@ -140,6 +141,8 @@ public class SlowInterfaceExtractor {
      * 处理所有日志文件并生成Excel
      */
     public static void processLogFilesToExcel(Path logDir, Path excelOutput) throws Exception {
+
+
         // 获取所有日志文件
         List<Path> logFiles = findLogFiles(logDir);
 
@@ -213,7 +216,7 @@ public class SlowInterfaceExtractor {
                     if (matcher.find()) {
                         // 解析JSON日志行
                         LogEntry entry = parseLogEntry(matcher.group());
-
+                        InterfaceManageDict.InterfaceInfo interfaceManageInfo = InterfaceManageDict.getInterfaceInfo(entry.serviceCenter);
                         // 线程安全写入Excel
                         synchronized (sheet) {
                             Row row = sheet.createRow(rowIndex.getAndIncrement());
@@ -222,6 +225,9 @@ public class SlowInterfaceExtractor {
                             row.createCell(2).setCellValue(entry.serviceCenter);
                             row.createCell(3).setCellValue(entry.interfacePath);
                             row.createCell(4).setCellValue(entry.duration);
+                            row.createCell(5).setCellValue(interfaceManageInfo.getCenterCnName());
+                            row.createCell(6).setCellValue(interfaceManageInfo.getSuperintendentEnName());
+                            row.createCell(7).setCellValue(interfaceManageInfo.getSuperintendentCnName());
                         }
                     }
                 } catch (Exception e) {
@@ -325,22 +331,23 @@ public class SlowInterfaceExtractor {
                 String serviceCenter = ExcelHelper.getCellValueAsString(row.getCell(2));
                 String interfacePath = ExcelHelper.getCellValueAsString(row.getCell(3));
                 String duration = ExcelHelper.getCellValueAsString(row.getCell(4));
-
-                // 根据服务中心获取负责人
-                String assignee = getAssigneeByServiceCenter(serviceCenter);
+                String centerCnName = ExcelHelper.getCellValueAsString(row.getCell(5));
+                String superintendentEnName = ExcelHelper.getCellValueAsString(row.getCell(6));
+                String superintendentCnName = ExcelHelper.getCellValueAsString(row.getCell(7));
 
                 // 构建任务数据
                 List<String> taskRow = new ArrayList<>();
                 taskRow.add(serialNum);                          // 序号
                 taskRow.add("系统开发");                           // 所属执行
                 taskRow.add("开发");                               // 任务类型
-                taskRow.add(assignee);                           // 指派给
-                taskRow.add(serviceCenter + ": " + interfacePath + "--性能优化-耗时：" + duration + "ms, " + i); // 任务名称
+                taskRow.add(superintendentEnName);                // 指派给
+                taskRow.add(centerCnName + ": " + serviceCenter+interfacePath + ",责任人："+superintendentCnName+"--性能优化-耗时：" + duration + "ms, 序号：" + formatCurrentDate +"--"+i); // 任务名称
                 taskRow.add("接口详情:\r\n"
                         + "--请求方法: " + method + "\r\n"
-                        + "--服务中心: " + serviceCenter + "\r\n"
-                        + "--接口地址: " + interfacePath + "\r\n"
-                        + "--响应耗时: " + duration + "ms");         // 任务描述
+                        + "--服务中心: " + centerCnName + "\r\n"
+                        + "--接口地址: " + serviceCenter+interfacePath + "\r\n"
+                        + "--响应耗时: " + duration + "ms \r\n"
+                        + "--SVN路径地址：\r\n");         // 任务描述
                 taskRow.add(formatCurrentDate);                   // 预计开始日期
                 taskRow.add(formatFutureDate);                    // 预计结束日期
                 taskRow.add("8");                                // 预计工时（小时）
@@ -355,19 +362,6 @@ public class SlowInterfaceExtractor {
         } catch (IOException e) {
             logger.error("处理禅道任务失败: " + e.getMessage(), e);
         }
-    }
-
-    /**
-     * 根据服务中心获取负责人
-     */
-    private static String getAssigneeByServiceCenter(String serviceCenter) {
-        // 实际实现应从配置或字典获取
-        Map<String, String> assigneeMap = new HashMap<>();
-        assigneeMap.put("user-center", "张三");
-        assigneeMap.put("order-center", "李四");
-        assigneeMap.put("payment-center", "王五");
-
-        return assigneeMap.getOrDefault(serviceCenter.toLowerCase(), "默认负责人");
     }
 
     /**
@@ -391,7 +385,7 @@ public class SlowInterfaceExtractor {
             );
 
             // 步骤2: 处理所有日志文件并生成Excel
-            Path excelOutputPath = FileAccessor.getProjectRootFolderPath(SLOW_INTERFACE_STEP_TWO_EXCEL);
+            Path excelOutputPath = FileAccessor.getProjectRootFolderPath(SLOW_INTERFACE_STEP_TWO_EXCEL+"/slow_interfaces.xlsx");
             processLogFilesToExcel(
                     FileAccessor.getProjectRootFolderPath(SLOW_INTERFACE_STEP_ONE_PATH),
                     excelOutputPath

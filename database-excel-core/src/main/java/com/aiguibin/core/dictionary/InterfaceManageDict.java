@@ -10,7 +10,11 @@ public class InterfaceManageDict {
     static {
         // 初始化微服务中心标识与接口管理信息的映射关系
         // 格式：服务中心标识 -> (服务中心中文, 负责人英文, 负责人中文)
-        MAPPING.put("TestCenter", new InterfaceInfo("测试中心", "xuxuan", "徐玄"));
+        MAPPING.put("creditStatisticsControlApi", new InterfaceInfo("授信管理", "zhouxin", "周鑫"));
+        MAPPING.put("custCorporat", new InterfaceInfo("客户管理", "jiangchanghao", "姜昌号"));
+        MAPPING.put("edoc", new InterfaceInfo("电子文档", "wanxujiang", "万旭江"));
+        MAPPING.put("ipcFcnScnInf", new InterfaceInfo("天元运行态", "lifuqiang", "李富强"));
+        MAPPING.put("tencentMaps", new InterfaceInfo("待确认", "liuguibin", "刘贵斌"));
     }
 
     /**
