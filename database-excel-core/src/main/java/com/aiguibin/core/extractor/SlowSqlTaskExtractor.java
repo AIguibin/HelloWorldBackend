@@ -177,7 +177,7 @@ public class SlowSqlTaskExtractor {
                 String taskName=nativeValues.get(12)+"-性能优化-耗时："+nativeValues.get(4)+",最大返回行数："+nativeValues.get(5)+",序号："+ i;
                 String taskDescription="所属环境库：\r\n"+nativeValues.get(8)+"\r\n所属数据库："+nativeValues.get(1)
                         +"\r\n慢SQL脚本：\r\n"+nativeValues.get(0)
-                        + "--SVN路径地址：\r\n";
+                        + "--SVN路径地址：98-工作区/09-开发组/01-开发实施组/08-评审管理/非功能优化。\r\n";
                 String estimatedStartDate=formatCurrentDate;
                 String estimatedEndDate=formatFutureDate;
                 String estimatedDurationHours ="8";
@@ -218,7 +218,7 @@ public class SlowSqlTaskExtractor {
                 return;
             }
             // 删除重复行
-            ExcelHelper.removeDuplicateSqlRows(sheet, 0);
+            ExcelHelper.removeDuplicateRowsByColumns(sheet, new int[]{0});
 
             // 添加表头
             Row headerRow = sheet.getRow(0);

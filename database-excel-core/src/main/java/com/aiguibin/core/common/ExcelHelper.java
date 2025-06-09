@@ -730,33 +730,43 @@ public class ExcelHelper {
 
 
     /**
-     * 删除A列SQL语句重复的行（保留第一个出现的行）
+     * 删除指定多列同时重复的行（保留第一个出现的行）
      *
      * @param sheet 要处理的工作表对象
+     * @param columns 需要检查重复的列索引数组
      */
-    public static void removeDuplicateSqlRows(Sheet sheet, int column) {
+    public static void removeDuplicateRowsByColumns(Sheet sheet, int[] columns) {
         DataFormatter formatter = new DataFormatter();
-        Set<String> sqlSet = new HashSet<>();
+        // 存储已出现的多列组合键
+        Set<String> seenKeys = new HashSet<>();
         List<Integer> rowsToDelete = new ArrayList<>();
 
-        // 遍历所有数据行（从第1行开始）
+        // 遍历所有数据行（跳过标题行，从第1行开始）
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             if (row == null) continue;
 
-            // 获取A列单元格内容
-            Cell cell = row.getCell(column);
-            String sql = formatter.formatCellValue(cell).trim();
+            // 构建当前行的多列组合键
+            StringBuilder keyBuilder = new StringBuilder();
+            for (int colIndex : columns) {
+                Cell cell = row.getCell(colIndex);
+                String value = (cell != null) ?
+                        formatter.formatCellValue(cell).trim() : "";
+                keyBuilder
+                        .append(value)
+                        .append("|");  // 使用特殊分隔符连接多列值
+            }
+            String rowKey = keyBuilder.toString();
 
-            // 检测重复
-            if (sqlSet.contains(sql)) {
-                rowsToDelete.add(i);
+            // 检查是否已存在相同键值
+            if (seenKeys.contains(rowKey)) {
+                rowsToDelete.add(i);  // 标记重复行
             } else {
-                sqlSet.add(sql);
+                seenKeys.add(rowKey); // 记录新键值
             }
         }
 
-        // 倒序删除重复行
+        // 倒序删除重复行（避免索引变化影响）
         Collections.sort(rowsToDelete, Collections.reverseOrder());
         for (int rowIndex : rowsToDelete) {
             Row row = sheet.getRow(rowIndex);
