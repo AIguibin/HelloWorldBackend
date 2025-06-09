@@ -1,6 +1,7 @@
 ########
 */dbConfig/
 */docs/
+*.log
 
 ###
 HELP.md
