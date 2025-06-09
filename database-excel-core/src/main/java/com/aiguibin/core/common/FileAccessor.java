@@ -7,10 +7,8 @@ import org.apache.commons.logging.LogFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -110,5 +108,40 @@ public class FileAccessor {
             });
         }
     }
+    /**
+     * 清空指定目录下的所有文件和子目录
+     *
+     * @param directory 要清空的目录路径
+     * @param recursive 是否递归清除子目录
+     * @throws IOException 当文件删除失败时抛出
+     */
+    public static void clearDirectory(Path directory, boolean recursive) throws IOException {
+        if (!Files.exists(directory)) {
+            logger.warn("目录不存在: " + directory);
+            return;
+        }
 
+        if (!Files.isDirectory(directory)) {
+            throw new IllegalArgumentException("路径不是目录: " + directory);
+        }
+
+        Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                // 如果是递归模式，删除所有子目录（除了根目录）
+                if (recursive && !dir.equals(directory)) {
+                    Files.delete(dir);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+
+        logger.info("成功清空目录: " + directory + (recursive ? "（含子目录）" : ""));
+    }
 }

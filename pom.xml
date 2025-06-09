@@ -36,6 +36,7 @@
         <poi.version>5.2.5</poi.version>
         <compress.version>1.25.0</compress.version>
         <easyexcel.version>3.1.1</easyexcel.version>
+        <jackson.version>2.13.0</jackson.version>
     </properties>
 
     <dependencyManagement>
@@ -52,6 +53,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
                 <version>${compress.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
 
             <!-- Third-party dependencies -->
