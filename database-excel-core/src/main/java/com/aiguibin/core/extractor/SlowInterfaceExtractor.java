@@ -378,13 +378,13 @@ public class SlowInterfaceExtractor {
                 taskRow.add("开发");                               // 任务类型
                 taskRow.add(superintendentEnName);                // 指派给
                 taskRow.add(centerCnName + ": " + serviceCenter + interfacePath + ",责任人：" + superintendentCnName + "--性能优化-耗时：" + duration + "ms, 序号：" + formatCurrentDate + "--" + i); // 任务名称
-                taskRow.add("接口详情:\r\n"
-                        + "--请求方法: " + method + "\r\n"
-                        + "--服务中心: " + centerCnName + "\r\n"
-                        + "--接口地址: " + serviceCenter + interfacePath + "\r\n"
-                        + "--响应耗时: " + duration + "ms \r\n"
-                        + "--SVN路径地址：98-工作区/09-开发组/01-开发实施组/08-评审管理/非功能优化。\r\n");         // 任务描述
-                taskRow.add(formatCurrentDate);                   // 预计开始日期
+                taskRow.add("接口详情 ▅︻┳┷═一\r\n"
+                        + " ---请求方法: " + method + "\r\n"
+                        + "  ---服务中心: " + centerCnName + "\r\n"
+                        + "  ---接口地址: " + serviceCenter + interfacePath + "\r\n"
+                        + "  ---响应耗时: " + duration + "ms \r\n"
+                        + "  ---SVN路径地址：98-工作区/09-开发组/01-开发实施组/08-评审管理/非功能优化");         // 任务描述
+                taskRow.add(formatCurrentDate);                  // 预计开始日期
                 taskRow.add(formatFutureDate);                    // 预计结束日期
                 taskRow.add("8");                                // 预计工时（小时）
                 taskRow.add("2");                                // 优先级（1-4）

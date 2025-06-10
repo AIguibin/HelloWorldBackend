@@ -35,7 +35,7 @@ public class InterfaceManageDict {
         MAPPING.put("tansun-tcp-message", new InterfaceInfo("消息中心", "zhaotao", "赵涛"));
         MAPPING.put("tansun-tcp-pd", new InterfaceInfo("产品中心", "zhaotao", "赵涛"));
         MAPPING.put("tansun-tcp-postloan", new InterfaceInfo("贷后管理", "chenjianwei", "陈建伟"));
-        MAPPING.put("tansun-tcp-retail-boot", new InterfaceInfo("零售能力中心", "chenyaun", "陈园"));
+        MAPPING.put("tansun-tcp-retail-boot", new InterfaceInfo("零售能力中心", "chenyuan", "陈园"));
         MAPPING.put("tansun-tcp-statistics", new InterfaceInfo("统计查询", "chenyuan", "陈园"));
         MAPPING.put("tansun-tcp-sys", new InterfaceInfo("系统管理", "zhaotao", "赵涛"));
         MAPPING.put("tansun-tcp-system-boot", new InterfaceInfo("系统管理", "zhaotao", "赵涛"));

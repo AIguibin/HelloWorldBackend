@@ -154,34 +154,33 @@ public class SlowSqlTaskExtractor {
         String formatCurrentDate = currentDate.format(formatter);
         // 格式化日期
         String formatFutureDate = futureDate.format(formatter);
-        Map<String,Object> resStringObjectMap=new HashMap<>();
-        List<List<String>> sheetData=new ArrayList<>();
+        List<List<String>> sheetData = new ArrayList<>();
         try {
-            Workbook workbook=ExcelHelper.readWorkbook(Paths.get(file.getAbsolutePath()));
+            Workbook workbook = ExcelHelper.readWorkbook(Paths.get(file.getAbsolutePath()));
             Sheet sheet = workbook.getSheet("result");
             for (int i = 1; i < sheet.getLastRowNum(); i++) {
-                List<String> nativeValues=new ArrayList<>();
-                List<String> finalValues=new ArrayList<>();
+                List<String> nativeValues = new ArrayList<>();
+                List<String> finalValues = new ArrayList<>();
                 Row row = sheet.getRow(i);
-                if (row.getLastCellNum()<13){
+                if (row.getLastCellNum() < 13) {
                     continue;
                 }
                 for (int j = 0; j < row.getLastCellNum(); j++) {
                     String cellValue = ExcelHelper.getCellValueAsString(row.getCell(j)).trim();
                     nativeValues.add(cellValue);
                 }
-                String serialNumber= "";
-                String parentTask="系统开发";
-                String taskType="开发";
-                String assignedTo=nativeValues.get(10);
-                String taskName=nativeValues.get(12)+"-性能优化-耗时："+nativeValues.get(4)+",最大返回行数："+nativeValues.get(5)+",序号："+ i;
-                String taskDescription="所属环境库：\r\n"+nativeValues.get(8)+"\r\n所属数据库："+nativeValues.get(1)
-                        +"\r\n慢SQL脚本：\r\n"+nativeValues.get(0)
-                        + "--SVN路径地址：98-工作区/09-开发组/01-开发实施组/08-评审管理/非功能优化。\r\n";
-                String estimatedStartDate=formatCurrentDate;
-                String estimatedEndDate=formatFutureDate;
-                String estimatedDurationHours ="8";
-                String priority="2";
+                String serialNumber = "";
+                String parentTask = "系统开发";
+                String taskType = "开发";
+                String assignedTo = nativeValues.get(10);
+                String taskName = nativeValues.get(12) + "-性能优化-耗时：" + nativeValues.get(4) + ",最大返回行数：" + nativeValues.get(5) + ",序号：" + i;
+                String taskDescription = "所属环境库：\r\n ---" + nativeValues.get(8) + "\r\n ---所属数据库：" + nativeValues.get(1)
+                        + "\r\n ---慢SQL脚本：\r\n" + nativeValues.get(0)
+                        + "\r\n ---SVN路径地址：98-工作区/09-开发组/01-开发实施组/08-评审管理/非功能优化";
+                String estimatedStartDate = formatCurrentDate;
+                String estimatedEndDate = formatFutureDate;
+                String estimatedDurationHours = "8";
+                String priority = "2";
                 finalValues.add(serialNumber);
                 finalValues.add(parentTask);
                 finalValues.add(taskType);
@@ -196,7 +195,7 @@ public class SlowSqlTaskExtractor {
             }
             createZenPathTask(sheetData);
         } catch (IOException e) {
-            logger.debug(String.format("创建禅道任务失败!!!"),e);
+            logger.debug(String.format("创建禅道任务失败!!!"), e);
         }
     }
 
