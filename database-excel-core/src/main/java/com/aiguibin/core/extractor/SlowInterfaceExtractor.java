@@ -11,6 +11,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.File;
@@ -47,7 +48,9 @@ public class SlowInterfaceExtractor {
     // 匹配新日志格式的正则表达式
     private static final Pattern TEXT_PATTERN = Pattern.compile("交易URL:(.*?)，交易耗时：(\\d+)ms");
 
-    private static final String[] EXCEL_HEADERS = {"序号", "请求方法", "服务中心", "接口地址", "耗时(ms)", "能力中心中文", "负责人英文", "负责人中文"};
+    private static final Pattern ENV_PATTERN = Pattern.compile("stepOneSlowInterface/([^/]+)");
+
+    private static final String[] EXCEL_HEADERS = {"序号", "请求方法", "服务中心", "接口地址", "耗时(ms)", "能力中心中文", "负责人英文", "负责人中文", "所属环境"};
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -58,6 +61,7 @@ public class SlowInterfaceExtractor {
 
 
     public static void extractAllCompressedFiles(Path sourceDir, Path destDir) throws IOException {
+        logger.info("解压文件开始: " + sourceDir);
         Files.walk(sourceDir)
                 .filter(Files::isRegularFile)
                 .filter(path -> isSupportedArchive(path))
@@ -146,25 +150,36 @@ public class SlowInterfaceExtractor {
         // 获取所有日志文件
         List<Path> logFiles = findLogFiles(logDir);
 
+        // 创建临时工作簿
+        Path tempExcel = Files.createTempFile("log_processor_temp_", ".xlsx");
         // 初始化Excel工作簿
-        Workbook workbook = initWorkbook(excelOutput);
-        Sheet sheet = workbook.getSheet("result");
+        Workbook tempWorkbook = initWorkbook(tempExcel);
+        Sheet tempSheet  = tempWorkbook.getSheet("result");
 
         // 获取初始序号
-        int serialNumber = sheet.getLastRowNum();
+        int serialNumber = tempSheet.getLastRowNum();
 
         // 处理所有日志文件
         for (Path logFile : logFiles) {
-            processLogFile(logFile, sheet, ++serialNumber);
+            processLogFile(logFile, tempSheet, ++serialNumber);
             // 更新序号基准为当前sheet的最后行号
-            serialNumber = sheet.getLastRowNum();
+            serialNumber = tempSheet.getLastRowNum();
         }
 
-        // 删除重复行
-        ExcelHelper.removeDuplicateRowsByColumns(sheet, new int[]{2,3});
-        // 保存Excel文件
-        ExcelHelper.saveWorkbook(workbook, excelOutput);
-        workbook.close();
+        // 保存临时工作簿
+        ExcelHelper.saveWorkbook(tempWorkbook, tempExcel);
+        tempWorkbook.close();
+
+        // 使用高效去重方法处理大文件
+        ExcelHelper.removeDuplicatesInLargeFile(
+                tempExcel.toString(),      // 输入文件（临时文件）
+                excelOutput.toString(),    // 输出文件（最终结果）
+                0,                        // 工作表索引（第一个sheet）
+                new int[]{2, 3}           // 需要去重的列索引
+        );
+
+        // 删除临时文件
+        Files.deleteIfExists(tempExcel);
         logger.info("Excel文件生成完成: " + excelOutput);
     }
 
@@ -183,12 +198,8 @@ public class SlowInterfaceExtractor {
     /**
      * 初始化或加载Excel工作簿
      */
-    private static Workbook initWorkbook(Path excelPath) throws IOException {
-        if (Files.exists(excelPath)) {
-            return ExcelHelper.readWorkbook(excelPath);
-        }
-
-        Workbook workbook = new XSSFWorkbook();
+    private static Workbook initWorkbook(Path excelPath) {
+        Workbook workbook = new SXSSFWorkbook(1000);
         Sheet sheet = workbook.createSheet("result");
         createHeaderRow(sheet);
         return workbook;
@@ -211,6 +222,16 @@ public class SlowInterfaceExtractor {
         final AtomicInteger rowIndex = new AtomicInteger(sheet.getLastRowNum() + 1);
         final AtomicInteger serialNumber = new AtomicInteger(startSerial);
 
+        String environment;
+        String logFileStr = String.valueOf(logPath);
+        // 统一替换路径分隔符为正斜杠（避免不同系统差异）
+        String normalizedPath = logFileStr.replace('\\', '/');
+        Matcher matcher = ENV_PATTERN.matcher(normalizedPath);
+        if (matcher.find()) {
+            environment = matcher.group(1).toUpperCase() + "环境：(҂‾▵‾)︻デ═一  " + logPath.getFileName().toString(); // 返回捕获组（dev/sit等）
+        } else {
+            throw new IllegalArgumentException("Pattern 'stepOneSlowInterface' not found in path");
+        }
         try (Stream<String> lines = Files.lines(logPath)) {
             lines.forEach(line -> {
                 try {
@@ -219,7 +240,7 @@ public class SlowInterfaceExtractor {
 
                     if (jsonMatcher.find()) {
                         // 解析JSON日志行
-                        LogEntry entry = parseJsonLogEntry(jsonMatcher.group());
+                        LogEntry entry = parseJsonLogEntry(jsonMatcher.group(), environment);
                         InterfaceManageDict.InterfaceInfo interfaceManageInfo = InterfaceManageDict.getInterfaceInfo(entry.serviceCenter);
                         // 线程安全写入Excel
                         synchronized (sheet) {
@@ -229,7 +250,7 @@ public class SlowInterfaceExtractor {
                         // 解析新格式日志行
                         String url = textMatcher.group(1).trim();
                         String duration = textMatcher.group(2).trim();
-                        LogEntry entry = parseTextLogEntry(url, duration);
+                        LogEntry entry = parseTextLogEntry(url, duration, environment);
                         InterfaceManageDict.InterfaceInfo interfaceManageInfo = InterfaceManageDict.getInterfaceInfo(entry.serviceCenter);
                         // 线程安全写入Excel
                         synchronized (sheet) {
@@ -251,22 +272,25 @@ public class SlowInterfaceExtractor {
      */
     private static void addRowToSheet(Sheet sheet, AtomicInteger rowIndex, AtomicInteger serialNumber,
                                       LogEntry entry, InterfaceManageDict.InterfaceInfo interfaceManageInfo) {
-        Row row = sheet.createRow(rowIndex.getAndIncrement());
-        row.createCell(0).setCellValue(serialNumber.getAndIncrement());
-        row.createCell(1).setCellValue(entry.method);
-        row.createCell(2).setCellValue(entry.serviceCenter);
-        row.createCell(3).setCellValue(entry.interfacePath);
-        row.createCell(4).setCellValue(entry.duration);
-        row.createCell(5).setCellValue(interfaceManageInfo.getCenterCnName());
-        row.createCell(6).setCellValue(interfaceManageInfo.getSuperintendentEnName());
-        row.createCell(7).setCellValue(interfaceManageInfo.getSuperintendentCnName());
+        if (Integer.parseInt(entry.duration)>10000){
+            Row row = sheet.createRow(rowIndex.getAndIncrement());
+            row.createCell(0).setCellValue(serialNumber.getAndIncrement());
+            row.createCell(1).setCellValue(entry.method);
+            row.createCell(2).setCellValue(entry.serviceCenter);
+            row.createCell(3).setCellValue(entry.interfacePath);
+            row.createCell(4).setCellValue(entry.duration);
+            row.createCell(5).setCellValue(interfaceManageInfo.getCenterCnName());
+            row.createCell(6).setCellValue(interfaceManageInfo.getSuperintendentEnName());
+            row.createCell(7).setCellValue(interfaceManageInfo.getSuperintendentCnName());
+            row.createCell(8).setCellValue(entry.environment);
+        }
     }
 
 
     /**
      * 日志条目解析 - 使用Jackson解析JSON
      */
-    private static LogEntry parseJsonLogEntry(String json) throws IOException {
+    private static LogEntry parseJsonLogEntry(String json, String environment) throws IOException {
         JsonNode node = objectMapper.readTree(json);
 
         String method = node.path("method").asText();
@@ -278,19 +302,20 @@ public class SlowInterfaceExtractor {
         String serviceCenter = parts.length > 0 ? parts[0] : "";
         String interfacePath = parts.length > 1 ? "/" + parts[1] : "/";
 
-        return new LogEntry(method, serviceCenter, interfacePath, duration);
+        return new LogEntry(method, serviceCenter, interfacePath, duration, environment);
     }
+
     /**
      * 解析新格式日志条目
      */
-    private static LogEntry parseTextLogEntry(String url, String duration) {
+    private static LogEntry parseTextLogEntry(String url, String duration, String environment) {
         // 解析URL路径（示例：/tansun-tcp-system-boot/role/saveRoleMuen）
         String[] parts = url.replaceFirst("^/", "").split("/", 2);
         String serviceCenter = parts.length > 0 ? parts[0] : "";
         String interfacePath = parts.length > 1 ? "/" + parts[1] : "/";
 
         // 新格式无请求方法，设为空字符串
-        return new LogEntry("POST", serviceCenter, interfacePath, duration);
+        return new LogEntry("POST", serviceCenter, interfacePath, duration, environment);
     }
 
     /**
@@ -301,12 +326,14 @@ public class SlowInterfaceExtractor {
         String serviceCenter;
         String interfacePath;
         String duration;
+        String environment;
 
-        public LogEntry(String method, String serviceCenter, String interfacePath, String duration) {
+        public LogEntry(String method, String serviceCenter, String interfacePath, String duration, String environment) {
             this.method = method;
             this.serviceCenter = serviceCenter;
             this.interfacePath = interfacePath;
             this.duration = duration;
+            this.environment = environment;
         }
     }
 
@@ -346,7 +373,7 @@ public class SlowInterfaceExtractor {
             Workbook workbook = ExcelHelper.readWorkbook(Paths.get(file.getAbsolutePath()));
             Sheet sheet = workbook.getSheet("result");
             if (sheet == null) {
-                logger.error("Excel中找不到'慢接口统计'工作表");
+                logger.error("Excel中找不到'result'工作表");
                 return;
             }
 
@@ -370,6 +397,7 @@ public class SlowInterfaceExtractor {
                 String centerCnName = ExcelHelper.getCellValueAsString(row.getCell(5));
                 String superintendentEnName = ExcelHelper.getCellValueAsString(row.getCell(6));
                 String superintendentCnName = ExcelHelper.getCellValueAsString(row.getCell(7));
+                String environment = ExcelHelper.getCellValueAsString(row.getCell(8));
 
                 // 构建任务数据
                 List<String> taskRow = new ArrayList<>();
@@ -383,7 +411,8 @@ public class SlowInterfaceExtractor {
                         + " ▎✌---服务中心: " + centerCnName + "\r\n"
                         + " ▎✌---接口地址: " + serviceCenter + interfacePath + "\r\n"
                         + " ▎✌---响应耗时: " + duration + "ms \r\n"
-                        + " ▎✌---SVN路径地址：98-工作区/09-开发组/01-开发实施组/08-评审管理/非功能优化");         // 任务描述
+                        + " ▎✌---SVN路径地址：98-工作区/09-开发组/01-开发实施组/08-评审管理/非功能优化 \r\n"
+                        + " ▎✌---日志文件路径：" + environment);
                 taskRow.add(formatCurrentDate);                  // 预计开始日期
                 taskRow.add(formatFutureDate);                    // 预计结束日期
                 taskRow.add("8");                                // 预计工时（小时）

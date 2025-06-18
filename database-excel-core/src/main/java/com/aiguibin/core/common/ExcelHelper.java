@@ -7,16 +7,19 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.streaming.SXSSFSheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -24,12 +27,17 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap;
 
 public class ExcelHelper {
     public static final Log logger = LogFactory.getLog(ExcelHelper.class);
 
 
     public static final String DEFAULT_MERGE_SHEET_NAME = "目录";
+
+    private static final int BATCH_SIZE = 50000;
+    private static final int MAX_IN_MEMORY_ROWS = 1000;
+    private static final int THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
 
     @FunctionalInterface
     public interface WorkbookProcessor {
@@ -779,6 +787,184 @@ public class ExcelHelper {
                 }
             }
         }
+    }
+
+    /**
+     * 删除指定多列同时重复的行（保留第一个出现的行）
+     *
+     * @param inputFile  输入Excel文件路径
+     * @param outputFile 输出Excel文件路径
+     * @param sheetIndex 工作表索引
+     * @param columns    需要检查重复的列索引数组
+     */
+    public static void removeDuplicatesInLargeFile(String inputFile, String outputFile,
+                                                   int sheetIndex, int[] columns) throws Exception {
+
+        // 1. 创建线程池
+        ExecutorService executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+
+        // 2. 初始化输入流
+        try (InputStream is = new FileInputStream(inputFile);
+             Workbook inputWorkbook = WorkbookFactory.create(is);
+             Workbook outputWorkbook = new SXSSFWorkbook(MAX_IN_MEMORY_ROWS)) {
+
+            Sheet inputSheet = inputWorkbook.getSheetAt(sheetIndex);
+            SXSSFSheet outputSheet = ((SXSSFWorkbook) outputWorkbook).createSheet("result");
+
+            // 3. 处理标题行
+            processHeaderRow(inputSheet, outputSheet);
+
+            // 4. 分块处理数据行
+            int totalRows = inputSheet.getLastRowNum() + 1;
+            Long2BooleanOpenHashMap globalKeyMap = new Long2BooleanOpenHashMap(totalRows / 2);
+
+            List<Future<BatchResult>> futures = new ArrayList<>();
+            for (int startRow = 1; startRow < totalRows; startRow += BATCH_SIZE) {
+                int endRow = Math.min(startRow + BATCH_SIZE, totalRows);
+                futures.add(executor.submit(
+                        new BatchProcessor(inputSheet, startRow, endRow, columns, globalKeyMap)
+                ));
+            }
+
+            // 5. 收集并写入结果
+            int outputRowIndex = 1;
+            for (Future<BatchResult> future : futures) {
+                BatchResult result = future.get();
+                for (RowData rowData : result.rowsToKeep) {
+                    writeRow(outputSheet, outputRowIndex++, rowData);
+                }
+                System.gc(); // 及时释放内存
+            }
+
+            // 6. 保存结果
+            try (OutputStream os = new FileOutputStream(outputFile)) {
+                outputWorkbook.write(os);
+            }
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    // 处理标题行
+    private static void processHeaderRow(Sheet inputSheet, Sheet outputSheet) {
+        Row headerRow = inputSheet.getRow(0);
+        if (headerRow != null) {
+            Row newHeader = outputSheet.createRow(0);
+            for (Cell cell : headerRow) {
+                Cell newCell = newHeader.createCell(cell.getColumnIndex());
+                newCell.setCellValue(cell.getStringCellValue());
+                newCell.setCellStyle();
+            }
+        }
+    }
+
+    // 写入行数据
+    private static void writeRow(SXSSFSheet sheet, int rowIndex, RowData rowData) {
+        Row row = sheet.createRow(rowIndex);
+        for (int i = 0; i < rowData.values.length; i++) {
+            Cell cell = row.createCell(i);
+            cell.setCellValue(rowData.values[i]);
+            cell.setCellStyle();
+        }
+    }
+
+    // 批处理任务类
+    private static class BatchProcessor implements Callable<BatchResult> {
+        private final Sheet sheet;
+        private final int startRow;
+        private final int endRow;
+        private final int[] columns;
+        private final Long2BooleanOpenHashMap globalKeyMap;
+
+        public BatchProcessor(Sheet sheet, int startRow, int endRow,
+                              int[] columns, Long2BooleanOpenHashMap globalKeyMap) {
+            this.sheet = sheet;
+            this.startRow = startRow;
+            this.endRow = endRow;
+            this.columns = columns;
+            this.globalKeyMap = globalKeyMap;
+        }
+
+        @Override
+        public BatchResult call() {
+            BatchResult result = new BatchResult();
+            DataFormatter formatter = new DataFormatter();
+
+            for (int i = startRow; i < endRow; i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                // 计算行键
+                long rowKey = calculateRowKey(row, columns, formatter);
+
+                // 检查是否重复（同步块确保线程安全）
+                boolean isDuplicate;
+                synchronized (globalKeyMap) {
+                    if (globalKeyMap.containsKey(rowKey)) {
+                        isDuplicate = true;
+                    } else {
+                        globalKeyMap.put(rowKey, true);
+                        isDuplicate = false;
+                    }
+                }
+
+                // 非重复行添加到结果集
+                if (!isDuplicate) {
+                    result.addRow(row, formatter);
+                }
+            }
+            return result;
+        }
+    }
+
+    // 批处理结果类
+    private static class BatchResult {
+        List<RowData> rowsToKeep = new ArrayList<>();
+
+        void addRow(Row row, DataFormatter formatter) {
+            String[] values = new String[row.getLastCellNum()];
+            for (int i = 0; i < values.length; i++) {
+                Cell cell = row.getCell(i);
+                values[i] = (cell != null) ? formatter.formatCellValue(cell) : "";
+            }
+            rowsToKeep.add(new RowData(values));
+        }
+    }
+
+    // 行数据容器
+    private static class RowData {
+        final String[] values;
+
+        RowData(String[] values) {
+            this.values = values;
+        }
+    }
+
+    // 高效行键计算（双哈希降低冲突概率）
+    private static long calculateRowKey(Row row, int[] columns, DataFormatter formatter) {
+        long hash1 = 0x7f3a21b6dL; // FNV1a offset basis
+        long hash2 = 0x811c9dc5L;   // 第二个哈希的初始值
+
+        for (int colIndex : columns) {
+            Cell cell = row.getCell(colIndex);
+            String value = (cell != null) ? formatter.formatCellValue(cell).trim() : "";
+
+            // 计算第一个哈希
+            for (int i = 0; i < value.length(); i++) {
+                char c = value.charAt(i);
+                hash1 ^= c;
+                hash1 *= 0x100000001b3L; // FNV prime
+            }
+
+            // 计算第二个哈希（使用不同算法）
+            for (int i = 0; i < value.length(); i++) {
+                char c = value.charAt(i);
+                hash2 = (hash2 << 5) - hash2 + c; // DJB2算法
+            }
+        }
+
+        // 组合两个哈希值
+        return (hash1 << 32) | (hash2 & 0xFFFFFFFFL);
     }
 
     /**
