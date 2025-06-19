@@ -800,6 +800,8 @@ public class ExcelHelper {
     public static void removeDuplicatesInLargeFile(String inputFile, String outputFile,
                                                    int sheetIndex, int[] columns) throws Exception {
 
+
+
         // 1. 创建线程池
         ExecutorService executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
@@ -853,7 +855,7 @@ public class ExcelHelper {
             for (Cell cell : headerRow) {
                 Cell newCell = newHeader.createCell(cell.getColumnIndex());
                 newCell.setCellValue(cell.getStringCellValue());
-                newCell.setCellStyle();
+                // newCell.setCellStyle();
             }
         }
     }
@@ -864,7 +866,7 @@ public class ExcelHelper {
         for (int i = 0; i < rowData.values.length; i++) {
             Cell cell = row.createCell(i);
             cell.setCellValue(rowData.values[i]);
-            cell.setCellStyle();
+            // cell.setCellStyle();
         }
     }
 
