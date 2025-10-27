@@ -59,7 +59,7 @@ INSERT INTO `system_user` (`usernumb`, `username`, `password`) VALUES
 
 ## 构建与运行
 - 构建：`mvn -DskipTests clean package`
-- 运行：`java -jar target\aiguibin-online-table-1.0.0.jar`
+- 运行：`java -jar target\aiguibin-online-table.jar`
 - 访问：`http://localhost:8080`
 
 ## 认证与安全

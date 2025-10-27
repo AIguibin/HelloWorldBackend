@@ -1,11 +1,11 @@
 <template>
   <div style="padding:16px;">
-    <div style="margin-bottom:12px; display:flex; gap:8px; align-items:center;">
+    <!-- 行1：筛选控件 + 右侧账户操作 -->
+    <div style="margin-bottom:8px; display:flex; gap:8px; align-items:center;">
       <el-input v-model="search.groupName" placeholder="组名" style="width:160px;" />
       <el-input v-model="search.developer" placeholder="开发负责人" style="width:160px;" />
       <el-input v-model="search.serviceName" placeholder="服务名称" style="width:160px;" />
       <el-input v-model="search.defectNumber" placeholder="缺陷编号" style="width:160px;" />
-      <!-- 已移除旧的发布状态过滤（isReleased） -->
       <el-date-picker v-model="searchRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" style="width:420px;" />
       <el-select v-model="downloadStatus" placeholder="下载状态" style="width:140px;">
         <el-option label="待审批" value="待审批" />
@@ -13,20 +13,22 @@
         <el-option label="待合版" value="待合版" />
         <el-option label="已合版" value="已合版" />
       </el-select>
-      <el-select v-model="exportFormat" placeholder="导出格式" style="width: 120px;">
-        <el-option label="Excel (XLSX)" value="xlsx" />
-        <el-option label="CSV" value="csv" />
-      </el-select>
-      <el-button type="primary" @click="fetchList(1)">查询</el-button>
-      <el-button type="success" @click="openCreate">新增</el-button>
-      <el-button type="info" plain @click="onExport">下载</el-button>
       <div style="flex:1"></div>
       <el-button type="warning" @click="$router.push('/change-password')">修改密码</el-button>
       <el-button type="danger" plain @click="logout">退出登录</el-button>
       <el-button type="primary" plain @click="goLogin">返回登录</el-button>
     </div>
-
-    <!-- 修复：移除嵌套的表格与表格内操作栏，仅保留单个列表表格 -->
+    <!-- 行2：查询、新增、导出格式、下载 -->
+    <div style="margin-bottom:12px; display:flex; gap:8px; align-items:center;">
+      <el-button type="primary" @click="fetchList(1)">查询</el-button>
+      <el-button type="success" @click="openCreate" :disabled="!canEdit">新增</el-button>
+      <el-select v-model="exportFormat" placeholder="导出格式" style="width: 160px;">
+        <el-option label="Excel (XLSX)" value="xlsx" />
+        <el-option label="CSV" value="csv" />
+      </el-select>
+      <el-button type="info" plain @click="onExport">下载</el-button>
+    </div>
+    <!-- 其余内容保持不变 -->
     <el-table :data="list" border stripe :header-cell-style="headerCellStyle">
         <el-table-column width="240">
             <template slot="header">
