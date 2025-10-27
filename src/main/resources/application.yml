@@ -1,0 +1,52 @@
+server:
+  port: 8081
+
+spring:
+  datasource:
+    druid:
+      db-type: mysql
+      driver-class-name: com.oceanbase.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/aiguibin_online_tables?serverTimezone=Asia/Shanghai&useCursorFetch=true&useUnicode=true&characterEncoding=utf-8&failOverReadOnly=false&useSSL=false&verifyServerCertificate=false&sessionVariables=ob_query_timeout=1000000000&sessionVariables=ob_trx_timeout=1000000000&socketTimeout=60000000&rewriteBatchedStatements=false&useServerPrepStmts=false&cachePrepStmts=true&prepStmtCacheSize=500&prepStmtCacheSqlLimit=2048&useCompression=true
+      username: root
+      password: P@ssW0rd
+      initialSize: 5
+      minIdle: 5
+      maxActive: 60
+      maxWait: 60000
+      timeBetweenEvictionRunsMillis: 60000
+      minEvictableIdleTimeMillis: 300000
+      maxEvictableIdleTimeMillis: 900000
+      validationQuery: SELECT 1
+      testWhileIdle: true
+      testOnBorrow: false
+      testOnReturn: false
+      poolPreparedStatements: false
+      maxPoolPreparedStatementPerConnectionSize: 20
+      removeAbandoned: false
+      removeAbandonedTimeoutMillis: 3600000
+      useGlobalDataSourceStat: true
+      filters: stat,slf4j,config
+      connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=500;druid.log.stmt.executableSql=true;
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+  sql:
+    init:
+      mode: always
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+    banner: false
+
+logging:
+  level:
+    root: INFO
+    com.aiguibin.online.table: INFO
+    com.aiguibin.online.table.mapper: DEBUG
