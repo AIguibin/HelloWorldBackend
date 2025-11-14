@@ -18,6 +18,7 @@ public class CodeScriptChangeRecord {
     private String defectNumber;
     private String groupName;
     private String developer;
+    private String developType;
     private String branchName;
     private String serviceName;
     private String problemDescription;
@@ -30,7 +31,6 @@ public class CodeScriptChangeRecord {
     private String version;
     private String changeDesc;
     private String currentStatus; // 当前状态：待审批/待评审/待合版/已合版
-
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private String createUser;

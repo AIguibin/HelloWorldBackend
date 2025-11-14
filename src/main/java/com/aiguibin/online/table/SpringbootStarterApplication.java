@@ -5,8 +5,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
+@EnableScheduling
 public class SpringbootStarterApplication {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringbootStarterApplication.class);
@@ -15,8 +17,8 @@ public class SpringbootStarterApplication {
         long strTime = System.currentTimeMillis();
         ApplicationContext context = SpringApplication.run(SpringbootStarterApplication.class, args);
         long internal = System.currentTimeMillis() - strTime;
-        logger.info("Æô¶¯³É¹¦~ÕìÌı¶Ë¿Ú£º {} ", context.getEnvironment().getProperty("server.port", "8080"));
-        logger.info("Æô¶¯³É¹¦~Æô¶¯Ê±³¤£º {} ·Ö {} Ãë {} ºÁÃë", internal / 1000 / 60, internal / 1000 % 60, internal % 1000);
+        logger.info("å¯åŠ¨æˆåŠŸ~ä¾¦å¬ç«¯å£ï¼š {} ", context.getEnvironment().getProperty("server.port", "8080"));
+        logger.info("å¯åŠ¨æˆåŠŸ~å¯åŠ¨æ—¶é•¿ï¼š {} åˆ† {} ç§’ {} æ¯«ç§’", internal / 1000 / 60, internal / 1000 % 60, internal % 1000);
     }
 
 }

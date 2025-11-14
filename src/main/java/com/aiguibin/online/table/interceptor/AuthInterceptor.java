@@ -23,6 +23,10 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        String path = request.getRequestURI();
+        if (path != null && path.endsWith("/export")){
+            return true;
+        }
         String auth = request.getHeader("Authorization");
         if (auth == null || auth.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "未登录");
@@ -34,31 +38,27 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
 
         // 从请求头获取用户编号和用户姓名（可能包含非 ASCII，解码后再校验）
-        String reqUsernumb = decodeHeader(request.getHeader("X-User-Numb"));
-        String reqUsername = decodeHeader(request.getHeader("X-User-Name"));
 
         // 查询服务端用户信息，确保存在且有效
-        User u = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername, username));
-        if (u == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户不存在或登录信息无效");
-        }
-        if (u.getUsernumb() == null || u.getUsernumb().isEmpty() || u.getUsername() == null || u.getUsername().isEmpty()) {
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getUsername, username);
+        User user = userMapper.selectOne(wrapper);
+        if (user == null || user.getUsernumb() == null || user.getUsernumb().isEmpty() || user.getUsername() == null || user.getUsername().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少用户编号或用户姓名");
         }
+        String reqUsernumb = decodeHeader(request.getHeader("X-User-Numb"));
+        String reqUsername = decodeHeader(request.getHeader("X-User-Name"));
         // 若请求头提供了用户编号/姓名，则进行一致性校验
-        if (reqUsernumb != null && !reqUsernumb.isEmpty() && !u.getUsernumb().equals(reqUsernumb)) {
+        if (reqUsernumb != null && !reqUsernumb.isEmpty() && !user.getUsernumb().equals(reqUsernumb)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "用户编号不一致");
         }
-        if (reqUsername != null && !reqUsername.isEmpty() && !u.getUsername().equals(reqUsername)) {
+        if (reqUsername != null && !reqUsername.isEmpty() && !user.getUsername().equals(reqUsername)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "用户姓名不一致");
         }
 
         // CSRF 校验：对状态变更方法强制要求 X-CSRF-Token
         String method = request.getMethod();
-        if ("POST".equalsIgnoreCase(method)
-                || "PUT".equalsIgnoreCase(method)
-                || "PATCH".equalsIgnoreCase(method)
-                || "DELETE".equalsIgnoreCase(method)) {
+        if ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method) || "PATCH".equalsIgnoreCase(method) || "DELETE".equalsIgnoreCase(method)) {
             String csrf = request.getHeader("X-CSRF-Token");
             if (!authService.validateCsrf(token, csrf)) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "CSRF校验失败");
@@ -66,15 +66,15 @@ public class AuthInterceptor implements HandlerInterceptor {
             // 编辑权限限制：仅 admin、BG001、BG002 可进行变更记录的写操作
             String uri = request.getRequestURI();
             if (uri.startsWith("/api/change-records")) {
-                String un = u.getUsernumb();
-                if (un == null || !("admin".equalsIgnoreCase(un) || "BG001".equalsIgnoreCase(un) || "BG002".equalsIgnoreCase(un))) {
+                String un = user.getUsernumb();
+                if (!("admin".equalsIgnoreCase(un) || "BG001".equalsIgnoreCase(un) || "BG002".equalsIgnoreCase(un))) {
                       // throw new ResponseStatusException(HttpStatus.FORBIDDEN, "编辑权限限制：仅admin、BG001、BG002可编辑");
                 }
             }
         }
 
         // 将操作人设置为 "usernumb|username" 格式，便于审计追溯
-        request.setAttribute("operator", u.getUsernumb() + "|" + u.getUsername());
+        request.setAttribute("operator", user.getUsernumb() + "|" + user.getUsername());
         return true;
     }
 

@@ -45,11 +45,13 @@ public class CodeScriptChangeRecordController {
                                                           @RequestParam(defaultValue = "10") int size,
                                                           @RequestParam(required = false) String groupName,
                                                           @RequestParam(required = false) String developer,
+                                                          @RequestParam(required = false) String developType,
+                                                          @RequestParam(required = false) String currentStatus,
                                                           @RequestParam(required = false) String serviceName,
                                                           @RequestParam(required = false) String defectNumber,
                                                           @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startTime,
                                                           @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime) {
-        Page<CodeScriptChangeRecord> pageData = service.page(page, size, groupName, developer, serviceName, defectNumber, startTime, endTime);
+        Page<CodeScriptChangeRecord> pageData = service.page(page, size, groupName, developer, developType, currentStatus, serviceName, defectNumber, startTime, endTime);
         return ApiResponse.success(pageData);
     }
 

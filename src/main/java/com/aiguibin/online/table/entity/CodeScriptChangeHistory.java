@@ -19,11 +19,11 @@ public class CodeScriptChangeHistory {
     private String operationUser;
     private LocalDateTime operationTime;
     private String operationDescription;
-
     private LocalDate releaseDate;
     private String defectNumber;
     private String groupName;
     private String developer;
+    private String developType;
     private String branchName;
     private String serviceName;
     private String problemDescription;

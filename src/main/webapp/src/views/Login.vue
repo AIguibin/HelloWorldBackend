@@ -44,6 +44,7 @@ export default {
           localStorage.setItem('user', JSON.stringify({ username: data.username, usernumb: data.usernumb, chineseName: data.chineseName }));
           this.$router.replace('/');
         } catch (e) {
+            console.error(e);
         } finally {
           this.loading = false;
         }

@@ -28,6 +28,8 @@ public class CodeScriptChangeRecordService {
     public Page<CodeScriptChangeRecord> page(int page, int size,
                                              String groupName,
                                              String developer,
+                                             String developType,
+                                             String currentStatus,
                                              String serviceName,
                                              String defectNumber,
                                              LocalDateTime startTime,
@@ -36,6 +38,8 @@ public class CodeScriptChangeRecordService {
         qw.eq(CodeScriptChangeRecord::getIsDeleted, 0);
         if (groupName != null && !groupName.isEmpty()) qw.like(CodeScriptChangeRecord::getGroupName, groupName);
         if (developer != null && !developer.isEmpty()) qw.like(CodeScriptChangeRecord::getDeveloper, developer);
+        if (developType != null && !developType.isEmpty()) qw.like(CodeScriptChangeRecord::getDevelopType, developType);
+        if (currentStatus != null && !currentStatus.isEmpty()) qw.like(CodeScriptChangeRecord::getCurrentStatus, currentStatus);
         if (serviceName != null && !serviceName.isEmpty()) qw.like(CodeScriptChangeRecord::getServiceName, serviceName);
         if (defectNumber != null && !defectNumber.isEmpty()) qw.like(CodeScriptChangeRecord::getDefectNumber, defectNumber);
         // 移除 isReleased 过滤，统一使用 currentStatus（若后续需要可扩展）
@@ -46,17 +50,17 @@ public class CodeScriptChangeRecordService {
         return recordMapper.selectPage(new Page<>(page, size), qw);
     }
 
-    public java.util.List<CodeScriptChangeRecord> listForExport(String currentStatus,
-                                                                LocalDateTime startTime,
+    public java.util.List<CodeScriptChangeRecord> listForExport(String status,
+                                                                LocalDateTime strTime,
                                                                 LocalDateTime endTime,
                                                                 int limit) {
         LambdaQueryWrapper<CodeScriptChangeRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CodeScriptChangeRecord::getIsDeleted, 0);
-        if (currentStatus != null && !currentStatus.trim().isEmpty()) {
-            wrapper.eq(CodeScriptChangeRecord::getCurrentStatus, currentStatus.trim());
+        if (status != null && !status.trim().isEmpty()) {
+            wrapper.eq(CodeScriptChangeRecord::getCurrentStatus, status.trim());
         }
-        if (startTime != null) {
-            wrapper.ge(CodeScriptChangeRecord::getReleaseDate, startTime.toLocalDate());
+        if (strTime != null) {
+            wrapper.ge(CodeScriptChangeRecord::getReleaseDate, strTime.toLocalDate());
         }
         if (endTime != null) {
             wrapper.le(CodeScriptChangeRecord::getReleaseDate, endTime.toLocalDate());
