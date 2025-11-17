@@ -14,7 +14,6 @@
     </el-row>
     <el-row :gutter="12">
       <el-col :span="12">
-
         <el-form-item label="分支名称" prop="branchName">
           <el-input v-model="form.branchName"  />
         </el-form-item>
@@ -22,7 +21,6 @@
       <el-col :span="12">
         <el-form-item label="当前状态" prop="currentStatus">
           <el-select v-model="form.currentStatus" placeholder="选择状态" style="width:100%" >
-            <el-option label="已登记" value="已登记" />
             <el-option label="待审批" value="待审批" />
             <el-option label="待评审" value="待评审" />
             <el-option label="待合版" value="待合版" />
@@ -62,6 +60,7 @@
             <el-option label="前端" value="前端" />
             <el-option label="后端" value="后端" />
             <el-option label="脚本" value="脚本" />
+            <el-option label="配置" value="配置" />
           </el-select>
         </el-form-item>
       </el-col>
@@ -93,7 +92,6 @@
         </el-form-item>
       </el-col>
     </el-row>
-
     <el-form-item label="备注说明">
       <el-input v-model="form.remark" type="textarea" rows="3"  />
     </el-form-item>

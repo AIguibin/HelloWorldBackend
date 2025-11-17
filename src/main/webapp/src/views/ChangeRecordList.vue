@@ -25,6 +25,7 @@
           <el-option label="前端" value="前端" />
           <el-option label="后端" value="后端" />
           <el-option label="脚本" value="脚本" />
+        <el-option label="配置" value="配置" />
         </el-select>
         <el-select v-model="exportFormat" placeholder="导出格式" class="search-select">
           <el-option label="Excel (XLSX)" value="xlsx" />
@@ -334,10 +335,7 @@ export default {
     },
     async onDownload() {
       try {
-        // 使用表单选择的状态参数，而非固定默认值
-        const statusParam = this.search.currentStatus || undefined;
-        console.log('Excel导出使用的状态参数:', statusParam);
-        const params = { currentStatus: statusParam, limit: 1000 };
+        const params = { ...this.search, limit: 1000 };
         if (this.searchRange && this.searchRange.length === 2) {
           params.startTime = this.formatDateTimeParam(this.searchRange[0]);
           params.endTime = this.formatDateTimeParam(this.searchRange[1]);

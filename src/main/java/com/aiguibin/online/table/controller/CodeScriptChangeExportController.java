@@ -27,7 +27,7 @@ public class CodeScriptChangeExportController {
     private CodeScriptChangeRecordService service;
 
     @RequestMapping("/export")
-    public void export(@RequestParam(required = false, defaultValue = "已合版") String currentStatus,
+    public void export(@RequestParam(required = false) String currentStatus,
                        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startTime,
                        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime,
                        @RequestParam(required = false, defaultValue = "1000") int limit,
