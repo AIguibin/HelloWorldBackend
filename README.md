@@ -1,6 +1,6 @@
 # aiguibin-online-table
 
-前后端一体化的变更登记系统（Spring Boot 2.7 + MyBatis-Plus + MySQL，前端 Vue 2 + Element UI，支持 RBAC 与 CSRF）。
+前后端一体化的架构管理系统（Spring Boot 2.7 + MyBatis-Plus + MySQL，前端 Vue 2 + Element UI，支持 RBAC 与 CSRF）。
 
 ## 项目结构
 ```

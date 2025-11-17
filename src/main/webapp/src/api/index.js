@@ -5,6 +5,10 @@ export const login = (username, password) => request.post('/login', { username, 
 // 新增：修改密码
 export const changePassword = (data) => request.post('/users/change-password', data);
 
+// 菜单权限 API
+export const getUserMenus = () => request.get('/menus/user');
+export const getUserPermissions = () => request.get('/menus/permissions');
+
 // 代码脚本变更登记 API
 export const listChangeRecords = (params) => request.get('/change-records', { params });
 export const createChangeRecord = (data) => request.post('/change-records', data, { headers: { 'X-Button-Name': '创建记录' } });

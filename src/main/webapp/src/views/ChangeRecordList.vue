@@ -1,47 +1,51 @@
 <template>
-  <div style="padding:16px;">
+  <div class="change-record-page">
     <!-- 搜索栏 -->
-    <div style="margin-bottom:12px; display:flex; gap:8px; align-items:center;">
-      <el-input v-model="search.groupName" placeholder="组名" style="width:120px;" />
-      <el-input v-model="search.developer" placeholder="开发负责人" style="width:120px;" />
-      <el-input v-model="search.serviceName" placeholder="服务名称" style="width:120px;" />
-      <el-input v-model="search.defectNumber" placeholder="缺陷编号" style="width:120px;" />
-      <!-- 已移除旧的发布状态过滤（isReleased） -->
-      <el-date-picker v-model="searchRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" style="width:400px;" />
-      <el-select v-model="search.currentStatus" placeholder="当前状态" style="width:120px;">
-        <el-option label="待审批" value="待审批" />
-        <el-option label="待评审" value="待评审" />
-        <el-option label="待合版" value="待合版" />
-        <el-option label="已合版" value="已合版" />
-      </el-select>
-      <el-select v-model="search.developType" placeholder="开发类别" style="width:120px;">
-        <el-option label="前端" value="前端" />
-        <el-option label="后端" value="后端" />
-        <el-option label="脚本" value="脚本" />
-      </el-select>
-      <el-select v-model="exportFormat" placeholder="导出格式" style="width: 120px;">
-        <el-option label="Excel (XLSX)" value="xlsx" />
-        <el-option label="CSV" value="csv" />
-      </el-select>
-      <el-button type="primary" @click="fetchList(1)">查询</el-button>
-      <el-button type="success" @click="openCreate">新增</el-button>
-      <el-button type="info" plain @click="onExport">下载</el-button>
-      <div style="flex:1"></div>
-      <el-button type="warning" @click="$router.push('/change-password')">修改密码</el-button>
-      <el-button type="danger" plain @click="logout">退出登录</el-button>
-      <el-button type="primary" plain @click="goLogin">返回登录</el-button>
+    <div class="search-bar">
+      <div class="search-inputs">
+        <el-input v-model="search.groupName" placeholder="组名" class="search-input" />
+        <el-input v-model="search.developer" placeholder="开发负责人" class="search-input" />
+        <el-input v-model="search.serviceName" placeholder="服务名称" class="search-input" />
+        <el-input v-model="search.defectNumber" placeholder="缺陷编号" class="search-input" />
+        <el-date-picker 
+          v-model="searchRange" 
+          type="datetimerange" 
+          range-separator="至" 
+          start-placeholder="开始时间" 
+          end-placeholder="结束时间" 
+          class="search-date"
+        />
+        <el-select v-model="search.currentStatus" placeholder="当前状态" class="search-select">
+          <el-option label="待审批" value="待审批" />
+          <el-option label="待评审" value="待评审" />
+          <el-option label="待合版" value="待合版" />
+          <el-option label="已合版" value="已合版" />
+        </el-select>
+        <el-select v-model="search.developType" placeholder="开发类别" class="search-select">
+          <el-option label="前端" value="前端" />
+          <el-option label="后端" value="后端" />
+          <el-option label="脚本" value="脚本" />
+        </el-select>
+        <el-select v-model="exportFormat" placeholder="导出格式" class="search-select">
+          <el-option label="Excel (XLSX)" value="xlsx" />
+          <el-option label="CSV" value="csv" />
+        </el-select>
+      </div>
+      <div class="search-buttons">
+        <el-button type="primary" @click="fetchList(1)" class="action-btn">查询</el-button>
+        <el-button @click="openCreate" class="action-btn create-btn">新增</el-button>
+        <el-button @click="onExport" class="action-btn export-btn">下载</el-button>
+      </div>
     </div>
 
-    <!-- 修复：移除嵌套的表格与表格内操作栏，仅保留单个列表表格 -->
-    <el-table :data="list" border stripe :header-cell-style="headerCellStyle">
-      <el-table-column width="210">
-          <template slot="header">
-            <span>操作</span>
-          </template>
+    <!-- 数据表格 -->
+    <div class="table-container">
+      <el-table :data="list" stripe class="data-table">
+      <el-table-column width="240" label="操作" fixed="right">
           <template slot-scope="scope">
-            <el-button size="mini" @click="openEdit(scope.row)">编辑</el-button>
-            <el-button size="mini" type="primary" @click="openHistory(scope.row)">历史</el-button>
-            <el-button size="mini" type="info" @click="goDetail(scope.row)">详情</el-button>
+            <el-button size="mini" @click="openEdit(scope.row)" class="table-btn">编辑</el-button>
+            <el-button size="mini" @click="openHistory(scope.row)" class="table-btn history-btn">历史</el-button>
+            <el-button size="mini" @click="goDetail(scope.row)" class="table-btn detail-btn">详情</el-button>
           </template>
       </el-table-column>
       <!-- 序号（原ID） -->
@@ -78,10 +82,11 @@
           <el-tag :type="scope.row.crossService ? 'warning' : 'info'">{{ scope.row.crossService ? '是' : '否' }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="remark" label="备注说明"  show-overflow-tooltip="true"/>
+      <el-table-column prop="remark" label="备注说明" show-overflow-tooltip="true"/>
     </el-table>
+    </div>
 
-    <div class="pagination_box mt-16">
+    <div class="pagination-container">
         <el-pagination
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
@@ -95,7 +100,7 @@
     </div>
 
     <!-- 表单弹窗 -->
-    <el-dialog :visible.sync="showForm" title="变更记录" width="60%">
+    <el-dialog :visible.sync="showForm" title="变更记录" width="60%" class="form-dialog">
       <change-record-form ref="changeRecordForm" :form="form"/>
       <div style="text-align:right; margin-top:12px;">
         <el-button @click="showForm=false">取 消</el-button>
@@ -218,9 +223,6 @@ export default {
         return false;
       }
     },
-    headerCellStyle() {
-      return { backgroundColor: 'green', color: '#fff', fontWeight: 'bold', textAlign: 'center' };
-    }
   },
   methods: {
     async fetchList(page = 1) {
@@ -356,16 +358,6 @@ export default {
         this.$message && this.$message.error('Excel导出失败');
       }
     },
-    logout() {
-      try {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      } catch (e) {}
-      this.$router.replace('/login');
-    },
-    goLogin() {
-      this.$router.push('/login');
-    },
     formatDateTime(v) {
       if (!v) return '';
       try {
@@ -477,20 +469,310 @@ export default {
 </script>
 
 <style scoped>
-.table-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
+.change-record-page {
+  padding: 0;
 }
-.actions-left {
+
+/* 搜索栏样式 */
+.search-bar {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.search-inputs {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
+  margin-bottom: 16px;
 }
-.actions-right {
+
+.search-input {
+  width: 140px;
+}
+
+.search-input ::v-deep .el-input__inner {
+  border-radius: 8px;
+  border: 1px solid #EAEAEA;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.search-input ::v-deep .el-input__inner:focus {
+  border-color: #7B68EE;
+  box-shadow: 0 0 0 3px rgba(123, 104, 238, 0.15);
+}
+
+.search-date {
+  width: 400px;
+}
+
+.search-date ::v-deep .el-input__inner {
+  border-radius: 8px;
+  border: 1px solid #EAEAEA;
+  transition: all 0.2s ease;
+}
+
+.search-date ::v-deep .el-input__inner:focus {
+  border-color: #7B68EE;
+  box-shadow: 0 0 0 3px rgba(123, 104, 238, 0.15);
+}
+
+.search-select {
+  width: 140px;
+}
+
+.search-select ::v-deep .el-input__inner {
+  border-radius: 8px;
+  border: 1px solid #EAEAEA;
+  transition: all 0.2s ease;
+}
+
+.search-select ::v-deep .el-input__inner:focus {
+  border-color: #7B68EE;
+  box-shadow: 0 0 0 3px rgba(123, 104, 238, 0.15);
+}
+
+.search-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+  font-size: 14px;
+}
+
+.action-btn.el-button--primary {
+  background: linear-gradient(135deg, #7B68EE 0%, #9370DB 100%);
+  color: #fff;
+}
+
+.action-btn.el-button--primary:hover {
+  background: linear-gradient(135deg, #9370DB 0%, #BA55D3 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(123, 104, 238, 0.3);
+}
+
+.create-btn {
+  background: #2196F3;
+  color: #fff;
+}
+
+.create-btn:hover {
+  background: #1976D2;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.export-btn {
+  background: #ffffff;
+  color: #1A1A2E;
+  border: 1px solid #EAEAEA;
+}
+
+.export-btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #7B68EE;
+  color: #7B68EE;
+}
+
+/* 表格容器 */
+.table-container {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.data-table {
+  width: 100%;
+}
+
+.data-table ::v-deep .el-table__header {
+  background: #ffffff;
+}
+
+.data-table ::v-deep .el-table__header th {
+  background: rgba(255, 255, 255, 0.9);
+  color: #5a5a5a;
+  font-weight: 600;
+  border-bottom: 2px solid rgba(173, 216, 230, 0.3);
+  padding: 16px 0;
+  font-size: 14px;
+}
+
+.data-table ::v-deep .el-table__body tr {
+  transition: all 0.2s ease;
+}
+
+.data-table ::v-deep .el-table__body tr:hover {
+  background: linear-gradient(90deg, 
+    rgba(255, 182, 193, 0.1) 0%, 
+    rgba(221, 160, 221, 0.1) 100%) !important;
+}
+
+.data-table ::v-deep .el-table__row {
+  border-bottom: 1px solid #EAEAEA;
+}
+
+.data-table ::v-deep .el-table__row:nth-child(even) {
+  background-color: #fafafa;
+}
+
+/* 表格按钮 */
+.table-btn {
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  border: 1px solid #EAEAEA;
+  background: #fff;
+  color: #1A1A2E;
+  transition: all 0.2s ease;
+  margin-right: 6px;
+}
+
+.table-btn:hover {
+  border-color: #7B68EE;
+  color: #7B68EE;
+  background: linear-gradient(90deg, 
+    rgba(255, 182, 193, 0.15) 0%, 
+    rgba(221, 160, 221, 0.15) 100%);
+}
+
+.history-btn:hover {
+  border-color: #87CEEB;
+  color: #87CEEB;
+  background: rgba(173, 216, 230, 0.15);
+}
+
+.detail-btn:hover {
+  border-color: #9370DB;
+  color: #9370DB;
+  background: rgba(221, 160, 221, 0.15);
+}
+
+/* 分页样式 */
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 0;
+}
+
+.pagination-container ::v-deep .el-pagination {
   display: flex;
   align-items: center;
-  gap: 8px;
+}
+
+.pagination-container ::v-deep .el-pagination .el-pager li {
+  border-radius: 6px;
+  margin: 0 4px;
+  transition: all 0.3s ease;
+}
+
+.pagination-container ::v-deep .el-pagination .el-pager li.active {
+  background: linear-gradient(135deg, #7B68EE 0%, #9370DB 100%);
+  color: #fff;
+}
+
+.pagination-container ::v-deep .el-pagination .btn-prev,
+.pagination-container ::v-deep .el-pagination .btn-next {
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.pagination-container ::v-deep .el-pagination .btn-prev:hover,
+.pagination-container ::v-deep .el-pagination .btn-next:hover {
+  color: #7B68EE;
+}
+
+/* 弹窗样式 */
+.form-dialog ::v-deep .el-dialog {
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.form-dialog ::v-deep .el-dialog__header {
+  background: linear-gradient(135deg, 
+    rgba(255, 182, 193, 0.3) 0%, 
+    rgba(255, 218, 185, 0.25) 25%,
+    rgba(173, 216, 230, 0.3) 50%,
+    rgba(221, 160, 221, 0.25) 75%,
+    rgba(255, 182, 193, 0.3) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 20px 24px;
+  border-radius: 12px 12px 0 0;
+}
+
+.form-dialog ::v-deep .el-dialog__title {
+  color: #5a5a5a;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.form-dialog ::v-deep .el-dialog__headerbtn .el-dialog__close {
+  color: #666;
+  font-size: 20px;
+}
+
+.form-dialog ::v-deep .el-dialog__body {
+  padding: 24px;
+}
+
+.form-dialog ::v-deep .el-button {
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.form-dialog ::v-deep .el-button--primary {
+  background: linear-gradient(135deg, #7B68EE 0%, #9370DB 100%);
+  border: none;
+}
+
+.form-dialog ::v-deep .el-button--primary:hover {
+  background: linear-gradient(135deg, #9370DB 0%, #BA55D3 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(123, 104, 238, 0.3);
+}
+
+/* Tag标签样式优化 */
+.data-table ::v-deep .el-tag {
+  border-radius: 6px;
+  border: none;
+  padding: 4px 12px;
+  font-weight: 500;
+}
+
+.data-table ::v-deep .el-tag--success {
+  background: rgba(103, 194, 58, 0.1);
+  color: #67c23a;
+}
+
+.data-table ::v-deep .el-tag--warning {
+  background: rgba(230, 162, 60, 0.1);
+  color: #e6a23c;
+}
+
+.data-table ::v-deep .el-tag--info {
+  background: rgba(144, 147, 153, 0.1);
+  color: #909399;
 }
 </style>

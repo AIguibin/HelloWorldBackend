@@ -1,8 +1,7 @@
 import Vue from 'vue';
 import Router from 'vue-router';
 import Login from '../views/Login.vue';
-// import VersionList from '../views/VersionList.vue';
-// import VersionDetail from '../views/VersionDetail.vue';
+import MainLayout from '../components/MainLayout.vue';
 import ChangePassword from '../views/ChangePassword.vue';
 import ChangeRecordList from '../views/ChangeRecordList.vue';
 import ChangeRecordDetail from '../views/ChangeRecordDetail.vue';
@@ -28,22 +27,137 @@ Router.prototype.replace = function replace(location, onResolve, onReject) {
 
 Vue.use(Router);
 
+// 动态路由映射表
+const componentMap = {
+  'views/ChangeRecordList': ChangeRecordList,
+  'views/ChangeRecordDetail': ChangeRecordDetail,
+  'views/ChangeRecordHistory': ChangeRecordHistory,
+  'views/ChangePassword': ChangePassword
+};
+
+// 将菜单转换为路由
+function menuToRoute(menu) {
+  if (menu.menuType !== 2 || !menu.path) {
+    return null;
+  }
+
+  const route = {
+    path: menu.path,
+    name: menu.menuCode,
+    component: componentMap[menu.component] || null,
+    meta: {
+      title: menu.menuName,
+      icon: menu.icon,
+      perms: menu.perms
+    }
+  };
+
+  // 处理动态路由参数（如 /change-records/:id）
+  if (menu.path.includes(':')) {
+    route.path = menu.path;
+  }
+
+  return route;
+}
+
+// 递归处理菜单树，生成路由
+function generateRoutes(menus) {
+  const routes = [];
+  for (const menu of menus) {
+    const route = menuToRoute(menu);
+    if (route && route.component) {
+      routes.push(route);
+    }
+    if (menu.children && menu.children.length > 0) {
+      routes.push(...generateRoutes(menu.children));
+    }
+  }
+  return routes;
+}
+
 const router = new Router({
   mode: 'hash',
   routes: [
-    { path: '/login', name: 'Login', component: Login },
-    { path: '/', name: 'ChangeRecordList', component: ChangeRecordList },
-    { path: '/change-password', name: 'ChangePassword', component: ChangePassword },
-    { path: '/change-records', name: 'ChangeRecordListAlias', component: ChangeRecordList },
-    { path: '/change-records/:id', name: 'ChangeRecordDetail', component: ChangeRecordDetail },
-    { path: '/change-records/:id/history', name: 'ChangeRecordHistory', component: ChangeRecordHistory }
+    {
+      path: '/login',
+      name: 'Login',
+      component: Login,
+      meta: { title: '登录' }
+    },
+    {
+      path: '/',
+      component: MainLayout,
+      redirect: '/change-records',
+      children: [
+        {
+          path: '/change-password',
+          name: 'ChangePassword',
+          component: ChangePassword,
+          meta: { title: '修改密码' }
+        },
+        {
+          path: '/change-records',
+          name: 'ChangeRecordList',
+          component: ChangeRecordList,
+          meta: { title: '变更登记管理' }
+        },
+        {
+          path: '/change-records/:id',
+          name: 'ChangeRecordDetail',
+          component: ChangeRecordDetail,
+          meta: { title: '变更记录详情' }
+        },
+        {
+          path: '/change-records/:id/history',
+          name: 'ChangeRecordHistory',
+          component: ChangeRecordHistory,
+          meta: { title: '变更记录历史' }
+        }
+      ]
+    }
   ]
 });
 
+// 动态添加路由的方法（Vue Router 3兼容）
+export function addDynamicRoutes(menus) {
+  const routes = generateRoutes(menus);
+  const layoutRoute = router.options.routes.find(r => r.path === '/');
+  if (layoutRoute && layoutRoute.children) {
+    routes.forEach(route => {
+      // 检查路由是否已存在
+      const exists = layoutRoute.children.some(r => r.path === route.path);
+      if (!exists && route.component) {
+        layoutRoute.children.push(route);
+      }
+    });
+  }
+}
+
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token');
-  if (to.path === '/login') return next();
-  if (!token) return next('/login');
+  
+  // 登录页面直接放行
+  if (to.path === '/login') {
+    if (token) {
+      next('/');
+    } else {
+      next();
+    }
+    return;
+  }
+
+  // 未登录跳转到登录页
+  if (!token) {
+    next('/login');
+    return;
+  }
+
+  // 已登录，检查是否需要加载动态路由
+  if (to.path === '/' || to.path === '/index') {
+    next('/change-records');
+    return;
+  }
+
   next();
 });
 

@@ -164,3 +164,157 @@ SET @drop_his_is_released_sql := IF(@his_is_released_exists = 1,
 );
 PREPARE drop_rec_is_released_stmt FROM @drop_rec_is_released_sql; EXECUTE drop_rec_is_released_stmt; DEALLOCATE PREPARE drop_rec_is_released_stmt;
 PREPARE drop_his_is_released_stmt FROM @drop_his_is_released_sql; EXECUTE drop_his_is_released_stmt; DEALLOCATE PREPARE drop_his_is_released_stmt;
+
+-- ============================================
+-- 权限管理系统核心表结构
+-- ============================================
+
+-- 机构表
+CREATE TABLE IF NOT EXISTS `sys_organization` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `parent_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '父机构ID',
+  `org_code` varchar(100) NOT NULL COMMENT '机构编码',
+  `org_name` varchar(200) NOT NULL COMMENT '机构名称',
+  `org_type` tinyint(4) NOT NULL COMMENT '机构类型 1:集团 2:公司 3:部门 4:小组',
+  `leader_id` bigint(20) DEFAULT NULL COMMENT '负责人ID',
+  `sort_order` int(11) DEFAULT 0 COMMENT '排序号',
+  `status` tinyint(4) DEFAULT 1 COMMENT '状态 0:停用 1:启用',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_org_code` (`org_code`),
+  KEY `idx_parent_id` (`parent_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='机构表';
+
+-- 扩展用户表（添加机构ID字段）
+SET @user_org_id_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'system_user'
+    AND COLUMN_NAME = 'org_id'
+);
+SET @add_user_org_id_sql := IF(@user_org_id_exists = 0,
+  'ALTER TABLE `system_user` ADD COLUMN `org_id` bigint(20) DEFAULT NULL COMMENT ''所属机构ID'' AFTER `role`',
+  'SELECT 1'
+);
+PREPARE add_user_org_id_stmt FROM @add_user_org_id_sql; EXECUTE add_user_org_id_stmt; DEALLOCATE PREPARE add_user_org_id_stmt;
+
+-- 角色表
+CREATE TABLE IF NOT EXISTS `sys_role` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `role_code` varchar(100) NOT NULL COMMENT '角色编码',
+  `role_name` varchar(200) NOT NULL COMMENT '角色名称',
+  `role_type` tinyint(4) NOT NULL COMMENT '角色类型 1:系统角色 2:业务角色',
+  `data_scope_type` tinyint(4) DEFAULT 1 COMMENT '数据权限范围 1:全部 2:本机构 3:本部门 4:本人 5:自定义',
+  `description` varchar(500) DEFAULT NULL COMMENT '描述',
+  `status` tinyint(4) DEFAULT 1 COMMENT '状态 0:停用 1:启用',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_role_code` (`role_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
+
+-- 菜单表
+CREATE TABLE IF NOT EXISTS `sys_menu` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `parent_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '父菜单ID',
+  `menu_type` tinyint(4) NOT NULL COMMENT '菜单类型 1:目录 2:菜单 3:按钮 4:接口',
+  `menu_name` varchar(100) NOT NULL COMMENT '菜单名称',
+  `menu_code` varchar(100) NOT NULL COMMENT '菜单编码',
+  `path` varchar(200) DEFAULT NULL COMMENT '路由路径',
+  `component` varchar(200) DEFAULT NULL COMMENT '组件路径',
+  `icon` varchar(100) DEFAULT NULL COMMENT '图标',
+  `perms` varchar(100) DEFAULT NULL COMMENT '权限标识',
+  `sort_order` int(11) DEFAULT 0 COMMENT '排序号',
+  `is_visible` tinyint(4) DEFAULT 1 COMMENT '是否显示 0:隐藏 1:显示',
+  `status` tinyint(4) DEFAULT 1 COMMENT '状态 0:停用 1:启用',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_menu_code` (`menu_code`),
+  KEY `idx_parent_id` (`parent_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='菜单表';
+
+-- 用户角色关系表
+CREATE TABLE IF NOT EXISTS `sys_user_role` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint(20) NOT NULL COMMENT '用户ID',
+  `role_id` bigint(20) NOT NULL COMMENT '角色ID',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_role` (`user_id`, `role_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_role_id` (`role_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户角色关系表';
+
+-- 角色菜单关系表
+CREATE TABLE IF NOT EXISTS `sys_role_menu` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `role_id` bigint(20) NOT NULL COMMENT '角色ID',
+  `menu_id` bigint(20) NOT NULL COMMENT '菜单ID',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_role_menu` (`role_id`, `menu_id`),
+  KEY `idx_role_id` (`role_id`),
+  KEY `idx_menu_id` (`menu_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色菜单关系表';
+
+-- 数据权限规则表
+CREATE TABLE IF NOT EXISTS `sys_data_permission` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `role_id` bigint(20) NOT NULL COMMENT '角色ID',
+  `rule_name` varchar(100) NOT NULL COMMENT '规则名称',
+  `table_name` varchar(100) NOT NULL COMMENT '表名',
+  `condition_type` tinyint(4) NOT NULL COMMENT '条件类型 1:等于 2:包含 3:范围',
+  `condition_field` varchar(100) NOT NULL COMMENT '条件字段',
+  `condition_value` varchar(500) DEFAULT NULL COMMENT '条件值',
+  `description` varchar(500) DEFAULT NULL COMMENT '描述',
+  `status` tinyint(4) DEFAULT 1 COMMENT '状态 0:停用 1:启用',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_role_id` (`role_id`),
+  KEY `idx_table_name` (`table_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据权限规则表';
+
+-- 操作日志表（扩展原有operation_log表）
+SET @op_log_module_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'operation_log'
+    AND COLUMN_NAME = 'module'
+);
+SET @add_op_log_module_sql := IF(@op_log_module_exists = 0,
+  'ALTER TABLE `operation_log` ADD COLUMN `module` varchar(100) DEFAULT NULL COMMENT ''模块名称'' AFTER `object_type`',
+  'SELECT 1'
+);
+PREPARE add_op_log_module_stmt FROM @add_op_log_module_sql; EXECUTE add_op_log_module_stmt; DEALLOCATE PREPARE add_op_log_module_stmt;
+
+-- 初始化菜单数据
+INSERT INTO `sys_menu` (`id`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `component`, `icon`, `perms`, `sort_order`, `is_visible`, `status`) VALUES
+(1, 0, 1, '登记管理', 'register_manage', '/register', NULL, 'el-icon-document', NULL, 1, 1, 1),
+(2, 1, 2, '变更登记管理', 'change_record_manage', '/change-records', 'views/ChangeRecordList', 'el-icon-edit', 'change:record:list', 1, 1, 1),
+(3, 2, 3, '新增', 'change_record_create', NULL, NULL, NULL, 'change:record:create', 1, 1, 1),
+(4, 2, 3, '编辑', 'change_record_edit', NULL, NULL, NULL, 'change:record:edit', 2, 1, 1),
+(5, 2, 3, '删除', 'change_record_delete', NULL, NULL, NULL, 'change:record:delete', 3, 1, 1),
+(6, 2, 3, '导出', 'change_record_export', NULL, NULL, NULL, 'change:record:export', 4, 1, 1),
+(7, 2, 2, '变更记录详情', 'change_record_detail', '/change-records/:id', 'views/ChangeRecordDetail', NULL, 'change:record:detail', 1, 0, 1),
+(8, 2, 2, '变更记录历史', 'change_record_history', '/change-records/:id/history', 'views/ChangeRecordHistory', NULL, 'change:record:history', 2, 0, 1),
+(9, 0, 2, '修改密码', 'change_password', '/change-password', 'views/ChangePassword', 'el-icon-lock', 'user:password:change', 99, 1, 1)
+ON DUPLICATE KEY UPDATE `menu_name` = VALUES(`menu_name`), `path` = VALUES(`path`), `component` = VALUES(`component`);
+
+-- 初始化角色数据（超级管理员）
+INSERT INTO `sys_role` (`id`, `role_code`, `role_name`, `role_type`, `data_scope_type`, `description`, `status`) VALUES
+(1, 'SUPER_ADMIN', '超级管理员', 1, 1, '系统超级管理员，拥有所有权限', 1)
+ON DUPLICATE KEY UPDATE `role_name` = VALUES(`role_name`);
+
+-- 为超级管理员角色分配所有菜单权限
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`)
+SELECT 1, id FROM `sys_menu` WHERE `status` = 1
+ON DUPLICATE KEY UPDATE `role_id` = VALUES(`role_id`);
+
+-- 为admin用户分配超级管理员角色
+INSERT INTO `sys_user_role` (`user_id`, `role_id`)
+SELECT u.id, 1 FROM `system_user` u WHERE (u.usernumb = 'admin' OR u.username = 'admin') AND NOT EXISTS (
+  SELECT 1 FROM `sys_user_role` ur WHERE ur.user_id = u.id AND ur.role_id = 1
+);
