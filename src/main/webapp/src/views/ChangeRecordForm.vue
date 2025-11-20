@@ -21,10 +21,7 @@
       <el-col :span="12">
         <el-form-item label="当前状态" prop="currentStatus">
           <el-select v-model="form.currentStatus" placeholder="选择状态" style="width:100%" >
-            <el-option label="待审批" value="待审批" />
-            <el-option label="待评审" value="待评审" />
-            <el-option label="待合版" value="待合版" />
-            <el-option label="已合版" value="已合版" />
+            <el-option v-for="item in currentStatusOptions" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue" />
           </el-select>
         </el-form-item>
       </el-col>
@@ -57,10 +54,7 @@
       <el-col :span="12">
         <el-form-item label="开发类别" prop="developType">
           <el-select v-model="form.developType" placeholder="选择开发类别" style="width:100%" >
-            <el-option label="前端" value="前端" />
-            <el-option label="后端" value="后端" />
-            <el-option label="脚本" value="脚本" />
-            <el-option label="配置" value="配置" />
+            <el-option v-for="item in developTypeOptions" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue" />
           </el-select>
         </el-form-item>
       </el-col>
@@ -82,7 +76,7 @@
     </el-form-item>
     <el-row :gutter="12">
       <el-col :span="12">
-        <el-form-item label="涉及外围系统">
+        <el-form-item label="是否涉及外围系统" prop="involveExternalSystem">
           <el-switch v-model="form.involveExternalSystem" :active-value="1" :inactive-value="0"  />
         </el-form-item>
       </el-col>
@@ -100,6 +94,8 @@
 </template>
 
 <script>
+import { getDictItemsByType } from '../api';
+
 export default {
   name: 'ChangeRecordForm',
   props: {
@@ -193,9 +189,31 @@ export default {
               trigger: "blur",
             },
           ],
+      },
+      // 字典选项
+      currentStatusOptions: [],
+      developTypeOptions: []
+    }
+  },
+  mounted() {
+    // 加载字典数据
+    this.loadDictData();
+  },
+  methods: {
+    async loadDictData() {
+      try {
+        // 加载当前状态字典
+        const statusRes = await getDictItemsByType('CURRENT_STATUS');
+        this.currentStatusOptions = statusRes.data || [];
+        
+        // 加载开发类别字典
+        const developRes = await getDictItemsByType('DEVELOP_TYPE');
+        this.developTypeOptions = developRes.data || [];
+      } catch (error) {
+        console.error('加载字典数据失败:', error);
       }
     }
   }
 };
 </script>
-
+

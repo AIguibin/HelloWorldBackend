@@ -16,16 +16,10 @@
           class="search-date"
         />
         <el-select v-model="search.currentStatus" placeholder="当前状态" class="search-select">
-          <el-option label="待审批" value="待审批" />
-          <el-option label="待评审" value="待评审" />
-          <el-option label="待合版" value="待合版" />
-          <el-option label="已合版" value="已合版" />
+          <el-option v-for="item in currentStatusOptions" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue" />
         </el-select>
         <el-select v-model="search.developType" placeholder="开发类别" class="search-select">
-          <el-option label="前端" value="前端" />
-          <el-option label="后端" value="后端" />
-          <el-option label="脚本" value="脚本" />
-        <el-option label="配置" value="配置" />
+          <el-option v-for="item in developTypeOptions" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue" />
         </el-select>
         <el-select v-model="exportFormat" placeholder="导出格式" class="search-select">
           <el-option label="Excel (XLSX)" value="xlsx" />
@@ -55,7 +49,7 @@
       <!-- 当前状态与发版日期 -->
       <el-table-column prop="currentStatus" label="当前状态" width="120">
         <template slot-scope="scope">
-          <el-tag :type="statusTagType(scope.row.currentStatus)">{{ scope.row.currentStatus || '待审批' }}</el-tag>
+          <el-tag :type="statusTagType(scope.row.currentStatus)">{{ getDictLabel('CURRENT_STATUS', scope.row.currentStatus) || '待审批' }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="releaseDate" label="发版日期" width="140" show-overflow-tooltip="true"/>
@@ -63,7 +57,11 @@
       <el-table-column prop="defectNumber" label="缺陷编号" width="140" show-overflow-tooltip="true"/>
       <el-table-column prop="groupName" label="组名" width="140" show-overflow-tooltip="true"/>
       <el-table-column prop="developer" label="开发负责人" width="140" show-overflow-tooltip="true"/>
-      <el-table-column prop="developType" label="开发类别" width="140" show-overflow-tooltip="true"/>
+      <el-table-column prop="developType" label="开发类别" width="140" show-overflow-tooltip="true">
+        <template slot-scope="scope">
+          {{ getDictLabel('DEVELOP_TYPE', scope.row.developType) }}
+        </template>
+      </el-table-column>
       <el-table-column prop="branchName" label="分支名称" width="140" show-overflow-tooltip="true"/>
       <el-table-column prop="serviceName" label="服务名称" width="160" show-overflow-tooltip="true"/>
       <!-- 问题与方案 -->
@@ -165,7 +163,7 @@
 </template>
 
 <script>
-import { listChangeRecords, createChangeRecord, updateChangeRecord, deleteChangeRecord, exportChangeRecords } from '../api';
+import { listChangeRecords, createChangeRecord, updateChangeRecord, deleteChangeRecord, exportChangeRecords, getDictItemsByType } from '../api';
 import ChangeRecordForm from './ChangeRecordForm.vue';
 
 export default {
@@ -205,11 +203,15 @@ export default {
       },
       showHistory: false,
       historyList: [],
-      historyTarget: null
+      historyTarget: null,
+      // 字典选项
+      currentStatusOptions: [],
+      developTypeOptions: []
     };
   },
-  created() {
+  mounted() {
     this.fetchList();
+    this.loadDictData();
   },
   computed: {
     canEdit() {
@@ -226,6 +228,33 @@ export default {
     },
   },
   methods: {
+    // 根据字典类型和编码获取字典标签
+    getDictLabel(dictType, dictValue) {
+      if (!dictType || !dictValue) return '';
+      
+      let dictOptions = [];
+      if (dictType === 'CURRENT_STATUS') {
+        dictOptions = this.currentStatusOptions;
+      } else if (dictType === 'DEVELOP_TYPE') {
+        dictOptions = this.developTypeOptions;
+      }
+      
+      const dictItem = dictOptions.find(item => item.dictValue === dictValue);
+      return dictItem ? dictItem.dictLabel : dictValue;
+    },
+    async loadDictData() {
+      try {
+        // 加载当前状态字典
+        const statusRes = await getDictItemsByType('CURRENT_STATUS');
+        this.currentStatusOptions = statusRes.data || [];
+        
+        // 加载开发类别字典
+        const developRes = await getDictItemsByType('DEVELOP_TYPE');
+        this.developTypeOptions = developRes.data || [];
+      } catch (error) {
+        console.error('加载字典数据失败:', error);
+      }
+    },
     async fetchList(page = 1) {
       this.page = page;
       const params = {
@@ -317,10 +346,10 @@ export default {
     },
     statusTagType(s) {
       switch (s) {
-        case '待审批': return 'warning';
-        case '待评审': return 'info';
-        case '待合版': return 'primary';
-        case '已合版': return 'success';
+        case '01': case '待审批': return 'warning';
+        case '02': case '待评审': return 'info';
+        case '03': case '待合版': return 'primary';
+        case '04': case '已合版': return 'success';
         default: return '';
       }
     },

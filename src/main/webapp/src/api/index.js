@@ -18,3 +18,8 @@ export const getChangeRecord = (id) => request.get(`/change-records/${id}`);
 export const getChangeRecordDetail = (id) => request.get(`/change-records/${id}`);
 export const getChangeRecordHistory = (id, params) => request.get(`/change-records/${id}/history`, { params });
 export const exportChangeRecords = (params) => request.get('/change-records/export', { params, responseType: 'blob', headers: { 'X-Button-Name': '下载列表' } });
+
+// 字典 API
+export const getDictItemsByType = (dictTypeCode) => request.get(`/dict/items/type/${dictTypeCode}`);
+export const getDictItemsByTypeAndGroup = (dictTypeCode, groupCode) => request.get(`/dict/items/type/${dictTypeCode}/group/${groupCode}`);
+export const listDictTypes = () => request.get('/dict/types/enabled');

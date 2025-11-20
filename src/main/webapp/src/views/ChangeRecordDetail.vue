@@ -55,10 +55,10 @@ export default {
     },
     statusTagType(s) {
       switch (s) {
-        case '待审批': return 'warning';
-        case '待评审': return 'info';
-        case '待合版': return 'primary';
-        case '已合版': return 'success';
+        case '01': case '待审批': return 'warning';
+        case '02': case '待评审': return 'info';
+        case '03': case '待合版': return 'primary';
+        case '04': case '已合版': return 'success';
         default: return '';
       }
     },
