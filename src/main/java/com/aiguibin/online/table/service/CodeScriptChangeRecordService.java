@@ -145,6 +145,7 @@ public class CodeScriptChangeRecordService {
         h.setDefectNumber(src.getDefectNumber());
         h.setGroupName(src.getGroupName());
         h.setDeveloper(src.getDeveloper());
+        h.setDevelopType(src.getDevelopType());
         h.setBranchName(src.getBranchName());
         h.setServiceName(src.getServiceName());
         h.setProblemDescription(src.getProblemDescription());

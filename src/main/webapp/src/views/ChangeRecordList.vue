@@ -99,7 +99,7 @@
     </div>
 
     <!-- 表单弹窗 -->
-    <el-dialog :visible.sync="showForm" title="变更记录" width="60%" class="form-dialog">
+    <el-dialog :visible.sync="showForm" title="变更记录" width="90%">
       <change-record-form ref="changeRecordForm" :form="form"/>
       <div style="text-align:right; margin-top:12px;">
         <el-button @click="showForm=false">取 消</el-button>

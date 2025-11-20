@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS `code_script_change_record` (
   `defect_number` varchar(100) DEFAULT NULL COMMENT '缺陷编号',
   `group_name` varchar(100) DEFAULT NULL COMMENT '组别',
   `developer` varchar(50) DEFAULT NULL COMMENT '开发负责人',
+  `develop_type` varchar(50) DEFAULT NULL COMMENT '开发类别',
   `branch_name` varchar(100) DEFAULT NULL COMMENT '分支名称',
   `service_name` varchar(100) DEFAULT NULL COMMENT '服务名称',
   `problem_description` text COMMENT '问题描述',
@@ -54,6 +55,7 @@ CREATE TABLE IF NOT EXISTS `code_script_change_history` (
   `defect_number` varchar(100) DEFAULT NULL COMMENT '缺陷编号',
   `group_name` varchar(100) DEFAULT NULL COMMENT '组别',
   `developer` varchar(50) DEFAULT NULL COMMENT '开发负责人',
+  `develop_type` varchar(50) DEFAULT NULL COMMENT '开发类别',
   `branch_name` varchar(100) DEFAULT NULL COMMENT '分支名称',
   `service_name` varchar(100) DEFAULT NULL COMMENT '服务名称',
   `problem_description` text COMMENT '问题描述',
@@ -164,6 +166,30 @@ SET @drop_his_is_released_sql := IF(@his_is_released_exists = 1,
 );
 PREPARE drop_rec_is_released_stmt FROM @drop_rec_is_released_sql; EXECUTE drop_rec_is_released_stmt; DEALLOCATE PREPARE drop_rec_is_released_stmt;
 PREPARE drop_his_is_released_stmt FROM @drop_his_is_released_sql; EXECUTE drop_his_is_released_stmt; DEALLOCATE PREPARE drop_his_is_released_stmt;
+
+-- 添加开发类别字段（如缺失）
+SET @rec_develop_type_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'code_script_change_record'
+    AND COLUMN_NAME = 'develop_type'
+);
+SET @his_develop_type_exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'code_script_change_history'
+    AND COLUMN_NAME = 'develop_type'
+);
+SET @add_rec_develop_type_sql := IF(@rec_develop_type_exists = 0,
+  'ALTER TABLE `code_script_change_record` ADD COLUMN `develop_type` varchar(50) DEFAULT NULL COMMENT ''开发类别'' AFTER `developer`',
+  'SELECT 1'
+);
+SET @add_his_develop_type_sql := IF(@his_develop_type_exists = 0,
+  'ALTER TABLE `code_script_change_history` ADD COLUMN `develop_type` varchar(50) DEFAULT NULL COMMENT ''开发类别'' AFTER `developer`',
+  'SELECT 1'
+);
+PREPARE add_rec_develop_type_stmt FROM @add_rec_develop_type_sql; EXECUTE add_rec_develop_type_stmt; DEALLOCATE PREPARE add_rec_develop_type_stmt;
+PREPARE add_his_develop_type_stmt FROM @add_his_develop_type_sql; EXECUTE add_his_develop_type_stmt; DEALLOCATE PREPARE add_his_develop_type_stmt;
 
 -- ============================================
 -- 权限管理系统核心表结构
