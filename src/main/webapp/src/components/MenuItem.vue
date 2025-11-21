@@ -9,15 +9,13 @@
         <i :class="menu.icon || 'el-icon-menu'"></i>
         <span>{{ menu.menuName }}</span>
       </template>
-      <template v-for="child in menu.children">
+      <template v-for="child in menu.children" :key="child.id">
         <menu-item
           v-if="child.menuType === 1"
-          :key="child.id"
           :menu="child"
         />
         <el-menu-item
           v-else-if="child.menuType === 2"
-          :key="child.id"
           :index="child.path || String(child.id)"
         >
           <i :class="child.icon || 'el-icon-document'"></i>

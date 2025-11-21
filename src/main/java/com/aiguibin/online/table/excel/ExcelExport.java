@@ -59,7 +59,7 @@ public class ExcelExport {
         }
     }
 
-    public static <T, I extends Integer> Integer doWork(Cursor<T> cursor, int pageSize, Function<List<T>, I> function) {
+    public static <T> Integer doWork(Cursor<T> cursor, int pageSize, Function<List<T>, Integer> function) {
 
         List<T> list = new ArrayList<>();
         for (T entity : cursor) {

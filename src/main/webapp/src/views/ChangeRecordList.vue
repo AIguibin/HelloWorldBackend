@@ -45,43 +45,43 @@
       </el-table-column>
       <!-- 序号（原ID） -->
       <!-- <el-table-column prop="id" label="序号" width="80" /> -->
-      <el-table-column prop="version" label="版本号" width="160" show-overflow-tooltip="true"/>
+      <el-table-column prop="version" label="版本号" width="160" :show-overflow-tooltip="true"/>
       <!-- 当前状态与发版日期 -->
       <el-table-column prop="currentStatus" label="当前状态" width="120">
         <template slot-scope="scope">
           <el-tag :type="statusTagType(scope.row.currentStatus)">{{ getDictLabel('CURRENT_STATUS', scope.row.currentStatus) || '待审批' }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="releaseDate" label="发版日期" width="140" show-overflow-tooltip="true"/>
+      <el-table-column prop="releaseDate" label="发版日期" width="140" :show-overflow-tooltip="true"/>
       <!-- 基本信息 -->
-      <el-table-column prop="defectNumber" label="缺陷编号" width="140" show-overflow-tooltip="true"/>
-      <el-table-column prop="groupName" label="组名" width="140" show-overflow-tooltip="true"/>
-      <el-table-column prop="developer" label="开发负责人" width="140" show-overflow-tooltip="true"/>
-      <el-table-column prop="developType" label="开发类别" width="140" show-overflow-tooltip="true">
+      <el-table-column prop="defectNumber" label="缺陷编号" width="140" :show-overflow-tooltip="true"/>
+      <el-table-column prop="groupName" label="组名" width="140" :show-overflow-tooltip="true"/>
+      <el-table-column prop="developer" label="开发负责人" width="140" :show-overflow-tooltip="true"/>
+      <el-table-column prop="developType" label="开发类别" width="140" :show-overflow-tooltip="true">
         <template slot-scope="scope">
           {{ getDictLabel('DEVELOP_TYPE', scope.row.developType) }}
         </template>
       </el-table-column>
-      <el-table-column prop="branchName" label="分支名称" width="140" show-overflow-tooltip="true"/>
-      <el-table-column prop="serviceName" label="服务名称" width="160" show-overflow-tooltip="true"/>
+      <el-table-column prop="branchName" label="分支名称" width="140" :show-overflow-tooltip="true"/>
+      <el-table-column prop="serviceName" label="服务名称" width="160" :show-overflow-tooltip="true"/>
       <!-- 问题与方案 -->
-      <el-table-column prop="problemDescription" width="220" label="问题描述" show-overflow-tooltip="true"/>
-      <el-table-column prop="changeDesc" width="220" label="变更描述" show-overflow-tooltip="true"/>
-      <el-table-column prop="impactAnalysis" width="220" label="影响分析" show-overflow-tooltip="true"/>
-      <el-table-column prop="solution" label="解决方案" show-overflow-tooltip="true"/>
-      <el-table-column prop="codeList" width="220" label="代码清单" show-overflow-tooltip="true"/>
+      <el-table-column prop="problemDescription" width="220" label="问题描述" :show-overflow-tooltip="true"/>
+      <el-table-column prop="changeDesc" width="220" label="变更描述" :show-overflow-tooltip="true"/>
+      <el-table-column prop="impactAnalysis" width="220" label="影响分析" :show-overflow-tooltip="true"/>
+      <el-table-column prop="solution" label="解决方案" :show-overflow-tooltip="true"/>
+      <el-table-column prop="codeList" width="220" label="代码清单" :show-overflow-tooltip="true"/>
       <!-- 影响范围 -->
-      <el-table-column prop="involveExternalSystem" label="涉及外部系统" width="120" show-overflow-tooltip="true">
+      <el-table-column prop="involveExternalSystem" label="涉及外部系统" width="120" :show-overflow-tooltip="true">
         <template slot-scope="scope">
           <el-tag :type="scope.row.involveExternalSystem ? 'warning' : 'info'">{{ scope.row.involveExternalSystem ? '是' : '否' }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="crossService" label="是否跨服务" width="120" show-overflow-tooltip="true">
+      <el-table-column prop="crossService" label="是否跨服务" width="120" :show-overflow-tooltip="true">
         <template slot-scope="scope">
           <el-tag :type="scope.row.crossService ? 'warning' : 'info'">{{ scope.row.crossService ? '是' : '否' }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="remark" label="备注说明" show-overflow-tooltip="true"/>
+      <el-table-column prop="remark" label="备注说明" :show-overflow-tooltip="true"/>
     </el-table>
     </div>
 

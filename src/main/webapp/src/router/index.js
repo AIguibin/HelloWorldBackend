@@ -2,10 +2,14 @@ import Vue from 'vue';
 import Router from 'vue-router';
 import Login from '../views/Login.vue';
 import MainLayout from '../components/MainLayout.vue';
+// Dashboard组件已迁移到MainLayout中
 import ChangePassword from '../views/ChangePassword.vue';
 import ChangeRecordList from '../views/ChangeRecordList.vue';
+import SystemSettings from '../views/SystemSettings.vue';
 import ChangeRecordDetail from '../views/ChangeRecordDetail.vue';
 import ChangeRecordHistory from '../views/ChangeRecordHistory.vue';
+import VersionManagement from '../views/VersionManagement.vue';
+import DevelopmentStandards from '../views/DevelopmentStandards.vue';
 
 // 忽略重复导航错误（Vue Router 3 在重复 push/replace 时会抛 NavigationDuplicated）
 const originalPush = Router.prototype.push;
@@ -32,7 +36,10 @@ const componentMap = {
   'views/ChangeRecordList': ChangeRecordList,
   'views/ChangeRecordDetail': ChangeRecordDetail,
   'views/ChangeRecordHistory': ChangeRecordHistory,
-  'views/ChangePassword': ChangePassword
+  'views/ChangePassword': ChangePassword,
+  'views/VersionManagement': VersionManagement,
+  'views/DevelopmentStandards': DevelopmentStandards,
+  'views/SystemSettings': SystemSettings
 };
 
 // 将菜单转换为路由
@@ -86,9 +93,34 @@ const router = new Router({
     },
     {
       path: '/',
+      name: 'MainLayout',
       component: MainLayout,
-      redirect: '/change-records',
+      meta: { title: '首页' },
       children: [
+        {
+          path: '/dashboard',
+          name: 'Dashboard',
+          component: () => import('../components/DashboardCards.vue'),
+          meta: { title: '首页' }
+        },
+        {
+          path: '/version-management',
+          name: 'VersionManagement',
+          component: VersionManagement,
+          meta: { title: '版本管理方案' }
+        },
+        {
+          path: '/development-standards',
+          name: 'DevelopmentStandards',
+          component: DevelopmentStandards,
+          meta: { title: '日常开发规范' }
+        },
+        {
+          path: '/system-settings',
+          name: 'SystemSettings',
+          component: SystemSettings,
+          meta: { title: '系统设置' }
+        },
         {
           path: '/change-password',
           name: 'ChangePassword',
@@ -121,13 +153,13 @@ const router = new Router({
 // 动态添加路由的方法（Vue Router 3兼容）
 export function addDynamicRoutes(menus) {
   const routes = generateRoutes(menus);
-  const layoutRoute = router.options.routes.find(r => r.path === '/');
-  if (layoutRoute && layoutRoute.children) {
+  const mainLayoutRoute = router.options.routes.find(r => r.path === '/');
+  if (mainLayoutRoute && mainLayoutRoute.children) {
     routes.forEach(route => {
       // 检查路由是否已存在
-      const exists = layoutRoute.children.some(r => r.path === route.path);
+      const exists = mainLayoutRoute.children.some(r => r.path === route.path);
       if (!exists && route.component) {
-        layoutRoute.children.push(route);
+        mainLayoutRoute.children.push(route);
       }
     });
   }
@@ -152,9 +184,9 @@ router.beforeEach((to, from, next) => {
     return;
   }
 
-  // 已登录，检查是否需要加载动态路由
+  // 已登录，根路径直接放行
   if (to.path === '/' || to.path === '/index') {
-    next('/change-records');
+    next();
     return;
   }
 
