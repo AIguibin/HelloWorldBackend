@@ -309,8 +309,8 @@ export default {
 }
 
 .module-card:hover {
-  width: 618px;
-  height: 120px;
+  width: 382px;
+  height: 191px;
   transform: translateY(-4px);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12) !important;
   z-index: 10;

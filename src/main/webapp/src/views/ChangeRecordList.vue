@@ -2,108 +2,117 @@
   <div class="change-record-page">
     <!-- 搜索栏 -->
     <div class="search-bar">
-      <div class="search-inputs">
-        <el-input v-model="search.groupName" placeholder="组名" class="search-input" />
-        <el-input v-model="search.developer" placeholder="开发负责人" class="search-input" />
-        <el-input v-model="search.serviceName" placeholder="服务名称" class="search-input" />
-        <el-input v-model="search.defectNumber" placeholder="缺陷编号" class="search-input" />
-        <el-date-picker 
-          v-model="searchRange" 
-          type="datetimerange" 
-          range-separator="至" 
-          start-placeholder="开始时间" 
-          end-placeholder="结束时间" 
-          class="search-date"
-        />
-        <el-select v-model="search.currentStatus" placeholder="当前状态" class="search-select">
-          <el-option v-for="item in currentStatusOptions" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue" />
-        </el-select>
-        <el-select v-model="search.developType" placeholder="开发类别" class="search-select">
-          <el-option v-for="item in developTypeOptions" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue" />
-        </el-select>
-        <el-select v-model="exportFormat" placeholder="导出格式" class="search-select">
-          <el-option label="Excel (XLSX)" value="xlsx" />
-          <el-option label="CSV" value="csv" />
-        </el-select>
-      </div>
-      <div class="search-buttons">
-        <el-button type="primary" @click="fetchList(1)" class="action-btn">查询</el-button>
-        <el-button @click="openCreate" class="action-btn create-btn">新增</el-button>
-        <el-button @click="onExport" class="action-btn export-btn">下载</el-button>
+      <div class="search-container">
+        <!-- 搜索输入区域 -->
+        <div class="search-inputs-wrapper">
+          <!-- 默认显示的前3个搜索项 -->
+          <el-input v-model="search.groupName" placeholder="组名" class="search-input" />
+          <el-input v-model="search.developer" placeholder="开发负责人" class="search-input" />
+          <el-input v-model="search.serviceName" placeholder="服务名称" class="search-input" />
+          <el-input v-model="search.defectNumber" placeholder="缺陷编号" class="search-input" />
+          <el-select v-model="search.developType" placeholder="开发类别" class="search-select">
+            <el-option v-for="item in developTypeOptions" :key="item.dictValue" :label="item.dictLabel"
+              :value="item.dictValue" />
+          </el-select>
+          <el-select v-model="search.currentStatus" placeholder="当前状态" class="search-select">
+            <el-option v-for="item in currentStatusOptions" :key="item.dictValue" :label="item.dictLabel"
+              :value="item.dictValue" />
+          </el-select>
+          <!-- 点击展开后显示的搜索项 -->
+          <template v-if="isSearchExpanded">
+
+            <el-date-picker v-model="searchRange" type="datetimerange" range-separator="至" start-placeholder="开始时间"
+              end-placeholder="结束时间" class="search-date" />
+            <el-select v-model="exportFormat" placeholder="导出格式" class="search-select">
+              <el-option label="Excel (XLSX)" value="xlsx" />
+              <el-option label="CSV" value="csv" />
+            </el-select>
+          </template>
+
+          <!-- 展开/收起按钮 -->
+          <el-button @click="toggleSearchExpanded" type="text" class="expand-btn">
+            {{ isSearchExpanded ? '收起' : '展开' }}
+            <i :class="['el-icon-arrow-down', { 'rotate-180': isSearchExpanded }]"></i>
+          </el-button>
+        </div>
+
+        <!-- 按钮组区域 -->
+        <div class="search-buttons">
+          <el-button @click="resetSearch" class="action-btn reset-btn">重置</el-button>
+          <el-button type="primary" @click="fetchList(1)" class="action-btn">查询</el-button>
+          <el-button @click="openCreate" class="action-btn create-btn">新增</el-button>
+          <el-button @click="onExport" class="action-btn export-btn">下载</el-button>
+        </div>
       </div>
     </div>
 
     <!-- 数据表格 -->
     <div class="table-container">
       <el-table :data="list" stripe class="data-table">
-      <el-table-column width="240" label="操作" fixed="right">
+        <el-table-column width="240" label="操作" fixed="right">
           <template slot-scope="scope">
             <el-button size="mini" @click="openEdit(scope.row)" class="table-btn">编辑</el-button>
             <el-button size="mini" @click="openHistory(scope.row)" class="table-btn history-btn">历史</el-button>
             <el-button size="mini" @click="goDetail(scope.row)" class="table-btn detail-btn">详情</el-button>
           </template>
-      </el-table-column>
-      <!-- 序号（原ID） -->
-      <!-- <el-table-column prop="id" label="序号" width="80" /> -->
-      <el-table-column prop="version" label="版本号" width="160" :show-overflow-tooltip="true"/>
-      <!-- 当前状态与发版日期 -->
-      <el-table-column prop="currentStatus" label="当前状态" width="120">
-        <template slot-scope="scope">
-          <el-tag :type="statusTagType(scope.row.currentStatus)">{{ getDictLabel('CURRENT_STATUS', scope.row.currentStatus) || '待审批' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="releaseDate" label="发版日期" width="140" :show-overflow-tooltip="true"/>
-      <!-- 基本信息 -->
-      <el-table-column prop="defectNumber" label="缺陷编号" width="140" :show-overflow-tooltip="true"/>
-      <el-table-column prop="groupName" label="组名" width="140" :show-overflow-tooltip="true"/>
-      <el-table-column prop="developer" label="开发负责人" width="140" :show-overflow-tooltip="true"/>
-      <el-table-column prop="developType" label="开发类别" width="140" :show-overflow-tooltip="true">
-        <template slot-scope="scope">
-          {{ getDictLabel('DEVELOP_TYPE', scope.row.developType) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="branchName" label="分支名称" width="140" :show-overflow-tooltip="true"/>
-      <el-table-column prop="serviceName" label="服务名称" width="160" :show-overflow-tooltip="true"/>
-      <!-- 问题与方案 -->
-      <el-table-column prop="problemDescription" width="220" label="问题描述" :show-overflow-tooltip="true"/>
-      <el-table-column prop="changeDesc" width="220" label="变更描述" :show-overflow-tooltip="true"/>
-      <el-table-column prop="impactAnalysis" width="220" label="影响分析" :show-overflow-tooltip="true"/>
-      <el-table-column prop="solution" label="解决方案" :show-overflow-tooltip="true"/>
-      <el-table-column prop="codeList" width="220" label="代码清单" :show-overflow-tooltip="true"/>
-      <!-- 影响范围 -->
-      <el-table-column prop="involveExternalSystem" label="涉及外部系统" width="120" :show-overflow-tooltip="true">
-        <template slot-scope="scope">
-          <el-tag :type="scope.row.involveExternalSystem ? 'warning' : 'info'">{{ scope.row.involveExternalSystem ? '是' : '否' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="crossService" label="是否跨服务" width="120" :show-overflow-tooltip="true">
-        <template slot-scope="scope">
-          <el-tag :type="scope.row.crossService ? 'warning' : 'info'">{{ scope.row.crossService ? '是' : '否' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="remark" label="备注说明" :show-overflow-tooltip="true"/>
-    </el-table>
+        </el-table-column>
+        <!-- 序号（原ID） -->
+        <!-- <el-table-column prop="id" label="序号" width="80" /> -->
+        <el-table-column prop="version" label="版本号" width="160" :show-overflow-tooltip="true" />
+        <!-- 当前状态与发版日期 -->
+        <el-table-column prop="currentStatus" label="当前状态" width="120">
+          <template slot-scope="scope">
+            <el-tag :type="statusTagType(scope.row.currentStatus)">{{ getDictLabel('CURRENT_STATUS',
+              scope.row.currentStatus) || '待审批' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="releaseDate" label="发版日期" width="140" :show-overflow-tooltip="true" />
+        <!-- 基本信息 -->
+        <el-table-column prop="defectNumber" label="缺陷编号" width="140" :show-overflow-tooltip="true" />
+        <el-table-column prop="groupName" label="组名" width="140" :show-overflow-tooltip="true" />
+        <el-table-column prop="developer" label="开发负责人" width="140" :show-overflow-tooltip="true" />
+        <el-table-column prop="developType" label="开发类别" width="140" :show-overflow-tooltip="true">
+          <template slot-scope="scope">
+            {{ getDictLabel('DEVELOP_TYPE', scope.row.developType) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="branchName" label="分支名称" width="140" :show-overflow-tooltip="true" />
+        <el-table-column prop="serviceName" label="服务名称" width="160" :show-overflow-tooltip="true" />
+        <!-- 问题与方案 -->
+        <el-table-column prop="problemDescription" width="220" label="问题描述" :show-overflow-tooltip="true" />
+        <el-table-column prop="changeDesc" width="220" label="变更描述" :show-overflow-tooltip="true" />
+        <el-table-column prop="impactAnalysis" width="220" label="影响分析" :show-overflow-tooltip="true" />
+        <el-table-column prop="solution" label="解决方案" :show-overflow-tooltip="true" />
+        <el-table-column prop="codeList" width="220" label="代码清单" :show-overflow-tooltip="true" />
+        <!-- 影响范围 -->
+        <el-table-column prop="involveExternalSystem" label="涉及外部系统" width="120" :show-overflow-tooltip="true">
+          <template slot-scope="scope">
+            <el-tag :type="scope.row.involveExternalSystem ? 'warning' : 'info'">{{ scope.row.involveExternalSystem ?
+              '是' : '否' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="crossService" label="是否跨服务" width="120" :show-overflow-tooltip="true">
+          <template slot-scope="scope">
+            <el-tag :type="scope.row.crossService ? 'warning' : 'info'">{{ scope.row.crossService ? '是' : '否'
+            }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="remark" label="备注说明" :show-overflow-tooltip="true" />
+      </el-table>
     </div>
 
     <div class="pagination-container">
-        <el-pagination
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-          :current-page="page"
-          :page-sizes="[5, 10, 20, 30]"
-          :page-size="pageSize"
-          layout="total,sizes,prev,pager,next,jumper"
-          :total="total"
-        >
-        </el-pagination>
+      <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="page"
+        :page-sizes="[5, 10, 20, 30]" :page-size="pageSize" layout="total,sizes,prev,pager,next,jumper" :total="total">
+      </el-pagination>
     </div>
 
     <!-- 表单弹窗 -->
     <el-dialog :visible.sync="showForm" title="变更记录" width="90%">
-      <change-record-form ref="changeRecordForm" :form="form"/>
+      <change-record-form ref="changeRecordForm" :form="form" />
       <div style="text-align:right; margin-top:12px;">
-        <el-button @click="showForm=false">取 消</el-button>
-        <el-button type="primary" @click="onSubmit" >确 定</el-button>
+        <el-button @click="showForm = false">取 消</el-button>
+        <el-button type="primary" @click="onSubmit">确 定</el-button>
       </div>
     </el-dialog>
 
@@ -132,12 +141,14 @@
         <el-table-column prop="solution" label="解决方案" />
         <el-table-column prop="involveExternalSystem" label="涉及外部系统" width="120">
           <template slot-scope="scope">
-            <el-tag :type="scope.row.involveExternalSystem ? 'warning' : 'info'">{{ scope.row.involveExternalSystem ? '是' : '否' }}</el-tag>
+            <el-tag :type="scope.row.involveExternalSystem ? 'warning' : 'info'">{{ scope.row.involveExternalSystem ?
+              '是' : '否' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="crossService" label="是否跨服务" width="120">
           <template slot-scope="scope">
-            <el-tag :type="scope.row.crossService ? 'warning' : 'info'">{{ scope.row.crossService ? '是' : '否' }}</el-tag>
+            <el-tag :type="scope.row.crossService ? 'warning' : 'info'">{{ scope.row.crossService ? '是' : '否'
+            }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="codeList" label="代码清单" />
@@ -175,8 +186,10 @@ export default {
       page: 1,
       pageSize: 10,
       total: 0,
+      // 新增：控制搜索项展开/收起的状态
+      isSearchExpanded: false,
       // 移除 isReleased 搜索项，保留其他
-      search: { groupName: '', developer: '', serviceName: '', defectNumber: '',currentStatus:'',developType:'' },
+      search: { groupName: '', developer: '', serviceName: '', defectNumber: '', currentStatus: '', developType: '' },
       searchRange: [],
       // 新增：导出相关字段，避免未定义导致渲染异常
       downloadStatus: '已合版',
@@ -231,14 +244,14 @@ export default {
     // 根据字典类型和编码获取字典标签
     getDictLabel(dictType, dictValue) {
       if (!dictType || !dictValue) return '';
-      
+
       let dictOptions = [];
       if (dictType === 'CURRENT_STATUS') {
         dictOptions = this.currentStatusOptions;
       } else if (dictType === 'DEVELOP_TYPE') {
         dictOptions = this.developTypeOptions;
       }
-      
+
       const dictItem = dictOptions.find(item => item.dictValue === dictValue);
       return dictItem ? dictItem.dictLabel : dictValue;
     },
@@ -247,7 +260,7 @@ export default {
         // 加载当前状态字典
         const statusRes = await getDictItemsByType('CURRENT_STATUS');
         this.currentStatusOptions = statusRes.data || [];
-        
+
         // 加载开发类别字典
         const developRes = await getDictItemsByType('DEVELOP_TYPE');
         this.developTypeOptions = developRes.data || [];
@@ -326,19 +339,19 @@ export default {
       this.showForm = true;
     },
     async onSubmit() {
-      this.$refs['changeRecordForm'].$refs.form.validate(async(valid) => {
-          if (valid) {
-            if (this.editTarget) {
-              await updateChangeRecord(this.editTarget.id, this.form);
-            } else {
-              await createChangeRecord(this.form);
-            }
-            this.showForm = false;
-            this.fetchList(this.page);
+      this.$refs['changeRecordForm'].$refs.form.validate(async (valid) => {
+        if (valid) {
+          if (this.editTarget) {
+            await updateChangeRecord(this.editTarget.id, this.form);
           } else {
-            this.$message && this.$message.error('请检查必填项');
+            await createChangeRecord(this.form);
           }
-     });
+          this.showForm = false;
+          this.fetchList(this.page);
+        } else {
+          this.$message && this.$message.error('请检查必填项');
+        }
+      });
     },
     async onDelete(row) {
       await deleteChangeRecord(row.id);
@@ -409,56 +422,56 @@ export default {
 
     onDownloadCsv() {
       this.fetchListRaw(1000).then(rows => {
-          const headers = ['序号','当前状态','发版日期','缺陷编号','组别','开发负责人','分支名称','服务名称','问题描述','影响分析','解决方案','涉及外部系统','跨服务','代码清单','备注','版本号','变更描述','创建时间','更新时间','创建人','更新人','删除标志'];
-          const escape = v => {
-            if (v == null) return '';
-            const s = String(v).replace(/\r?\n/g, ' ');
-            return /[,\"]/.test(s) ? ('"' + s.replace(/\"/g, '""') + '"') : s;
-          };
-          const lines = [headers.join(',')];
-          (rows || []).forEach(cr => {
-            const line = [
-              cr.id,
-              cr.currentStatus,
-              cr.releaseDate,
-              cr.defectNumber,
-              cr.groupName,
-              cr.developer,
-              cr.branchName,
-              cr.serviceName,
-              cr.problemDescription,
-              cr.impactAnalysis,
-              cr.solution,
-              cr.involveExternalSystem,
-              cr.crossService,
-              cr.codeList,
-              cr.remark,
-              cr.version,
-              cr.changeDesc,
-              cr.createTime,
-              cr.updateTime,
-              cr.createUser,
-              cr.updateUser,
-              cr.isDeleted
-            ].map(escape).join(',');
-            lines.push(line);
-          });
-          // 加入UTF-8 BOM以防止Excel中文乱码
-          const csv = '\uFEFF' + lines.join('\n');
-          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          const today = new Date();
-          const yyyy = today.getFullYear();
-          const mm = String(today.getMonth() + 1).padStart(2, '0');
-          const dd = String(today.getDate()).padStart(2, '0');
-          a.href = url;
-          a.download = `code_script_change_record_${yyyy}${mm}${dd}.csv`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          window.URL.revokeObjectURL(url);
-        })
+        const headers = ['序号', '当前状态', '发版日期', '缺陷编号', '组别', '开发负责人', '分支名称', '服务名称', '问题描述', '影响分析', '解决方案', '涉及外部系统', '跨服务', '代码清单', '备注', '版本号', '变更描述', '创建时间', '更新时间', '创建人', '更新人', '删除标志'];
+        const escape = v => {
+          if (v == null) return '';
+          const s = String(v).replace(/\r?\n/g, ' ');
+          return /[,\"]/.test(s) ? ('"' + s.replace(/\"/g, '""') + '"') : s;
+        };
+        const lines = [headers.join(',')];
+        (rows || []).forEach(cr => {
+          const line = [
+            cr.id,
+            cr.currentStatus,
+            cr.releaseDate,
+            cr.defectNumber,
+            cr.groupName,
+            cr.developer,
+            cr.branchName,
+            cr.serviceName,
+            cr.problemDescription,
+            cr.impactAnalysis,
+            cr.solution,
+            cr.involveExternalSystem,
+            cr.crossService,
+            cr.codeList,
+            cr.remark,
+            cr.version,
+            cr.changeDesc,
+            cr.createTime,
+            cr.updateTime,
+            cr.createUser,
+            cr.updateUser,
+            cr.isDeleted
+          ].map(escape).join(',');
+          lines.push(line);
+        });
+        // 加入UTF-8 BOM以防止Excel中文乱码
+        const csv = '\uFEFF' + lines.join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        a.href = url;
+        a.download = `code_script_change_record_${yyyy}${mm}${dd}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      })
         .catch(() => { this.$message && this.$message.error('CSV导出失败'); });
     },
     // 新增：按筛选条件拉取原始数据（最多limit条）用于CSV
@@ -491,6 +504,24 @@ export default {
       this.page = val;
       this.fetchList(this.page);
     },
+    // 新增：重置搜索条件方法
+    resetSearch() {
+      this.search = {
+        groupName: '',
+        developer: '',
+        serviceName: '',
+        defectNumber: '',
+        currentStatus: '',
+        developType: ''
+      };
+      this.searchRange = [];
+      this.exportFormat = 'xlsx';
+    },
+
+    // 新增：切换搜索项展开/收起状态
+    toggleSearchExpanded() {
+      this.isSearchExpanded = !this.isSearchExpanded;
+    },
   }
 };
 </script>
@@ -506,21 +537,41 @@ export default {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 12px;
-  padding: 20px;
+  padding: 16px;
   margin-bottom: 20px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-.search-inputs {
+/* 新增：搜索容器主布局 */
+.search-container {
   display: flex;
+  align-items: center;
+  gap: 16px;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 16px;
+  width: 100%;
+}
+
+/* 搜索输入区域 */
+.search-inputs-wrapper {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* 按钮组区域 */
+.search-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .search-input {
   width: 140px;
+  min-width: 120px;
 }
 
 .search-input ::v-deep .el-input__inner {
@@ -537,6 +588,7 @@ export default {
 
 .search-date {
   width: 400px;
+  min-width: 280px;
 }
 
 .search-date ::v-deep .el-input__inner {
@@ -552,6 +604,7 @@ export default {
 
 .search-select {
   width: 140px;
+  min-width: 120px;
 }
 
 .search-select ::v-deep .el-input__inner {
@@ -565,19 +618,47 @@ export default {
   box-shadow: 0 0 0 3px rgba(123, 104, 238, 0.15);
 }
 
-.search-buttons {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
+/* 展开/收起按钮样式 */
+.expand-btn {
+  color: #7B68EE;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.expand-btn:hover {
+  color: #9370DB;
+  background: rgba(123, 104, 238, 0.1);
+}
+
+.expand-btn .el-icon-arrow-down {
+  margin-left: 4px;
+  transition: transform 0.2s ease;
+}
+
+.expand-btn .el-icon-arrow-down.rotate-180 {
+  transform: rotate(180deg);
 }
 
 .action-btn {
   border-radius: 8px;
-  padding: 10px 20px;
+  padding: 10px 16px;
   font-weight: 500;
   transition: all 0.2s ease;
   border: none;
   font-size: 14px;
+  white-space: nowrap;
+}
+
+/* 重置按钮样式 */
+.reset-btn {
+  background: #f0f0f0;
+  color: #606266;
+}
+
+.reset-btn:hover {
+  background: #e6e6e6;
+  color: #409EFF;
 }
 
 .action-btn.el-button--primary {
@@ -626,6 +707,60 @@ export default {
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
+/* 响应式设计 */
+@media screen and (max-width: 1200px) {
+  .search-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-inputs-wrapper {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
+  .search-buttons {
+    justify-content: flex-start;
+  }
+}
+
+@media screen and (max-width: 768px) {
+
+  .search-input,
+  .search-select {
+    width: calc(50% - 4px);
+    min-width: calc(50% - 4px);
+  }
+
+  .search-date {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .search-buttons {
+    flex-wrap: wrap;
+  }
+
+  .action-btn {
+    flex: 1;
+    min-width: 80px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+
+  .search-input,
+  .search-select {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .expand-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
 .data-table {
   width: 100%;
 }
@@ -648,9 +783,9 @@ export default {
 }
 
 .data-table ::v-deep .el-table__body tr:hover {
-  background: linear-gradient(90deg, 
-    rgba(255, 182, 193, 0.1) 0%, 
-    rgba(221, 160, 221, 0.1) 100%) !important;
+  background: linear-gradient(90deg,
+      rgba(255, 182, 193, 0.1) 0%,
+      rgba(221, 160, 221, 0.1) 100%) !important;
 }
 
 .data-table ::v-deep .el-table__row {
@@ -676,9 +811,9 @@ export default {
 .table-btn:hover {
   border-color: #7B68EE;
   color: #7B68EE;
-  background: linear-gradient(90deg, 
-    rgba(255, 182, 193, 0.15) 0%, 
-    rgba(221, 160, 221, 0.15) 100%);
+  background: linear-gradient(90deg,
+      rgba(255, 182, 193, 0.15) 0%,
+      rgba(221, 160, 221, 0.15) 100%);
 }
 
 .history-btn:hover {
@@ -735,12 +870,12 @@ export default {
 }
 
 .form-dialog ::v-deep .el-dialog__header {
-  background: linear-gradient(135deg, 
-    rgba(255, 182, 193, 0.3) 0%, 
-    rgba(255, 218, 185, 0.25) 25%,
-    rgba(173, 216, 230, 0.3) 50%,
-    rgba(221, 160, 221, 0.25) 75%,
-    rgba(255, 182, 193, 0.3) 100%);
+  background: linear-gradient(135deg,
+      rgba(255, 182, 193, 0.3) 0%,
+      rgba(255, 218, 185, 0.25) 25%,
+      rgba(173, 216, 230, 0.3) 50%,
+      rgba(221, 160, 221, 0.25) 75%,
+      rgba(255, 182, 193, 0.3) 100%);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   padding: 20px 24px;

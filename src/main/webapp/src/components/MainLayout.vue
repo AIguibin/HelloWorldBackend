@@ -109,91 +109,8 @@ export default {
         showSubMenu: null,
         // 当前是否显示首页内容
         isHomePage: true,
-        // 菜单数据（本地模拟数据）
-        topMenuList: [
-        {
-          id: 1,
-          menuName: '首页',
-          menuType: 2,
-          path: '/dashboard'
-        },
-        {
-          id: 2,
-          menuName: '变更管理',
-          menuType: 1,
-          children: [
-            {
-              id: 3,
-              menuName: '变更登记管理',
-              menuType: 2,
-              path: '/change-records'
-            },
-            {
-              id: 4,
-              menuName: '变更审核',
-              menuType: 2,
-              path: '/change-review'
-            }
-          ]
-        },
-        {
-          id: 5,
-          menuName: '版本管理',
-          menuType: 1,
-          children: [
-            {
-              id: 6,
-              menuName: '版本管理方案',
-              menuType: 2,
-              path: '/version-management'
-            },
-            {
-              id: 7,
-              menuName: '版本发布',
-              menuType: 2,
-              path: '/version-release'
-            }
-          ]
-        },
-        {
-          id: 8,
-          menuName: '开发规范',
-          menuType: 1,
-          children: [
-            {
-              id: 9,
-              menuName: '日常开发规范',
-              menuType: 2,
-              path: '/development-standards'
-            },
-            {
-              id: 10,
-              menuName: '代码审查',
-              menuType: 2,
-              path: '/code-review'
-            }
-          ]
-        },
-        {
-          id: 11,
-          menuName: '系统设置',
-          menuType: 1,
-          children: [
-            {
-              id: 12,
-              menuName: '用户管理',
-              menuType: 2,
-              path: '/user-management'
-            },
-            {
-              id: 13,
-              menuName: '权限配置',
-              menuType: 2,
-              path: '/permission-config'
-            }
-          ]
-        }
-      ]
+        // 菜单数据（通过API获取）
+        topMenuList: []
     };
   },
   watch: {
@@ -213,6 +130,7 @@ export default {
   },
   mounted() {
     // 在组件挂载完成后获取菜单数据，以适配Dashboard的延迟加载机制
+    // 在组件创建时加载菜单数据
     this.loadMenus();
   },
   methods: {
@@ -272,15 +190,16 @@ export default {
       this.menuLoading = true;
       try {
         const response = await getUserMenus();
-        if (response.code === 200) {
+        // 适配API响应格式
+        if (response && (response.code === 200 || response.data)) {
           // 确保使用正确的变量名
           this.topMenuList = response.data || [];
+          console.log('成功加载菜单数据:', this.topMenuList);
           // 根据当前路由设置激活菜单项
           this.setActiveMenuItem();
         }
       } catch (e) {
         console.error('加载菜单失败:', e);
-        // 模拟数据已经在data中定义，这里不需要重复设置
         // 确保即使在错误情况下也设置激活菜单项
         this.setActiveMenuItem();
       } finally {
@@ -575,6 +494,7 @@ export default {
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  padding: 0 16px;
 }
 
 /* 响应式样式 */
