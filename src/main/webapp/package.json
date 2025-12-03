@@ -1,0 +1,23 @@
+{
+  "name": "aiguibin-online-table",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build"
+  },
+  "dependencies": {
+    "vue": "^2.7.16",
+    "element-ui": "^2.15.14",
+    "axios": "^1.6.8",
+    "vue-router": "^3.6.5"
+  },
+  "devDependencies": {
+    "@vue/cli-service": "^4.5.19",
+    "babel-eslint": "^10.1.0"
+  },
+  "volta": {
+    "node": "16.20.2",
+    "npm": "8.19.4"
+  }
+}
