@@ -5,7 +5,10 @@
       <div class="navbar-container">
         <!-- 系统标题 -->
         <div class="logo-container">
-          <h1 class="system-title">架构管理系统</h1>
+          <div class="logo-wrapper">
+            <i class="el-icon-connection system-icon"></i>
+            <h1 class="system-title">架构管理系统</h1>
+          </div>
         </div>
         
         <!-- 顶部菜单导航 -->
@@ -18,6 +21,7 @@
                 class="top-menu-item"
                 :class="{ 'active': currentMenu === menu.path }"
                 @click="toggleSubMenu(menu)"
+                @mouseenter="showSubMenuOnHover(menu)"
                 @mouseleave="closeSubMenuOnLeave(menu)"
               >
                 <span class="menu-text">{{ menu.menuName }}</span>
@@ -47,7 +51,13 @@
         </div>
         
         <!-- 用户信息区域 -->
-        <div class="user-info-container">
+        <div class="nav-right-section">
+          <!-- 当前日期显示 -->
+          <div class="date-display">
+            <i class="el-icon-date"></i>
+            <span>{{ currentDate }}</span>
+          </div>
+          
           <el-dropdown @command="handleCommand">
             <span class="user-info">
               <i class="el-icon-user"></i>
@@ -110,14 +120,16 @@ export default {
         // 当前是否显示首页内容
         isHomePage: true,
         // 菜单数据（通过API获取）
-        topMenuList: []
+        topMenuList: [],
+        // 当前日期
+        currentDate: ''
     };
   },
   watch: {
     $route: {
       immediate: true,
       handler(to) {
-        this.activeMenu = to.path;
+        // Remove undefined activeMenu property assignment
         this.updateBreadcrumb(to);
         // 确保每次路由变化时更新菜单激活状态和首页显示逻辑
         this.setActiveMenuItem();
@@ -126,6 +138,12 @@ export default {
   },
   created() {
     this.loadUserInfo();
+    // 初始化并更新当前日期
+    this.updateCurrentDate();
+    // 设置定时器，每分钟更新一次日期
+    this.dateTimer = setInterval(() => {
+      this.updateCurrentDate();
+    }, 60000);
     // 移除在created中加载菜单，改为在mounted中加载以兼容延迟加载机制
   },
   mounted() {
@@ -133,7 +151,24 @@ export default {
     // 在组件创建时加载菜单数据
     this.loadMenus();
   },
+  beforeDestroy() {
+    // 清除日期更新定时器
+    if (this.dateTimer) {
+      clearInterval(this.dateTimer);
+    }
+  },
   methods: {
+    // 更新当前日期
+    updateCurrentDate() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      this.currentDate = `${year}-${month}-${day} ${hours}:${minutes}`;
+    },
+    
     // 切换子菜单显示
     toggleSubMenu(menu) {
       // 检查是否为首页菜单
@@ -144,6 +179,13 @@ export default {
       
       // 切换子菜单显示状态
       this.showSubMenu = this.showSubMenu === menu.id ? null : menu.id;
+    },
+    
+    // 鼠标悬停时显示子菜单
+    showSubMenuOnHover(menu) {
+      if (this.hasChildren(menu)) {
+        this.showSubMenu = menu.id;
+      }
     },
     
     // 鼠标离开菜单项时关闭子菜单
@@ -196,8 +238,8 @@ export default {
         console.log('菜单API响应:', response);
         
         if (response) {
-          // 确保使用正确的变量名
-          this.topMenuList = response.data || [];
+          // 适配API响应格式 - response is already the data array from the interceptor
+          this.topMenuList = response || [];
           console.log('成功加载菜单数据:', this.topMenuList);
           // 根据当前路由设置激活菜单项
           this.setActiveMenuItem();
@@ -310,11 +352,32 @@ export default {
   flex-shrink: 0;
 }
 
+.logo-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.system-icon {
+  font-size: 28px;
+  color: #7B68EE;
+  animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .system-title {
   margin: 0;
   font-size: 20px;
   font-weight: 700;
   color: #7B68EE;
+  background: linear-gradient(135deg, #7B68EE 0%, #9370DB 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* 顶部菜单容器 */
@@ -463,6 +526,32 @@ export default {
     background-color: #7B68EE;
     transition: all 0.3s ease;
   }
+
+/* 导航栏右侧区域 */
+.nav-right-section {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+/* 日期显示样式 */
+.date-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #606266;
+  font-size: 14px;
+  padding: 8px 12px;
+  background-color: rgba(123, 104, 238, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(123, 104, 238, 0.1);
+}
+
+.date-display i {
+  color: #7B68EE;
+  font-size: 16px;
+}
 
 /* 用户信息区域 */
 .user-info-container {
@@ -624,8 +713,30 @@ export default {
     padding: 0 16px;
   }
   
+  .logo-wrapper {
+    gap: 8px;
+  }
+  
+  .system-icon {
+    font-size: 22px;
+  }
+  
   .system-title {
     font-size: 16px;
+  }
+  
+  .nav-right-section {
+    gap: 16px;
+  }
+  
+  .date-display {
+    font-size: 12px;
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  
+  .date-display i {
+    font-size: 14px;
   }
   
   .top-menu-container {
@@ -653,6 +764,14 @@ export default {
   }
   
   .logo-container {
+    display: none;
+  }
+  
+  .nav-right-section {
+    gap: 12px;
+  }
+  
+  .date-display {
     display: none;
   }
   

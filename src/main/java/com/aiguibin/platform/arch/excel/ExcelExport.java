@@ -1,8 +1,8 @@
 package com.aiguibin.platform.arch.excel;
 
 
-import com.aiguibin.platform.arch.entity.CodeScriptChangeRecord;
-import com.aiguibin.platform.arch.mapper.CodeScriptChangeRecordMapper;
+import com.aiguibin.platform.arch.entity.ChangeRecord;
+import com.aiguibin.platform.arch.mapper.ChangeRecordMapper;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.support.ExcelTypeEnum;
@@ -42,8 +42,8 @@ public class ExcelExport {
             WriteSheet sheet = EasyExcel.writerSheet("首页").build();
             Map<String, Object> objectMap = new HashMap<>();
             try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
-                CodeScriptChangeRecordMapper mapper = sqlSession.getMapper(CodeScriptChangeRecordMapper.class);
-                Cursor<CodeScriptChangeRecord> cursor = mapper.selectCursor(objectMap);
+                ChangeRecordMapper mapper = sqlSession.getMapper(ChangeRecordMapper.class);
+                Cursor<ChangeRecord> cursor = mapper.selectCursor(objectMap);
                 Integer count = doWork(cursor, 10, list -> {
                     writer.write(list, sheet);
                     return list.size();

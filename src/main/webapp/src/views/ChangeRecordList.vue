@@ -48,7 +48,7 @@
 
     <!-- 数据表格 -->
     <div class="table-container">
-      <el-table :data="list" stripe class="data-table">
+      <el-table :data="list" stripe class="data-table" :fit="true" border>
         <el-table-column width="240" label="操作" fixed="right">
           <template slot-scope="scope">
             <el-button size="mini" @click="openEdit(scope.row)" class="table-btn">编辑</el-button>
@@ -529,6 +529,9 @@ export default {
 <style scoped>
 .change-record-page {
   padding: 0;
+  /* max-width: 1400px; */
+  margin: 0 auto;
+  padding: 0 8px;
 }
 
 /* 搜索栏样式 */
@@ -761,21 +764,234 @@ export default {
   }
 }
 
-.data-table {
+/* 表格容器 */
+.table-container {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  margin-bottom: 20px;
+  max-width: 100%;
   width: 100%;
 }
 
-.data-table ::v-deep .el-table__header {
-  background: #ffffff;
+/* 数据表格基础样式 */
+.data-table {
+  width: 100%;
+  min-width: 1200px;
+  table-layout: auto;
+}
+
+/* 17英寸屏幕优化 (1920x1080) */
+@media screen and (min-width: 1920px) {
+  .data-table {
+    min-width: 100%;
+    table-layout: fixed;
+  }
+  
+  /* 精确调整各列宽度以适应17英寸屏幕 */
+  .data-table ::v-deep .el-table-column--fixed-right {
+    width: 240px !important;
+  }
+  
+  /* 基础信息列 */
+  .data-table ::v-deep .el-table-column:nth-child(2) {
+    width: 160px !important;
+  }
+  .data-table ::v-deep .el-table-column:nth-child(3) {
+    width: 120px !important;
+  }
+  .data-table ::v-deep .el-table-column:nth-child(4) {
+    width: 140px !important;
+  }
+  .data-table ::v-deep .el-table-column:nth-child(5) {
+    width: 140px !important;
+  }
+  .data-table ::v-deep .el-table-column:nth-child(6) {
+    width: 140px !important;
+  }
+  .data-table ::v-deep .el-table-column:nth-child(7) {
+    width: 140px !important;
+  }
+  .data-table ::v-deep .el-table-column:nth-child(8) {
+    width: 140px !important;
+  }
+  .data-table ::v-deep .el-table-column:nth-child(9) {
+    width: 160px !important;
+  }
+  
+  /* 问题与方案列 */
+  .data-table ::v-deep .el-table-column:nth-child(10) {
+    width: 220px !important;
+  }
+  .data-table ::v-deep .el-table-column:nth-child(11) {
+    width: 220px !important;
+  }
+  .data-table ::v-deep .el-table-column:nth-child(12) {
+    width: 220px !important;
+  }
+  .data-table ::v-deep .el-table-column:nth-child(13) {
+    width: 220px !important;
+  }
+  
+  /* 影响范围列 */
+  .data-table ::v-deep .el-table-column:nth-child(14) {
+    width: 120px !important;
+  }
+  .data-table ::v-deep .el-table-column:nth-child(15) {
+    width: 120px !important;
+  }
+  .data-table ::v-deep .el-table-column:nth-child(16) {
+    width: 120px !important;
+  }
+}
+
+/* 10-17英寸设备 (平板和小型桌面) */
+@media screen and (min-width: 1024px) and (max-width: 1919px) {
+  .data-table {
+    min-width: 100%;
+    table-layout: auto;
+  }
+  
+  /* 智能列宽调整 - 缩小部分列宽度 */
+  .data-table ::v-deep .el-table-column:nth-child(2) {
+    width: 140px !important;
+  }
+  .data-table ::v-deep .el-table-column:nth-child(10),
+  .data-table ::v-deep .el-table-column:nth-child(11),
+  .data-table ::v-deep .el-table-column:nth-child(12),
+  .data-table ::v-deep .el-table-column:nth-child(13) {
+    width: 180px !important;
+  }
+}
+
+/* 10英寸及以下设备 (手机) */
+@media screen and (max-width: 1023px) {
+  .table-container {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  
+  .data-table {
+    min-width: 1200px;
+    table-layout: fixed;
+  }
+  
+  /* 固定首列 */
+  .data-table ::v-deep .el-table__body-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #c1c1c1 #f0f0f0;
+  }
+  
+  /* 滚动条样式优化 */
+  .data-table ::v-deep .el-table__body-wrapper::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  .data-table ::v-deep .el-table__body-wrapper::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 4px;
+  }
+  
+  .data-table ::v-deep .el-table__body-wrapper::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+  }
+  
+  .data-table ::v-deep .el-table__body-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+  
+  /* 调整列宽以适应移动设备 */
+  .data-table ::v-deep .el-table-column:nth-child(2) {
+    width: 120px !important;
+    min-width: 120px;
+  }
+  
+  .data-table ::v-deep .el-table-column:nth-child(3),
+  .data-table ::v-deep .el-table-column:nth-child(4),
+  .data-table ::v-deep .el-table-column:nth-child(5),
+  .data-table ::v-deep .el-table-column:nth-child(6),
+  .data-table ::v-deep .el-table-column:nth-child(7),
+  .data-table ::v-deep .el-table-column:nth-child(8),
+  .data-table ::v-deep .el-table-column:nth-child(9) {
+    width: 100px !important;
+    min-width: 100px;
+  }
+  
+  .data-table ::v-deep .el-table-column:nth-child(10),
+  .data-table ::v-deep .el-table-column:nth-child(11),
+  .data-table ::v-deep .el-table-column:nth-child(12),
+  .data-table ::v-deep .el-table-column:nth-child(13) {
+    width: 160px !important;
+    min-width: 160px;
+  }
+  
+  /* 操作列固定在右侧 */
+  .data-table ::v-deep .el-table-column--fixed-right {
+    width: 180px !important;
+    z-index: 10;
+  }
+  
+  /* 调整表格字体大小 */
+  .data-table ::v-deep .el-table__header th,
+  .data-table ::v-deep .el-table__body td {
+    font-size: 13px !important;
+  }
+  
+  /* 调整表格行高 */
+  .data-table ::v-deep .el-table__body td {
+    padding: 8px 10px !important;
+  }
+  
+  .data-table ::v-deep .el-table__header th {
+    padding: 12px 10px !important;
+  }
+}
+
+/* 触控设备优化 */
+@media (hover: none) and (pointer: coarse) {
+  .data-table ::v-deep .el-table__body-wrapper {
+    scrollbar-width: none;
+  }
+  
+  .data-table ::v-deep .el-table__body-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* 优化触摸交互 */
+  .table-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+    margin-right: 4px;
+  }
+  
+  /* 增大点击区域 */
+  .data-table ::v-deep .el-button--mini {
+    padding: 8px 16px;
+  }
+}
+
+/* 确保表格内容清晰可读 */
+.data-table ::v-deep .el-table__body td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 .data-table ::v-deep .el-table__header th {
-  background: rgba(255, 255, 255, 0.9);
-  color: #5a5a5a;
   font-weight: 600;
-  border-bottom: 2px solid rgba(173, 216, 230, 0.3);
-  padding: 16px 0;
-  font-size: 14px;
+  text-align: center;
+  background: #ffffff;
 }
 
 .data-table ::v-deep .el-table__body tr {
@@ -794,6 +1010,47 @@ export default {
 
 .data-table ::v-deep .el-table__row:nth-child(even) {
   background-color: #fafafa;
+}
+
+/* 表格边框和分隔线清晰显示 */
+.data-table ::v-deep .el-table {
+  border: 1px solid #EAEAEA;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.data-table ::v-deep .el-table__inner-wrapper {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.data-table ::v-deep .el-table__header-wrapper {
+  border-bottom: 2px solid #EAEAEA;
+}
+
+.data-table ::v-deep .el-table__header th {
+  border-right: 1px solid #EAEAEA;
+}
+
+.data-table ::v-deep .el-table__body td {
+  border-right: 1px solid #F5F5F5;
+}
+
+/* 优化列宽调整后的对齐 */
+.data-table ::v-deep .el-table th.gutter {
+  display: table-cell !important;
+}
+
+.data-table ::v-deep .el-table colgroup.gutter {
+  display: table-cell !important;
+}
+
+/* 确保表格和搜索栏宽度匹配 */
+.search-bar,
+.table-container,
+.pagination-container {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* 表格按钮 */
@@ -834,33 +1091,33 @@ export default {
   display: flex;
   justify-content: flex-end;
   padding: 16px 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.pagination-container ::v-deep .el-pagination {
-  display: flex;
-  align-items: center;
-}
-
-.pagination-container ::v-deep .el-pagination .el-pager li {
-  border-radius: 6px;
-  margin: 0 4px;
-  transition: all 0.3s ease;
-}
-
-.pagination-container ::v-deep .el-pagination .el-pager li.active {
-  background: linear-gradient(135deg, #7B68EE 0%, #9370DB 100%);
-  color: #fff;
-}
-
-.pagination-container ::v-deep .el-pagination .btn-prev,
-.pagination-container ::v-deep .el-pagination .btn-next {
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.pagination-container ::v-deep .el-pagination .btn-prev:hover,
-.pagination-container ::v-deep .el-pagination .btn-next:hover {
-  color: #7B68EE;
+/* 响应式分页样式 */
+@media screen and (max-width: 1023px) {
+  .pagination-container {
+    margin-top: 16px;
+    padding: 12px 0;
+  }
+  
+  .pagination-container ::v-deep .el-pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .pagination-container ::v-deep .el-pagination .el-pager {
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 0;
+  }
+  
+  .pagination-container ::v-deep .el-pagination .el-pager li {
+    margin: 2px;
+    padding: 5px 10px;
+  }
 }
 
 /* 弹窗样式 */

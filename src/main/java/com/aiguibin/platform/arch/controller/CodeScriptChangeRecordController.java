@@ -1,9 +1,9 @@
 package com.aiguibin.platform.arch.controller;
 
-import com.aiguibin.platform.arch.entity.CodeScriptChangeHistory;
-import com.aiguibin.platform.arch.entity.CodeScriptChangeRecord;
+import com.aiguibin.platform.arch.entity.ChangeHistory;
+import com.aiguibin.platform.arch.entity.ChangeRecord;
 import com.aiguibin.platform.arch.model.ApiResponse;
-import com.aiguibin.platform.arch.service.CodeScriptChangeRecordService;
+import com.aiguibin.platform.arch.service.ChangeRecordService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
@@ -28,30 +28,30 @@ import java.time.LocalDateTime;
 public class CodeScriptChangeRecordController {
 
     @Resource
-    private CodeScriptChangeRecordService service;
+    private ChangeRecordService service;
 
     @GetMapping
-    public ApiResponse<Page<CodeScriptChangeRecord>> list(@RequestParam(defaultValue = "1") int page,
+    public ApiResponse<Page<ChangeRecord>> list(@RequestParam(defaultValue = "1") int page,
                                                           @RequestParam(defaultValue = "10") int size,
                                                           @RequestParam(required = false) String groupName,
-                                                          @RequestParam(required = false) String developer,
+                                                          @RequestParam(required = false) String developerNum,
                                                           @RequestParam(required = false) String developType,
                                                           @RequestParam(required = false) String currentStatus,
                                                           @RequestParam(required = false) String serviceName,
                                                           @RequestParam(required = false) String defectNumber,
                                                           @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startTime,
                                                           @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime) {
-        Page<CodeScriptChangeRecord> pageData = service.page(page, size, groupName, developer, developType, currentStatus, serviceName, defectNumber, startTime, endTime);
+        Page<ChangeRecord> pageData = service.page(page, size, groupName, developerNum, developType, currentStatus, serviceName, defectNumber, startTime, endTime);
         return ApiResponse.success(pageData);
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<CodeScriptChangeRecord> detail(@PathVariable Long id) {
+    public ApiResponse<ChangeRecord> detail(@PathVariable Long id) {
         return ApiResponse.success(service.getById(id));
     }
 
     @PostMapping
-    public ApiResponse<Long> create(@RequestBody @Validated CodeScriptChangeRecord r, HttpServletRequest request) {
+    public ApiResponse<Long> create(@RequestBody @Validated ChangeRecord r, HttpServletRequest request) {
         String operator = (String) request.getAttribute("operator");
         String pagePath = decodeHeader(request.getHeader("X-Page-Path"));
         String buttonName = decodeHeader(request.getHeader("X-Button-Name"));
@@ -61,7 +61,7 @@ public class CodeScriptChangeRecordController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<Boolean> update(@PathVariable Long id, @RequestBody @Validated CodeScriptChangeRecord r, HttpServletRequest request) {
+    public ApiResponse<Boolean> update(@PathVariable Long id, @RequestBody @Validated ChangeRecord r, HttpServletRequest request) {
         String operator = (String) request.getAttribute("operator");
         String pagePath = decodeHeader(request.getHeader("X-Page-Path"));
         String buttonName = decodeHeader(request.getHeader("X-Button-Name"));
@@ -81,10 +81,10 @@ public class CodeScriptChangeRecordController {
     }
 
     @GetMapping("/{id}/history")
-    public ApiResponse<Page<CodeScriptChangeHistory>> history(@PathVariable Long id,
+    public ApiResponse<Page<ChangeHistory>> history(@PathVariable Long id,
                                                               @RequestParam(defaultValue = "1") int page,
                                                               @RequestParam(defaultValue = "10") int size) {
-        Page<CodeScriptChangeHistory> pageData = service.history(id, page, size);
+        Page<ChangeHistory> pageData = service.history(id, page, size);
         return ApiResponse.success(pageData);
     }
 
