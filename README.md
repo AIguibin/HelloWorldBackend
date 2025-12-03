@@ -741,7 +741,7 @@ INSERT INTO sys_menu (menu_code, menu_name, menu_type, parent_menu_code, icon, p
 ```
 
 ## 构建与运行
-- 构建：`mvn -DskipTests clean package`
+- 构建：` mvn -gs "D:\Maven\settings-aiguibin.xml" -Dmaven.repo.local="E:\Repository\Local" -T 1C clean package -DskipTests -U -Dmaven.compile.fork=true -Dmaven.test.skip=true`
 - 运行：`java -jar target/aiguibin-platform-arch.jar`
 - 访问：`http://localhost:8080`
 
