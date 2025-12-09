@@ -2,7 +2,7 @@ import Vue from 'vue';
 import Router from 'vue-router';
 import Login from '../views/Login.vue';
 import MainLayout from '../components/MainLayout.vue';
-// Dashboard组件已迁移到MainLayout中
+import DashboardCards from '../components/DashboardCards.vue';
 import ChangePassword from '../views/ChangePassword.vue';
 import ChangeRecordList from '../views/ChangeRecordList.vue';
 import SystemSettings from '../views/SystemSettings.vue';
@@ -100,7 +100,7 @@ const router = new Router({
         {
           path: '/dashboard',
           name: 'Dashboard',
-          component: () => import('../components/DashboardCards.vue'),
+          component: DashboardCards,
           meta: { title: '首页' }
         },
         {
@@ -184,9 +184,9 @@ router.beforeEach((to, from, next) => {
     return;
   }
 
-  // 已登录，根路径直接放行
+  // 已登录，根路径重定向到dashboard
   if (to.path === '/' || to.path === '/index') {
-    next();
+    next('/dashboard');
     return;
   }
 
