@@ -9,7 +9,7 @@ import java.util.List;
  * 字典码值服务
  */
 public interface DictItemService {
-    
+
     /**
      * 分页查询字典码值
      * @param page 页码
@@ -21,14 +21,14 @@ public interface DictItemService {
      * @return 分页结果
      */
     Page<DictItem> page(int page, int size, String dictTypeCode, String dictValue, String dictLabel, String groupCode);
-    
+
     /**
      * 根据字典类型编码查询字典码值
      * @param dictTypeCode 字典类型编码
      * @return 字典码值列表
      */
     List<DictItem> listByType(String dictTypeCode);
-    
+
     /**
      * 根据字典类型编码和分组编码查询字典码值
      * @param dictTypeCode 字典类型编码
@@ -36,14 +36,14 @@ public interface DictItemService {
      * @return 字典码值列表
      */
     List<DictItem> listByTypeAndGroup(String dictTypeCode, String groupCode);
-    
+
     /**
      * 根据ID查询字典码值
      * @param id 字典码值ID
      * @return 字典码值
      */
     DictItem getById(Long id);
-    
+
     /**
      * 创建字典码值
      * @param dictItem 字典码值
@@ -51,7 +51,7 @@ public interface DictItemService {
      * @return 字典码值ID
      */
     Long create(DictItem dictItem, String operator);
-    
+
     /**
      * 更新字典码值
      * @param id 字典码值ID
@@ -60,7 +60,7 @@ public interface DictItemService {
      * @return 是否成功
      */
     boolean update(Long id, DictItem dictItem, String operator);
-    
+
     /**
      * 删除字典码值
      * @param id 字典码值ID
@@ -68,7 +68,7 @@ public interface DictItemService {
      * @return 是否成功
      */
     boolean delete(Long id, String operator);
-    
+
     /**
      * 根据字典类型编码和字典值查询字典码值
      * @param dictTypeCode 字典类型编码

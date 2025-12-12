@@ -146,7 +146,7 @@ export default {
 
 <style scoped>
 .dashboard-cards-container {
-  padding: 30px;
+  padding: 8px;
   max-width: 1400px;
   margin: 0 auto;
 }

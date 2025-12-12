@@ -44,4 +44,11 @@ public class ChangeRecord {
     private String updatedBy; // 更新人用户编号
     private LocalDateTime updatedTime; // 更新时间
     private Integer isDeleted; // 是否删除：0-否，1-是
+    private String flowId; // 关联流程ID
+    private String currentNodeId; // 当前节点ID
+    private String approvalInstanceId; // 审批实例ID
+    private String approvalStatus; // 审批状态：DRAFT-草稿，PENDING-待审批，APPROVED-已通过，REJECTED-已拒绝，CANCELED-已取消
+    private LocalDateTime submitTime; // 提交审批时间
+    private String rejectReason; // 拒绝原因
+    private String rejectNodeId; // 拒绝节点ID
 }

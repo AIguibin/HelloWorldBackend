@@ -15,7 +15,7 @@ public class User {
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    private String userNum; // 用户编号，5位，9开头
+    private String userNum; // 用户编号，20位
     private String userName; // 用户姓名
     private String nickname; // 用户昵称
     private Integer gender; // 性别：0-未知，1-男，2-女

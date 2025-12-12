@@ -49,11 +49,12 @@
     <!-- 数据表格 -->
     <div class="table-container">
       <el-table :data="list" stripe class="data-table" :fit="true" border>
-        <el-table-column width="240" label="操作" fixed="right">
+        <el-table-column width="280" label="操作" fixed="right">
           <template slot-scope="scope">
             <el-button size="mini" @click="openEdit(scope.row)" class="table-btn">编辑</el-button>
             <el-button size="mini" @click="openHistory(scope.row)" class="table-btn history-btn">历史</el-button>
             <el-button size="mini" @click="goDetail(scope.row)" class="table-btn detail-btn">详情</el-button>
+            <el-button v-if="canSubmitApproval(scope.row)" size="mini" type="primary" @click="submitApproval(scope.row)" class="table-btn approve-btn">提交审批</el-button>
           </template>
         </el-table-column>
         <!-- 序号（原ID） -->
@@ -174,7 +175,7 @@
 </template>
 
 <script>
-import { listChangeRecords, createChangeRecord, updateChangeRecord, deleteChangeRecord, exportChangeRecords, getDictItemsByType } from '../api';
+import { listChangeRecords, createChangeRecord, updateChangeRecord, deleteChangeRecord, exportChangeRecords, getDictItemsByType, submitApproval } from '../api';
 import ChangeRecordForm from './ChangeRecordForm.vue';
 
 export default {
@@ -493,6 +494,32 @@ export default {
         params.endTime = this.formatDateTimeParam(this.searchRange[1]);
       }
       return listChangeRecords(params).then(data => data.records || []);
+    },
+    
+    // 新增：判断是否可以提交审批
+    canSubmitApproval(row) {
+      // 仅当记录状态为"待审批"且用户是创建人时显示
+      try {
+        const raw = localStorage.getItem('user');
+        const u = JSON.parse(raw || '{}');
+        const rawId = (u && (u.usernumb || u.username)) || '';
+        const id = String(rawId).toUpperCase();
+        return row.currentStatus === '待审批' && (row.createdBy || '').toUpperCase() === id;
+      } catch (e) {
+        return false;
+      }
+    },
+    
+    // 新增：提交审批
+    async submitApproval(row) {
+      try {
+        // 调用提交审批API
+        await submitApproval(row.id);
+        this.$message.success('提交审批成功');
+        this.fetchList(this.page);
+      } catch (e) {
+        this.$message.error('提交审批失败');
+      }
     },
     //分页
     handleSizeChange(val) {

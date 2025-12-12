@@ -3,9 +3,9 @@
     <div class="login-box">
       <h2 class="login-title">架构管理系统登录</h2>
       <el-form :model="form" :rules="rules" ref="formRef" label-width="80px" class="login-form">
-        <el-form-item label="账号" prop="username">
+        <el-form-item label="账号" prop="userNum">
           <el-input 
-            v-model="form.username" 
+            v-model="form.userNum" 
             autocomplete="username"
             prefix-icon="el-icon-user"
             placeholder="请输入账号"
@@ -52,10 +52,10 @@ export default {
   name: 'Login',
   data() {
     return {
-      form: { username: '', password: '' },
+      form: { userNum: '', password: '' },
       loading: false,
       rules: {
-        username: [{ required: true, message: '请输入账号', trigger: 'blur' }],
+        userNum: [{ required: true, message: '请输入账号', trigger: 'blur' }],
         password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
       }
     };
@@ -66,7 +66,7 @@ export default {
         if (!valid) return;
         this.loading = true;
         try {
-          const data = await login(this.form.username, this.form.password);
+          const data = await login(this.form.userNum, this.form.password);
           localStorage.setItem('token', data.token);
           localStorage.setItem('csrfToken', data.csrfToken);
           localStorage.setItem('user', JSON.stringify({ username: data.username, usernumb: data.usernumb, chineseName: data.chineseName }));

@@ -10,6 +10,9 @@ import ChangeRecordDetail from '../views/ChangeRecordDetail.vue';
 import ChangeRecordHistory from '../views/ChangeRecordHistory.vue';
 import VersionManagement from '../views/VersionManagement.vue';
 import DevelopmentStandards from '../views/DevelopmentStandards.vue';
+// 导入审批相关组件
+import ApprovalTodoList from '../views/ApprovalTodoList.vue';
+import ApprovalProcessDialog from '../views/ApprovalProcessDialog.vue';
 
 // 忽略重复导航错误（Vue Router 3 在重复 push/replace 时会抛 NavigationDuplicated）
 const originalPush = Router.prototype.push;
@@ -39,7 +42,9 @@ const componentMap = {
   'views/ChangePassword': ChangePassword,
   'views/VersionManagement': VersionManagement,
   'views/DevelopmentStandards': DevelopmentStandards,
-  'views/SystemSettings': SystemSettings
+  'views/SystemSettings': SystemSettings,
+  'views/ApprovalTodoList': ApprovalTodoList,
+  'views/ApprovalProcessDialog': ApprovalProcessDialog
 };
 
 // 将菜单转换为路由
@@ -81,7 +86,11 @@ function generateRoutes(menus) {
   }
   return routes;
 }
-
+/**
+ * 路由配置
+ * 不在数据库中配置的路由需要在这里注册
+ * @type {Router}
+ */
 const router = new Router({
   mode: 'hash',
   routes: [
@@ -144,6 +153,13 @@ const router = new Router({
           name: 'ChangeRecordHistory',
           component: ChangeRecordHistory,
           meta: { title: '变更记录历史' }
+        },
+        // 审批相关路由
+        {
+          path: '/approval-todos',
+          name: 'ApprovalTodoList',
+          component: ApprovalTodoList,
+          meta: { title: '待办任务列表' }
         }
       ]
     }

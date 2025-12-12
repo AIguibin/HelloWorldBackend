@@ -23,14 +23,14 @@ public class AuthController {
 
     @PostMapping("/login")
     public ApiResponse<?> login(@RequestBody @Validated LoginRequest req) {
-        User user = userService.findByUsername(req.getUsername());
+        User user = userService.getUserByUserNum(req.getUserNum());
         if (user == null) {
             return ApiResponse.error("账号不存在");
         }
         if (!userService.matchesPassword(req.getPassword(), user.getPassword())) {
             return ApiResponse.error("密码错误");
         }
-        String token = authService.issueToken(user.getUserName());
+        String token = authService.issueToken(user.getUserNum());
         Map<String, Object> payload = new HashMap<>();
         payload.put("token", token);
         payload.put("csrfToken", authService.getCsrfToken(token));

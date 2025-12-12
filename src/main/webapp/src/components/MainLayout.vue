@@ -102,15 +102,6 @@
     <div class="main-content">
       <!-- 主内容区 - 占满整个宽度 -->
       <div class="content-area">
-        <!-- 面包屑导航 -->
-        <div class="breadcrumb-section">
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item v-for="(item, index) in breadcrumbList" :key="index">
-              {{ item.title }}
-            </el-breadcrumb-item>
-          </el-breadcrumb>
-        </div>
-        
         <!-- 页面内容 -->
         <div class="page-content">
           <transition name="fade" mode="out-in">
@@ -515,15 +506,15 @@ export default {
 .main-content {
   display: flex;
   margin-top: 60px;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 20px);
 }
 
 /* 主内容区 - 占满整个宽度 */
 .content-area {
   flex: 1;
-  padding: 24px;
+  padding: 2px;
   overflow-y: auto;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 20px);
 }
 
 /* 三级菜单样式 */
@@ -580,18 +571,13 @@ export default {
   font-weight: 500;
 }
 
-/* 面包屑区域 */
-.breadcrumb-section {
-  margin-bottom: 24px;
-}
-
 /* 页面内容 */
 .page-content {
   background-color: #FFFFFF;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  padding: 24px;
-  min-height: calc(100% - 48px);
+  padding: 2px;
+  min-height: calc(100% - 60px);
 }
 
 /* 页面过渡动画 */

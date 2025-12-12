@@ -32,8 +32,8 @@ public class AuthInterceptor implements HandlerInterceptor {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "未登录");
         }
         String token = auth.replace("Bearer ", "").trim();
-        String username = authService.getUsernameByToken(token);
-        if (username == null) {
+        String userNum = authService.getUserNumByToken(token);
+        if (userNum == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "登录已失效");
         }
 
@@ -41,7 +41,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         // 查询服务端用户信息，确保存在且有效
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(User::getUserName, username);
+        wrapper.eq(User::getUserNum, userNum);
         User user = userMapper.selectOne(wrapper);
         if (user == null || user.getUserNum() == null || user.getUserNum().isEmpty() || user.getUserName() == null || user.getUserName().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少用户编号或用户姓名");

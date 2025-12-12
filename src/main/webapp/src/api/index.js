@@ -1,6 +1,6 @@
 import request from '../utils/request';
 
-export const login = (username, password) => request.post('/login', { username, password });
+export const login = (userNum, password) => request.post('/login', { userNum, password });
 
 // 新增：修改密码
 export const changePassword = (data) => request.post('/users/change-password', data);
@@ -23,3 +23,15 @@ export const exportChangeRecords = (params) => request.get('/change-records/expo
 export const getDictItemsByType = (dictTypeCode) => request.get(`/dict/items/type/${dictTypeCode}`);
 export const getDictItemsByTypeAndGroup = (dictTypeCode, groupCode) => request.get(`/dict/items/type/${dictTypeCode}/group/${groupCode}`);
 export const listDictTypes = () => request.get('/dict/types/enabled');
+
+// 审批流程 API
+export const submitApproval = (recordId) => request.post(`/approval/submit/${recordId}`, {}, { headers: { 'X-Button-Name': '提交审批' } });
+export const startApprovalProcess = (businessId, businessType, userNum) => request.post(`/approval/process/start`, { businessId, businessType, userNum }, { headers: { 'X-Button-Name': '启动审批流程' } });
+export const listApprovalTasks = (params) => request.get('/approval/tasks', { params });
+export const approveTask = (taskId, remark, userNum) => request.post(`/approval/task/${taskId}/approve`, { remark, userNum }, { headers: { 'X-Button-Name': '同意审批' } });
+export const rejectTask = (taskId, remark, userNum, rejectToNode) => request.post(`/approval/task/${taskId}/reject`, { remark, userNum, rejectToNode }, { headers: { 'X-Button-Name': '驳回审批' } });
+export const transferTask = (taskId, nextAssigneeNum, remark, userNum) => request.post(`/approval/task/${taskId}/transfer`, { nextAssigneeNum, remark, userNum }, { headers: { 'X-Button-Name': '转办审批' } });
+export const getApprovalHistory = (recordId, params) => request.get(`/approval/history/${recordId}`, { params });
+export const getApprovalTodoTasks = (params) => request.get('/approval/tasks/todo', { params });
+export const getApprovalProcessedTasks = (params) => request.get('/approval/tasks/processed', { params });
+export const getApprovalCompletedTasks = (params) => request.get('/approval/tasks/completed', { params });

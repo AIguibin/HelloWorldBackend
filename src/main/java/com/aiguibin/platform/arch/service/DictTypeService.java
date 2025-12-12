@@ -9,7 +9,7 @@ import java.util.List;
  * 字典类型服务
  */
 public interface DictTypeService {
-    
+
     /**
      * 分页查询字典类型
      * @param page 页码
@@ -19,27 +19,27 @@ public interface DictTypeService {
      * @return 分页结果
      */
     Page<DictType> page(int page, int size, String dictTypeCode, String dictTypeName);
-    
+
     /**
      * 查询所有启用的字典类型
      * @return 字典类型列表
      */
     List<DictType> listEnabled();
-    
+
     /**
      * 根据ID查询字典类型
      * @param id 字典类型ID
      * @return 字典类型
      */
     DictType getById(Long id);
-    
+
     /**
      * 根据编码查询字典类型
      * @param dictTypeCode 字典类型编码
      * @return 字典类型
      */
     DictType getByCode(String dictTypeCode);
-    
+
     /**
      * 创建字典类型
      * @param dictType 字典类型
@@ -47,7 +47,7 @@ public interface DictTypeService {
      * @return 字典类型ID
      */
     Long create(DictType dictType, String operator);
-    
+
     /**
      * 更新字典类型
      * @param id 字典类型ID
@@ -56,7 +56,7 @@ public interface DictTypeService {
      * @return 是否成功
      */
     boolean update(Long id, DictType dictType, String operator);
-    
+
     /**
      * 删除字典类型
      * @param id 字典类型ID

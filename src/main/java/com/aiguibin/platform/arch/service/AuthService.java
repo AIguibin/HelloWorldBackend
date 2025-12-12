@@ -11,15 +11,15 @@ public class AuthService {
     private final Map<String, String> tokenStore = new ConcurrentHashMap<>();
     private final Map<String, String> csrfStore = new ConcurrentHashMap<>();
 
-    public String issueToken(String username) {
+    public String issueToken(String userNum) {
         String token = UUID.randomUUID().toString().replaceAll("-", "");
-        tokenStore.put(token, username);
+        tokenStore.put(token, userNum);
         String csrfToken = UUID.randomUUID().toString().replaceAll("-", "");
         csrfStore.put(token, csrfToken);
         return token;
     }
 
-    public String getUsernameByToken(String token) {
+    public String getUserNumByToken(String token) {
         return tokenStore.get(token);
     }
 

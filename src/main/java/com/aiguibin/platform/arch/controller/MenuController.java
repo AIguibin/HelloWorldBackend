@@ -75,12 +75,12 @@ public class MenuController {
                 return null;
             }
             String token = auth.replace("Bearer ", "").trim();
-            String username = authService.getUsernameByToken(token);
-            if (username == null) {
+            String userNum = authService.getUserNumByToken(token);
+            if (userNum == null) {
                 return null;
             }
             LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(User::getUserName, username);
+            wrapper.eq(User::getUserNum, userNum);
             User user = userMapper.selectOne(wrapper);
             return user != null ? user.getId() : null;
         } catch (Exception e) {

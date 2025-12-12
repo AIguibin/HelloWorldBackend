@@ -2,8 +2,8 @@
 
 JAVA_HOME=/usr/java/jdk1.8.0_212/bin/java
 
-APP_JAR_NAME="aiguibin-online-table"
-APP_JAR_PATH=/home/yw/aiguibin-online-table
+APP_JAR_NAME="aiguibin-platform-arch"
+APP_JAR_PATH=/home/yw/aiguibin-platform-arch
 
 JAVA_OPTS=" -Dfile.encoding=UTF-8 -Xms2G -Xmx2G -Dlog4j2.asyncQueueFullPolicy=Discard -Dlog4j2.discardThreshold=ERROR"
 JAVA_OPTS="${JAVA_OPTS} -Dspring.cloud.nacos.discovery.enabled=true"

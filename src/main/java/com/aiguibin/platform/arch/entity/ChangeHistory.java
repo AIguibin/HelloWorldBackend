@@ -45,4 +45,7 @@ public class ChangeHistory {
     private String approverName; // 审批人姓名
     private LocalDateTime approvalTime; // 审批时间
     private String approvalRemark; // 审批备注
+    private String approvalTaskId; // 关联审批任务ID
+    private String approvalLogId; // 关联审批日志ID
+    private String approvalOperationType; // 审批操作类型
 }
