@@ -232,7 +232,7 @@ export default {
       try {
         const raw = localStorage.getItem('user');
         const u = JSON.parse(raw || '{}');
-        const rawId = (u && (u.usernumb || u.username)) || '';
+        const rawId = (u && (u.userNum || u.userName)) || '';
         const id = String(rawId).toUpperCase();
         const white = ['ADMIN', 'BG001', 'BG002'];
         return white.includes(id);
@@ -502,7 +502,7 @@ export default {
       try {
         const raw = localStorage.getItem('user');
         const u = JSON.parse(raw || '{}');
-        const rawId = (u && (u.usernumb || u.username)) || '';
+        const rawId = (u && (u.usernumb || u.userName)) || '';
         const id = String(rawId).toUpperCase();
         return row.currentStatus === '待审批' && (row.createdBy || '').toUpperCase() === id;
       } catch (e) {

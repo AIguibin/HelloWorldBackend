@@ -6,7 +6,7 @@
         <!-- Logo区域 -->
         <div class="logo-section">
           <i class="el-icon-connection system-icon"></i>
-          <span class="brand-name">架构管理系统</span>
+          <span class="brand-name">架构管理工作</span>
         </div>
         
         <!-- 导航菜单 -->
@@ -82,7 +82,7 @@
           <el-dropdown @command="handleCommand">
             <span class="user-info">
               <i class="el-icon-user"></i>
-              <span>{{ currentUser.username || '用户' }}</span>
+              <span>{{ currentUser.userName || '用户' }}</span>
               <i class="el-icon-arrow-down"></i>
             </span>
             <el-dropdown-menu slot="dropdown">

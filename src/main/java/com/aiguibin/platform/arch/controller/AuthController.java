@@ -31,11 +31,16 @@ public class AuthController {
             return ApiResponse.error("密码错误");
         }
         String token = authService.issueToken(user.getUserNum());
+        // TODO 根据用户信息中的org_code、dept_code去获取`sys_org``sys_dept`中的org_name、dept_name
         Map<String, Object> payload = new HashMap<>();
         payload.put("token", token);
         payload.put("csrfToken", authService.getCsrfToken(token));
-        payload.put("username", user.getUserName());
-        payload.put("usernumb", user.getUserNum());
+        payload.put("userName", user.getUserName());
+        payload.put("userNum", user.getUserNum());
+        payload.put("orgCode", user.getOrgCode());
+        payload.put("orgName", ""); 
+        payload.put("deptCode", user.getDeptCode());
+        payload.put("deptName", ""); 
         payload.put("chineseName", ""); // 兼容前端字段，不再使用
         return ApiResponse.success(payload);
     }

@@ -214,7 +214,7 @@ export default {
     getCurrentUserNum() {
       try {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
-        return user.usernumb || '';
+        return user.userNum || '';
       } catch (e) {
         return '';
       }

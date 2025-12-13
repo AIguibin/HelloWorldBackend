@@ -67,9 +67,10 @@ export default {
         this.loading = true;
         try {
           const data = await login(this.form.userNum, this.form.password);
+          console.log(data);
           localStorage.setItem('token', data.token);
           localStorage.setItem('csrfToken', data.csrfToken);
-          localStorage.setItem('user', JSON.stringify({ username: data.username, usernumb: data.usernumb, chineseName: data.chineseName }));
+          localStorage.setItem('user', JSON.stringify({ userName: data.userName, userNum: data.userNum, chineseName: data.chineseName }));
           this.$router.replace('/');
         } catch (e) {
             console.error(e);

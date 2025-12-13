@@ -14,8 +14,8 @@ service.interceptors.request.use(config => {
   // 附加登录用户信息（将可能包含非 ASCII 的字段进行 URL 编码）
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user && user.usernumb) config.headers['X-User-Numb'] = user.usernumb;
-    if (user && user.username) config.headers['X-User-Name'] = encodeURIComponent(user.username);
+    if (user && user.userNum) config.headers['X-User-Numb'] = user.userNum;
+    if (user && user.userName) config.headers['X-User-Name'] = encodeURIComponent(user.userName);
   } catch (e) {}
   // 页面路径用于操作轨迹（确保为 ASCII，可解码为原始路径）
   try {
