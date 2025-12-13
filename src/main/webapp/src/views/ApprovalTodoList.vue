@@ -103,9 +103,14 @@
     </div>
 
     <!-- 审批处理对话框 -->
-    <el-dialog :visible.sync="showProcessDialog" title="审批处理" width="60%">
-      <approval-process-dialog ref="approvalProcessDialog" :task="selectedTask" @success="onProcessSuccess" />
-    </el-dialog>
+    <approval-process-dialog 
+      ref="approvalProcessDialog" 
+      :visible="showProcessDialog"
+      :task="selectedTask" 
+      :business-data="{}" 
+      @success="onProcessSuccess" 
+      @update:visible="showProcessDialog = $event"
+    />
 
     <!-- 转办对话框 -->
     <el-dialog :visible.sync="showTransferDialog" title="任务转办" width="50%">
@@ -135,7 +140,7 @@
 
 <script>
 // 导入API函数
-import { listApprovalTasks, approveTask, transferTask } from '../api';
+import { getApprovalTodoTasks, approveTask, transferTask } from '../api';
 // 导入审批处理对话框组件（假设已创建）
 import ApprovalProcessDialog from './ApprovalProcessDialog.vue';
 // 导入权限混入
@@ -205,6 +210,15 @@ export default {
     }
   },
   methods: {
+    // 获取当前登录用户编号
+    getCurrentUserNum() {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        return user.usernumb || '';
+      } catch (e) {
+        return '';
+      }
+    },
     // 获取待办任务列表
     async fetchList(page = 1) {
       this.page = page;
@@ -212,10 +226,10 @@ export default {
       this.loadError = false;
       this.errorMessage = '';
       
+      const currentUserNum = this.getCurrentUserNum();
       const params = {
         page: this.page,
         size: this.pageSize,
-        assignee: this.search.assignee || undefined,
         taskStatus: this.search.taskStatus || undefined,
         businessCode: this.search.businessCode || undefined,
         businessTitle: this.search.businessTitle || undefined,
@@ -226,7 +240,8 @@ export default {
         params.endTime = this.formatDate(this.searchRange[1]);
       }
       try {
-        const data = await listApprovalTasks(params);
+        // 使用正确的API函数调用，传递当前用户编号作为assigneeNum
+        const data = await getApprovalTodoTasks(currentUserNum, params);
         this.list = data.records || [];
         this.total = data.total || 0;
       } catch (e) {

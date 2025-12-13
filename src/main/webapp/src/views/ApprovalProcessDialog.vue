@@ -331,16 +331,15 @@ export default {
             let result;
             switch (this.form.action) {
               case 'APPROVE':
-                // 调用同意API
-                result = await approveTask(this.task.id, params);
+                // 调用同意API，传递正确的参数格式
+                result = await approveTask(this.task.id, this.form.comment);
                 break;
               case 'REJECT':
-                // 调用驳回API
-                params.rejectNodeId = this.form.rejectNodeId;
-                result = await rejectTask(this.task.id, params);
+                // 调用驳回API，传递正确的参数格式
+                result = await rejectTask(this.task.id, this.form.comment);
                 break;
               case 'TRANSFER':
-                // 调用转办API
+                // 调用转办API，传递正确的参数格式
                 result = await transferTask(this.task.id, this.form.transferUserId, this.form.comment);
                 break;
               default:

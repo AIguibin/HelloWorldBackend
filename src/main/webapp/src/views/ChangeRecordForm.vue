@@ -1,96 +1,116 @@
 <template>
-  <el-form ref="form" :model="form" label-width="120px" :rules="rules">
-    <el-row :gutter="12">
-      <el-col :span="12">
-        <el-form-item label="版本号">
-          <el-input v-model="form.version"  :disabled="true"/>
-        </el-form-item>
-      </el-col>
-      <el-col :span="12">
-        <el-form-item label="发版日期" prop="releaseDate">
-          <el-date-picker v-model="form.releaseDate" type="date" placeholder="选择日期" style="width:100%" value-format="yyyy-MM-dd" :disabled="!isFieldEditable('releaseDate')" />
-        </el-form-item>
-      </el-col>
-    </el-row>
-    <el-row :gutter="12">
-      <el-col :span="12">
-        <el-form-item label="分支名称" prop="branchName">
-          <el-input v-model="form.branchName"  :disabled="!isFieldEditable('branchName')" />
-        </el-form-item>
-      </el-col>
-      <el-col :span="12">
-        <el-form-item label="当前状态" prop="currentStatus">
-          <el-select v-model="form.currentStatus" placeholder="选择状态" style="width:100%" :disabled="!isFieldEditable('currentStatus')">
-            <el-option v-for="item in currentStatusOptions" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue" />
-          </el-select>
-        </el-form-item>
-      </el-col>
-    </el-row>
-    <el-row :gutter="12">
-      <el-col :span="12">
-        <el-form-item label="缺陷编号" prop="defectNumber">
-          <el-input v-model="form.defectNumber"  :disabled="!isFieldEditable('defectNumber')" />
-        </el-form-item>
-      </el-col>
-      <el-col :span="12">
-        <el-form-item label="服务名称" prop="serviceName">
-          <el-input v-model="form.serviceName"  :disabled="!isFieldEditable('serviceName')" />
-        </el-form-item>
-      </el-col>
-    </el-row>
-    <el-row :gutter="12">
-      <el-col :span="12">
-        <el-form-item label="组别" prop="groupName">
-          <el-input v-model="form.groupName"  :disabled="!isFieldEditable('groupName')" />
-        </el-form-item>
-      </el-col>
-      <el-col :span="12">
-        <el-form-item label="开发负责人" prop="developer">
-          <el-input v-model="form.developer"  :disabled="!isFieldEditable('developer')" />
-        </el-form-item>
-      </el-col>
-    </el-row>
-    <el-row :gutter="12">
-      <el-col :span="12">
-        <el-form-item label="开发类别" prop="developType">
-          <el-select v-model="form.developType" placeholder="选择开发类别" style="width:100%" :disabled="!isFieldEditable('developType')">
-            <el-option v-for="item in developTypeOptions" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue" />
-          </el-select>
-        </el-form-item>
-      </el-col>
-    </el-row>
-    <el-form-item label="问题描述" prop="problemDescription">
-      <el-input v-model="form.problemDescription" type="textarea" rows="3"  :disabled="!isFieldEditable('problemDescription')" />
-    </el-form-item>
-    <el-form-item label="变更描述" prop="changeDesc">
-      <el-input v-model="form.changeDesc" type="textarea" rows="3"  :disabled="!isFieldEditable('changeDesc')" />
-    </el-form-item>
-    <el-form-item label="问题影响分析" prop="impactAnalysis">
-      <el-input v-model="form.impactAnalysis" type="textarea" rows="3"  :disabled="!isFieldEditable('impactAnalysis')" />
-    </el-form-item>
-    <el-form-item label="解决方案" prop="solution">
-      <el-input v-model="form.solution" type="textarea" rows="3"  :disabled="!isFieldEditable('solution')" />
-    </el-form-item>
-    <el-form-item label="代码清单" prop="codeList">
-      <el-input v-model="form.codeList" type="textarea" rows="3"  :disabled="!isFieldEditable('codeList')" />
-    </el-form-item>
-    <el-row :gutter="12">
-      <el-col :span="12">
-        <el-form-item label="是否涉及外围系统" prop="involveExternalSystem">
-          <el-switch v-model="form.involveExternalSystem" :active-value="1" :inactive-value="0"  :disabled="!isFieldEditable('involveExternalSystem')" />
-        </el-form-item>
-      </el-col>
-      <el-col :span="12">
-        <el-form-item label="是否跨服务">
-          <el-switch v-model="form.crossService" :active-value="1" :inactive-value="0"  :disabled="!isFieldEditable('crossService')" />
-        </el-form-item>
-      </el-col>
-    </el-row>
-    <el-form-item label="备注说明">
-      <el-input v-model="form.remark" type="textarea" rows="3"  :disabled="!isFieldEditable('remark')" />
-    </el-form-item>
-
-  </el-form>
+  <el-card>
+    <div slot="header" class="clearfix">
+      <span>变更记录表单</span>
+    </div>
+    <el-form ref="form" :model="form" :rules="rules" label-width="0">
+      <el-descriptions :column="3" border>
+        <!-- 第一行 -->
+        <el-descriptions-item label="版本号">
+          <el-form-item>
+            <el-input v-model="form.version" :disabled="true" />
+          </el-form-item>
+        </el-descriptions-item>
+        <el-descriptions-item label="发版日期">
+          <el-form-item prop="releaseDate">
+            <el-date-picker v-model="form.releaseDate" type="date" placeholder="选择日期" style="width: 100%" value-format="yyyy-MM-dd" :disabled="!isFieldEditable('releaseDate')" />
+          </el-form-item>
+        </el-descriptions-item>
+        <el-descriptions-item label="分支名称">
+          <el-form-item prop="branchName">
+            <el-input v-model="form.branchName" :disabled="!isFieldEditable('branchName')" />
+          </el-form-item>
+        </el-descriptions-item>
+        
+        <!-- 第二行 -->
+        <el-descriptions-item label="当前状态">
+          <el-form-item prop="currentStatus">
+            <el-select v-model="form.currentStatus" placeholder="选择状态" style="width: 100%" :disabled="!isFieldEditable('currentStatus')">
+              <el-option v-for="item in currentStatusOptions" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue" />
+            </el-select>
+          </el-form-item>
+        </el-descriptions-item>
+        <el-descriptions-item label="缺陷编号">
+          <el-form-item prop="defectNumber">
+            <el-input v-model="form.defectNumber" :disabled="!isFieldEditable('defectNumber')" />
+          </el-form-item>
+        </el-descriptions-item>
+        <el-descriptions-item label="服务名称">
+          <el-form-item prop="serviceName">
+            <el-input v-model="form.serviceName" :disabled="!isFieldEditable('serviceName')" />
+          </el-form-item>
+        </el-descriptions-item>
+        
+        <!-- 第三行 -->
+        <el-descriptions-item label="组别">
+          <el-form-item prop="groupName">
+            <el-input v-model="form.groupName" :disabled="!isFieldEditable('groupName')" />
+          </el-form-item>
+        </el-descriptions-item>
+        <el-descriptions-item label="开发负责人">
+          <el-form-item prop="developer">
+            <el-input v-model="form.developer" :disabled="!isFieldEditable('developer')" />
+          </el-form-item>
+        </el-descriptions-item>
+        <el-descriptions-item label="开发类别">
+          <el-form-item prop="developType">
+            <el-select v-model="form.developType" placeholder="选择开发类别" style="width: 100%" :disabled="!isFieldEditable('developType')">
+              <el-option v-for="item in developTypeOptions" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue" />
+            </el-select>
+          </el-form-item>
+        </el-descriptions-item>
+        
+        <!-- 第四行 -->
+        <el-descriptions-item label="是否涉及外围系统">
+          <el-form-item prop="involveExternalSystem">
+            <el-switch v-model="form.involveExternalSystem" :active-value="1" :inactive-value="0" :disabled="!isFieldEditable('involveExternalSystem')" />
+          </el-form-item>
+        </el-descriptions-item>
+        <el-descriptions-item label="是否跨服务">
+          <el-form-item>
+            <el-switch v-model="form.crossService" :active-value="1" :inactive-value="0" :disabled="!isFieldEditable('crossService')" />
+          </el-form-item>
+        </el-descriptions-item>
+        <el-descriptions-item label="">
+          <!-- 占位，保持3列布局 -->
+        </el-descriptions-item>
+      </el-descriptions>
+      
+      <!-- 文本域部分，1列布局 -->
+      <el-descriptions :column="1" border>
+        <el-descriptions-item label="问题描述">
+          <el-form-item prop="problemDescription">
+            <el-input v-model="form.problemDescription" type="textarea" rows="3" :disabled="!isFieldEditable('problemDescription')" />
+          </el-form-item>
+        </el-descriptions-item>
+        <el-descriptions-item label="变更描述">
+          <el-form-item prop="changeDesc">
+            <el-input v-model="form.changeDesc" type="textarea" rows="3" :disabled="!isFieldEditable('changeDesc')" />
+          </el-form-item>
+        </el-descriptions-item>
+        <el-descriptions-item label="问题影响分析">
+          <el-form-item prop="impactAnalysis">
+            <el-input v-model="form.impactAnalysis" type="textarea" rows="3" :disabled="!isFieldEditable('impactAnalysis')" />
+          </el-form-item>
+        </el-descriptions-item>
+        <el-descriptions-item label="解决方案">
+          <el-form-item prop="solution">
+            <el-input v-model="form.solution" type="textarea" rows="3" :disabled="!isFieldEditable('solution')" />
+          </el-form-item>
+        </el-descriptions-item>
+        <el-descriptions-item label="代码清单">
+          <el-form-item prop="codeList">
+            <el-input v-model="form.codeList" type="textarea" rows="3" :disabled="!isFieldEditable('codeList')" />
+          </el-form-item>
+        </el-descriptions-item>
+        <el-descriptions-item label="备注说明">
+          <el-form-item>
+            <el-input v-model="form.remark" type="textarea" rows="3" :disabled="!isFieldEditable('remark')" />
+          </el-form-item>
+        </el-descriptions-item>
+      </el-descriptions>
+    </el-form>
+  </el-card>
 </template>
 
 <script>
@@ -242,9 +262,9 @@ export default {
       const id = String(rawId).toUpperCase();
       
       // 管理员角色判断
-      const adminUsers = ['ADMIN', 'BG001', 'BG002'];
+      const adminUsers = ['R0001', 'BG001', 'BG002'];
       if (adminUsers.includes(id)) {
-        return 'ADMIN';
+        return 'R0001';
       }
       
       // 审批者角色判断
@@ -280,7 +300,7 @@ export default {
     // 扩展现有canEdit逻辑，保持兼容性
     enhancedCanEdit() {
       // 管理员始终可编辑
-      if (this.userRole === 'ADMIN') {
+      if (this.userRole === 'R0001') {
         return true;
       }
       
@@ -314,7 +334,7 @@ export default {
       const { userRole, approvalInfo } = this;
       
       // 管理员拥有所有权限
-      if (userRole === 'ADMIN') {
+      if (userRole === 'R0001') {
         return true;
       }
       
@@ -340,7 +360,7 @@ export default {
       const { userRole, isApprovalInProgress, isDraftStatus } = this;
       
       // 管理员可编辑所有字段
-      if (userRole === 'ADMIN') {
+      if (userRole === 'R0001') {
         return [...this.allFields, ...this.approvalFields];
       }
       
