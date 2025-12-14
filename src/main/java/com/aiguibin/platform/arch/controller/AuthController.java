@@ -1,6 +1,7 @@
 package com.aiguibin.platform.arch.controller;
 
 import com.aiguibin.platform.arch.dto.LoginRequest;
+import com.aiguibin.platform.arch.dto.UserOrgDeptVO;
 import com.aiguibin.platform.arch.entity.User;
 import com.aiguibin.platform.arch.model.ApiResponse;
 import com.aiguibin.platform.arch.service.AuthService;
@@ -34,7 +35,8 @@ public class AuthController {
             return ApiResponse.error("密码错误");
         }
         String token = authService.issueToken(user.getUserNum());
-        // TODO 根据用户信息中的org_code、dept_code去获取`sys_org``sys_dept`中的org_name、dept_name
+        // 获取用户机构部门信息
+        List<UserOrgDeptVO> orgDeptList = authService.getUserOrgDeptInfo(user.getUserNum());
         // TODO 根据用户信息获取角色权限信息
         List<Map<String, Object>> roleList=new ArrayList<>();
         Map<String, Object> payload = new HashMap<>();
@@ -43,10 +45,27 @@ public class AuthController {
         payload.put("userName", user.getUserName());
         payload.put("userNum", user.getUserNum());
         payload.put("orgCode", user.getOrgCode());
-        payload.put("orgName", ""); 
         payload.put("deptCode", user.getDeptCode());
-        payload.put("deptName", ""); 
         payload.put("roles", roleList);
+        payload.put("orgDeptList", orgDeptList);
+        
+        // 设置主机构和主部门名称
+        if (!orgDeptList.isEmpty()) {
+            // 查找主机构（这里假设第一个机构为主机构，实际业务中可能需要根据isPrimary字段判断）
+            UserOrgDeptVO mainOrg = orgDeptList.get(0);
+            payload.put("orgName", mainOrg.getOrgName());
+            
+            // 设置主部门名称
+            if (!mainOrg.getDeptList().isEmpty()) {
+                payload.put("deptName", mainOrg.getDeptList().get(0).getDeptName());
+            } else {
+                payload.put("deptName", "");
+            }
+        } else {
+            payload.put("orgName", "");
+            payload.put("deptName", "");
+        }
+        
         return ApiResponse.success(payload);
     }
 
