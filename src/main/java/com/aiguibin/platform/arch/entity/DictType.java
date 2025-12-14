@@ -9,11 +9,15 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 字典类型表
+ * 字典类型表实体类
+ * 对应sys_dict_type表，用于存储字典类型信息
  */
 @Data
 @TableName("sys_dict_type")
 public class DictType {
+    /**
+     * 自增ID，仅做序号
+     */
     @TableId(type = IdType.AUTO)
     private Long id;
     
@@ -33,17 +37,17 @@ public class DictType {
     private String description;
     
     /**
-     * 排序
+     * 排序号
      */
     private Integer sortOrder;
     
     /**
-     * 状态：1-启用 0-禁用
+     * 状态：0-禁用，1-启用
      */
     private Integer status;
     
     /**
-     * 创建人
+     * 创建人用户编号
      */
     @TableField("created_by")
     private String createUser;
@@ -55,7 +59,7 @@ public class DictType {
     private LocalDateTime createTime;
     
     /**
-     * 更新人
+     * 更新人用户编号
      */
     @TableField("updated_by")
     private String updateUser;
@@ -67,7 +71,7 @@ public class DictType {
     private LocalDateTime updateTime;
     
     /**
-     * 是否删除 0-未删除 1-已删除
+     * 是否删除：0-否，1-是
      */
     private Integer isDeleted;
 }

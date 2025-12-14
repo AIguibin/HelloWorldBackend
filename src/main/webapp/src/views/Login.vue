@@ -67,7 +67,7 @@ export default {
         this.loading = true;
         try {
           const data = await login(this.form.userNum, this.form.password);
-          console.log(data);
+          console.log('登录成功:', data);
           localStorage.setItem('token', data.token);
           localStorage.setItem('csrfToken', data.csrfToken);
           localStorage.setItem('user', JSON.stringify({ userName: data.userName, userNum: data.userNum, chineseName: data.chineseName }));

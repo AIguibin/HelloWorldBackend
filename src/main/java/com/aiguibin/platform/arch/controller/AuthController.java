@@ -9,7 +9,10 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -32,6 +35,8 @@ public class AuthController {
         }
         String token = authService.issueToken(user.getUserNum());
         // TODO 根据用户信息中的org_code、dept_code去获取`sys_org``sys_dept`中的org_name、dept_name
+        // TODO 根据用户信息获取角色权限信息
+        List<Map<String, Object>> roleList=new ArrayList<>();
         Map<String, Object> payload = new HashMap<>();
         payload.put("token", token);
         payload.put("csrfToken", authService.getCsrfToken(token));
@@ -41,7 +46,7 @@ public class AuthController {
         payload.put("orgName", ""); 
         payload.put("deptCode", user.getDeptCode());
         payload.put("deptName", ""); 
-        payload.put("chineseName", ""); // 兼容前端字段，不再使用
+        payload.put("roles", roleList);
         return ApiResponse.success(payload);
     }
 

@@ -9,29 +9,90 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
+/**
+ * 业务类型表实体类
+ * 对应biz_business_type表，用于存储业务类型信息
+ */
 @Data
 @TableName("biz_business_type")
 public class BusinessType {
+    /**
+     * 自增ID，仅做序号
+     */
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    private String typeCode; // 业务类型编码，如CHANGE_RECORD
-    private String typeName; // 业务类型名称，如变更记录
-    private String mainTableName; // 主表名，如biz_change_record
-    private String idFieldName; // 主键字段名
-    private String codeFieldName; // 编码字段名，如record_code
-    private String statusFieldName; // 状态字段名，用于待办显示
-    private String titleFieldName; // 标题字段名，用于待办显示
-    private Integer isActive; // 是否激活：0-否，1-是
-    private String description; // 业务类型描述
+    /**
+     * 业务类型编码，如CHANGE_RECORD
+     */
+    private String typeCode;
+    
+    /**
+     * 业务类型名称，如变更记录
+     */
+    private String typeName;
+    
+    /**
+     * 主表名，如biz_change_record
+     */
+    private String mainTableName;
+    
+    /**
+     * 主键字段名
+     */
+    private String idFieldName;
+    
+    /**
+     * 编码字段名，如record_code
+     */
+    private String codeFieldName;
+    
+    /**
+     * 状态字段名，用于待办显示
+     */
+    private String statusFieldName;
+    
+    /**
+     * 标题字段名，用于待办显示
+     */
+    private String titleFieldName;
+    
+    /**
+     * 是否激活：0-否，1-是
+     */
+    private Integer isActive;
+    
+    /**
+     * 业务类型描述
+     */
+    private String description;
 
+    /**
+     * 创建人用户编号
+     */
     @TableField(fill = FieldFill.INSERT)
-    private String createdBy; // 创建人用户编号
+    private String createdBy;
+    
+    /**
+     * 创建时间
+     */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdTime;
+    
+    /**
+     * 更新人用户编号
+     */
     @TableField(fill = FieldFill.INSERT_UPDATE)
-    private String updatedBy; // 更新人用户编号
+    private String updatedBy;
+    
+    /**
+     * 更新时间
+     */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedTime;
-    private Integer isDeleted; // 是否删除：0-否，1-是
+    
+    /**
+     * 是否删除：0-否，1-是
+     */
+    private Integer isDeleted;
 }
