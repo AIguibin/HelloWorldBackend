@@ -1,6 +1,6 @@
 package com.aiguibin.platform.arch.controller;
 
-import com.aiguibin.platform.arch.dto.LoginRequest;
+import com.aiguibin.platform.arch.dto.LoginRO;
 import com.aiguibin.platform.arch.dto.UserOrgDeptVO;
 import com.aiguibin.platform.arch.entity.User;
 import com.aiguibin.platform.arch.model.ApiResponse;
@@ -26,7 +26,7 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/login")
-    public ApiResponse<?> login(@RequestBody @Validated LoginRequest req) {
+    public ApiResponse<?> login(@RequestBody @Validated LoginRO req) {
         User user = userService.getUserByUserNum(req.getUserNum());
         if (user == null) {
             return ApiResponse.error("账号不存在");

@@ -2,9 +2,9 @@ package com.aiguibin.platform.arch.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.aiguibin.platform.arch.dto.ChangePasswordRequest;
-import com.aiguibin.platform.arch.dto.UserCreateRequest;
-import com.aiguibin.platform.arch.dto.UserUpdateRequest;
+import com.aiguibin.platform.arch.dto.ChangePasswordRO;
+import com.aiguibin.platform.arch.dto.UserCreateRO;
+import com.aiguibin.platform.arch.dto.UserUpdateRO;
 import com.aiguibin.platform.arch.entity.User;
 import com.aiguibin.platform.arch.mapper.UserMapper;
 import com.aiguibin.platform.arch.model.ApiResponse;
@@ -48,7 +48,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ApiResponse<Long> create(@RequestBody @Validated UserCreateRequest req) {
+    public ApiResponse<Long> create(@RequestBody @Validated UserCreateRO req) {
         // 唯一约束前置校验
         User exists = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUserNum, req.getUsernumb()));
         if (exists != null) {
@@ -69,7 +69,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<Boolean> update(@PathVariable Long id, @RequestBody @Validated UserUpdateRequest req) {
+    public ApiResponse<Boolean> update(@PathVariable Long id, @RequestBody @Validated UserUpdateRO req) {
         if (!id.equals(req.getId())) {
             return ApiResponse.error("路径ID与请求体ID不一致");
         }
@@ -98,7 +98,7 @@ public class UserController {
     }
 
     @PostMapping("/change-password")
-    public ApiResponse<?> changePassword(@RequestBody @Validated ChangePasswordRequest req, HttpServletRequest request) {
+    public ApiResponse<?> changePassword(@RequestBody @Validated ChangePasswordRO req, HttpServletRequest request) {
         String operator = (String) request.getAttribute("operator");
         // 从operator中解析出用户名，格式为 "userNum|userName"
         String[] operatorParts = operator.split("\\|");
