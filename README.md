@@ -43,7 +43,7 @@ aiguibin-platform-arch/
 ```
 
 ## 构建与运行
-- 构建：` mvn -gs "D:\Maven\settings-aiguibin.xml" -Dmaven.repo.local="E:\Repository\Local" -T 1C clean package -DskipTests -U -Dmaven.compile.fork=true -Dmaven.test.skip=true`
+- 构建：` mvn -gs "D:\Maven\settings-aiguibin.xml" -Dmaven.repo.local="E:\Repository\Local" -T 1C clean package -DskipTests -U -Dmaven.compile.fork=true`
 - 运行：`java -jar target/aiguibin-platform-arch.jar`
 - 调试：`sh local_debug_restart.sh full-restart`
 - 访问：`http://localhost:8080`

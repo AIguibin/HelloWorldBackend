@@ -15,7 +15,7 @@ public interface SysUserDeptMapper extends BaseMapper<SysUserDept> {
      * @param userNum 用户编号
      * @return 部门信息列表
      */
-    @Select("SELECT sud.org_code as orgCode, sud.dept_code as deptCode, sd.dept_name as deptName " +
+    @Select("SELECT sd.org_code as orgCode, sud.dept_code as deptCode, sd.dept_name as deptName " +
             "FROM sys_user_dept sud " +
             "LEFT JOIN sys_dept sd ON sud.dept_code = sd.dept_code AND sd.status = 1 AND sd.is_deleted = 0 " +
             "WHERE sud.user_num = #{userNum} AND sud.status = 1 AND sud.is_deleted = 0")

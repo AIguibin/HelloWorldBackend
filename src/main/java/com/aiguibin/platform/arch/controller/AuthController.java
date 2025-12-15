@@ -1,23 +1,27 @@
 package com.aiguibin.platform.arch.controller;
 
 import com.aiguibin.platform.arch.dto.LoginRO;
+import com.aiguibin.platform.arch.dto.OrgDeptInfoVO;
 import com.aiguibin.platform.arch.dto.UserOrgDeptVO;
 import com.aiguibin.platform.arch.entity.User;
 import com.aiguibin.platform.arch.model.ApiResponse;
 import com.aiguibin.platform.arch.service.AuthService;
 import com.aiguibin.platform.arch.service.UserService;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
+@Slf4j
 public class AuthController {
 
     @Resource
@@ -37,8 +41,8 @@ public class AuthController {
         String token = authService.issueToken(user.getUserNum());
         // 获取用户机构部门信息
         List<UserOrgDeptVO> orgDeptList = authService.getUserOrgDeptInfo(user.getUserNum());
-        // TODO 根据用户信息获取角色权限信息
-        List<Map<String, Object>> roleList=new ArrayList<>();
+        // 根据用户信息获取角色权限信息
+        List<Map<String, Object>> roleList = userService.getUserDetailedRoles(user.getUserNum());
         Map<String, Object> payload = new HashMap<>();
         payload.put("token", token);
         payload.put("csrfToken", authService.getCsrfToken(token));
@@ -50,22 +54,36 @@ public class AuthController {
         payload.put("orgDeptList", orgDeptList);
         
         // 设置主机构和主部门名称
-        if (!orgDeptList.isEmpty()) {
-            // 查找主机构（这里假设第一个机构为主机构，实际业务中可能需要根据isPrimary字段判断）
-            UserOrgDeptVO mainOrg = orgDeptList.get(0);
-            payload.put("orgName", mainOrg.getOrgName());
-            
-            // 设置主部门名称
-            if (!mainOrg.getDeptList().isEmpty()) {
-                payload.put("deptName", mainOrg.getDeptList().get(0).getDeptName());
-            } else {
-                payload.put("deptName", "");
+        String orgName = "";
+        String deptName = "";
+        
+        // 获取用户的主机构和主部门编码
+        String userOrgCode = user.getOrgCode();
+        String userDeptCode = user.getDeptCode();
+        
+        // 遍历机构部门列表，查找匹配的主机构和主部门
+        if (!orgDeptList.isEmpty() && userOrgCode != null) {
+            for (UserOrgDeptVO orgDept : orgDeptList) {
+                if (userOrgCode.equals(orgDept.getOrgCode())) {
+                    // 找到匹配的主机构
+                    orgName = orgDept.getOrgName();
+                    
+                    // 在该机构下查找匹配的主部门
+                    if (userDeptCode != null && !orgDept.getDeptList().isEmpty()) {
+                        for (OrgDeptInfoVO dept : orgDept.getDeptList()) {
+                            if (userDeptCode.equals(dept.getDeptCode())) {
+                                deptName = dept.getDeptName();
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                }
             }
-        } else {
-            payload.put("orgName", "");
-            payload.put("deptName", "");
         }
         
+        payload.put("orgName", orgName);
+        payload.put("deptName", deptName);
         return ApiResponse.success(payload);
     }
 

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.aiguibin.platform.arch.entity.SysOrg;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 import java.util.Map;
@@ -24,5 +25,5 @@ public interface SysOrgMapper extends BaseMapper<SysOrg> {
             "</foreach>" +
             "AND status = 1 AND is_deleted = 0" +
             "</script>")
-    List<Map<String, Object>> selectOrgInfosByIds(List<String> orgCodes);
+    List<Map<String, Object>> selectOrgInfosByIds(@Param("orgCodes") List<String> orgCodes);
 }

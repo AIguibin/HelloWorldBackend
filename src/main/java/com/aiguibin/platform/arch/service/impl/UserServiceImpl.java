@@ -1,6 +1,7 @@
 package com.aiguibin.platform.arch.service.impl;
 
 import com.aiguibin.platform.arch.entity.User;
+import com.aiguibin.platform.arch.mapper.SysUserRoleMapper;
 import com.aiguibin.platform.arch.mapper.UserMapper;
 import com.aiguibin.platform.arch.service.UserService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 用户服务实现类.
@@ -24,6 +26,12 @@ public final class UserServiceImpl implements UserService {
      */
     @Resource
     private UserMapper userMapper;
+    
+    /**
+     * 用户角色关联Mapper.
+     */
+    @Resource
+    private SysUserRoleMapper sysUserRoleMapper;
     
     /**
      * BCrypt密码编码器.
@@ -63,8 +71,17 @@ public final class UserServiceImpl implements UserService {
 
     @Override
     public List<String> getUserRoles(final String userNum) {
-        // 简化实现，实际应从角色关联表查询
-        return new ArrayList<>();
+        List<Map<String, Object>> userRoles = sysUserRoleMapper.selectUserRolesByUserNum(userNum);
+        List<String> roleList = new ArrayList<>();
+        for (Map<String, Object> role : userRoles) {
+            roleList.add((String) role.get("roleCode"));
+        }
+        return roleList;
+    }
+    
+    @Override
+    public List<Map<String, Object>> getUserDetailedRoles(final String userNum) {
+        return sysUserRoleMapper.selectUserRolesByUserNum(userNum);
     }
 
     @Override

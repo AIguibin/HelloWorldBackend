@@ -4,6 +4,7 @@ import com.aiguibin.platform.arch.entity.User;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 用户服务接口.
@@ -46,6 +47,13 @@ public interface UserService {
      * @return 角色列表.
      */
     List<String> getUserRoles(String userNum);
+    
+    /**
+     * 获取用户详细角色信息列表.
+     * @param userNum 用户编号.
+     * @return 用户详细角色信息列表.
+     */
+    List<Map<String, Object>> getUserDetailedRoles(String userNum);
 
     /**
      * 验证用户密码.
