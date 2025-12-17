@@ -40,7 +40,18 @@ public class Role {
     /**
      * 数据权限范围：1-全部，2-本机构，3-本部门，4-本人，5-自定义
      */
+    @TableField("data_scope_type")
     private Integer dataScopeType;
+    
+    /**
+     * 排序号
+     */
+    private Integer sortOrder;
+    
+    /**
+     * 状态：0-禁用，1-启用
+     */
+    private Integer status;
     
     /**
      * 描述
@@ -48,20 +59,32 @@ public class Role {
     private String description;
     
     /**
-     * 状态：0-禁用，1-启用
+     * 创建人用户编号
      */
-    private Integer status;
-
+    @TableField(fill = FieldFill.INSERT)
+    private String createdBy;
+    
     /**
      * 创建时间
      */
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
+    @TableField(value = "created_time", fill = FieldFill.INSERT)
+    private LocalDateTime createdTime;
+    
+    /**
+     * 更新人用户编号
+     */
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private String updatedBy;
     
     /**
      * 更新时间
      */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
+    @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updatedTime;
+    
+    /**
+     * 是否删除：0-否，1-是
+     */
+    private Integer isDeleted;
 }
 

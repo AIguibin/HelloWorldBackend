@@ -33,14 +33,14 @@ public class SysOrg {
     private String orgName;
     
     /**
-     * 机构类型：1-集团，2-公司，3-部门
-     */
-    private String orgType;
-    
-    /**
      * 父机构编码
      */
     private String parentOrgCode;
+    
+    /**
+     * 机构层级：1-5级
+     */
+    private Integer level;
     
     /**
      * 排序号

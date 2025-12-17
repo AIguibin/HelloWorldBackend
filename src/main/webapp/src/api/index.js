@@ -1,6 +1,7 @@
 import request from '../utils/request';
 
 export const login = (userNum, password) => request.post('/login', { userNum, password });
+export const checkLogin = (data) => request.post('/auth/check', data);
 
 // 新增：修改密码
 export const changePassword = (data) => request.post('/users/change-password', data);

@@ -7,3 +7,5 @@
 确保代码符合项目代码风格和质量标准，通过代码审查后再合并到主干分支，确保代码质量和可维护性
 所有过程中生成的文档都放在.trae/documents目录下
 所有的思考一定要考虑前后端交互，包括前端页面的设计和实现，后端接口的定义和实现，数据库的设计和实现等，确保前后端交互的一致性和正确性，尤其要考虑数据库表字段和前端页面的交互，确保数据的正确展示和操作
+前端文件修改完成后直接在JavaScript Debug Terminal中运行npm run build，即可在dist目录下生成最新的前端文件
+后端文件修改完成后，直接在Debug: SpringbootStarterApplication中运行，如果已经启动，直接点击Debug: Restart SpringbootStarterApplication即可重启应用
