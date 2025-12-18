@@ -1,8 +1,6 @@
 package com.aiguibin.platform.arch.controller;
 
 import com.aiguibin.platform.arch.dto.LoginRO;
-import com.aiguibin.platform.arch.dto.OrgDeptInfoVO;
-import com.aiguibin.platform.arch.dto.UserOrgDeptVO;
 import com.aiguibin.platform.arch.entity.User;
 import com.aiguibin.platform.arch.model.ApiResponse;
 import com.aiguibin.platform.arch.service.AuthService;
@@ -15,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +28,11 @@ public class AuthController {
     @Resource
     private AuthService authService;
 
+    @GetMapping("/health")
+    public ApiResponse<String> health() {
+        return ApiResponse.success("OK");
+    }
+
     @PostMapping("/login")
     public ApiResponse<?> login(@RequestBody @Validated LoginRO req) {
         User user = userService.getUserByUserNum(req.getUserNum());
@@ -41,61 +45,36 @@ public class AuthController {
         // 生成临时token，用于后续机构选择
         String tempToken = authService.issueToken(user.getUserNum());
         // 获取用户机构部门信息
-        List<UserOrgDeptVO> orgDeptList = authService.getUserOrgDeptInfo(user.getUserNum());
-        // 根据用户信息获取角色权限信息
-        List<Map<String, Object>> roleList = userService.getUserDetailedRoles(user.getUserNum());
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("tempToken", tempToken);
-        payload.put("csrfToken", authService.getCsrfToken(tempToken));
-        payload.put("userName", user.getUserName());
-        payload.put("userNum", user.getUserNum());
-        payload.put("orgCode", user.getOrgCode());
-        payload.put("deptCode", user.getDeptCode());
-        payload.put("roles", roleList);
-        payload.put("orgDeptList", orgDeptList);
-        
-        // 设置主机构和主部门名称
-        String orgName = "";
-        String deptName = "";
-        
-        // 获取用户的主机构和主部门编码
-        String userOrgCode = user.getOrgCode();
-        String userDeptCode = user.getDeptCode();
-        
-        // 遍历机构部门列表，查找匹配的主机构和主部门
-        if (!orgDeptList.isEmpty() && userOrgCode != null) {
-            for (UserOrgDeptVO orgDept : orgDeptList) {
-                if (userOrgCode.equals(orgDept.getOrgCode())) {
-                    // 找到匹配的主机构
-                    orgName = orgDept.getOrgName();
-                    
-                    // 在该机构下查找匹配的主部门
-                    if (userDeptCode != null && !orgDept.getDeptList().isEmpty()) {
-                        for (OrgDeptInfoVO dept : orgDept.getDeptList()) {
-                            if (userDeptCode.equals(dept.getDeptCode())) {
-                                deptName = dept.getDeptName();
-                                break;
-                            }
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-        
-        payload.put("orgName", orgName);
-        payload.put("deptName", deptName);
-        return ApiResponse.success(payload);
+        List<Map<String, Object>> availableOrgs = authService.getUserOrgDeptInfo(user);
+
+        // 构建响应数据
+        Map<String, Object> responseData = new HashMap<>();
+
+        // 1. 构建用户信息
+        Map<String, Object> userInfo = new HashMap<>();
+        userInfo.put("userNum", user.getUserNum());
+        userInfo.put("userName", user.getUserName());
+        userInfo.put("avatar", user.getAvatar());
+        userInfo.put("email", user.getEmail());
+        userInfo.put("phone", user.getPhone());
+        responseData.put("userInfo", userInfo);
+
+        // 2.构建部门新信
+        responseData.put("availableOrgs", availableOrgs);
+
+        // 3. 构建token信息
+        Map<String, Object> tokenInfo = new HashMap<>();
+        tokenInfo.put("tempToken", tempToken);
+        tokenInfo.put("expiresIn", 300); // 5分钟过期
+        responseData.put("token", tokenInfo);
+
+        return ApiResponse.success("登录成功，请选择机构", responseData);
     }
 
-    @GetMapping("/health")
-    public ApiResponse<String> health() {
-        return ApiResponse.success("OK");
-    }
-    
     /**
      * 机构选择后的登录验证接口
-     * @param tempToken 临时token
+     * 
+     * @param tempToken       临时token
      * @param selectedOrgCode 选择的机构编码
      * @return 完整的登录信息，包括用户、机构、权限等
      */
@@ -103,39 +82,53 @@ public class AuthController {
     public ApiResponse<?> checkLogin(@RequestBody Map<String, String> requestBody) {
         String tempToken = requestBody.get("tempToken");
         String selectedOrgCode = requestBody.get("selectedOrgCode");
-        
+
         // 验证临时token
         if (tempToken == null || tempToken.isEmpty()) {
             return ApiResponse.error("临时token不能为空");
         }
-        
+
         // 验证机构编码
         if (selectedOrgCode == null || selectedOrgCode.isEmpty()) {
             return ApiResponse.error("机构编码不能为空");
         }
-        
+
         // 从临时token中获取用户信息
         String userNum = authService.getUserNumFromToken(tempToken);
         if (userNum == null) {
             return ApiResponse.error("临时token无效");
         }
-        
+
         // 获取用户信息
         User user = userService.getUserByUserNum(userNum);
         if (user == null) {
             return ApiResponse.error("用户不存在");
         }
-        
+
         // 获取用户在该机构下的权限信息
         Map<String, Object> result = authService.checkOrgAccess(userNum, selectedOrgCode);
-        
+
         // 生成正式token
         String accessToken = authService.issueToken(userNum, selectedOrgCode);
-        result.put("accessToken", accessToken);
-        result.put("tokenType", "Bearer");
-        result.put("expiresIn", 7200); // 2小时过期
-        result.put("refreshToken", authService.generateRefreshToken(userNum, selectedOrgCode));
         
+        // 构建会话信息
+        Map<String, Object> session = new HashMap<>();
+        session.put("accessToken", accessToken);
+        session.put("tokenType", "Bearer");
+        session.put("expiresIn", 7200); // 2小时过期
+        session.put("refreshToken", authService.generateRefreshToken(userNum, selectedOrgCode));
+        session.put("loginTime", new Date());
+        session.put("selectedOrgCode", selectedOrgCode);
+        session.put("selectedOrgTime", new Date());
+        // 按照格式生成sessionId: SESSION_当前时间_用户名_机构编码
+        String sessionId = String.format("SESSION_%s_%s_%s", 
+                new Date().toString().replaceAll("\\s+", "_").replaceAll(":", ""), 
+                userNum, 
+                selectedOrgCode);
+        session.put("sessionId", sessionId);
+        
+        result.put("session", session);
+
         return ApiResponse.success(result);
     }
 }

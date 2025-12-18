@@ -1,6 +1,7 @@
 package com.aiguibin.platform.arch.service;
 
 import com.aiguibin.platform.arch.dto.UserOrgDeptVO;
+import com.aiguibin.platform.arch.entity.User;
 
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,7 @@ public interface AuthService {
      * @param userNum 用户编号
      * @return 用户机构部门信息列表
      */
-    List<UserOrgDeptVO> getUserOrgDeptInfo(String userNum);
+    List<Map<String, Object>> getUserOrgDeptInfo(User user);
     
     /**
      * 验证用户在指定机构下的访问权限

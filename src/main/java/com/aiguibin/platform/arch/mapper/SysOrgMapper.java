@@ -26,4 +26,24 @@ public interface SysOrgMapper extends BaseMapper<SysOrg> {
             "AND status = 1 AND is_deleted = 0" +
             "</script>")
     List<Map<String, Object>> selectOrgInfosByIds(@Param("orgCodes") List<String> orgCodes);
+    
+    /**
+     * 根据机构编码查询机构信息
+     * @param orgCode 机构编码
+     * @return 机构信息
+     */
+    @Select("SELECT org_code as orgCode, org_name as orgName, parent_org_code as parentOrgCode, level " +
+            "FROM sys_org " +
+            "WHERE org_code = #{orgCode} AND status = 1 AND is_deleted = 0")
+    Map<String, Object> selectOrgByOrgCode(String orgCode);
+    
+    /**
+     * 根据机构编码查询机构信息
+     * @param orgCode 机构编码
+     * @return 机构信息
+     */
+    @Select("SELECT org_code as orgCode, org_name as orgName " +
+            "FROM sys_org " +
+            "WHERE org_code = #{orgCode} AND status = 1 AND is_deleted = 0")
+    Map<String, Object> selectOrgInfoByOrgCode(String orgCode);
 }

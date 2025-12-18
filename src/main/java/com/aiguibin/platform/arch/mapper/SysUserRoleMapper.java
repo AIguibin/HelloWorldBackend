@@ -59,4 +59,15 @@ public interface SysUserRoleMapper extends BaseMapper<SysUserRole> {
             "LEFT JOIN sys_role_org ro ON ur.role_code = ro.role_code " +
             "WHERE ur.user_num = #{userNum} AND ur.status = 1 AND ur.is_deleted = 0 AND r.status = 1 AND r.is_deleted = 0 AND (ro.is_deleted IS NULL OR ro.is_deleted = 0)")
     List<Map<String, Object>> selectUserRolesWithOrgByUserNum(@Param("userNum") String userNum);
+    
+    /**
+     * 根据用户编号查询用户角色信息，包含角色类型和数据范围
+     * @param userNum 用户编号
+     * @return 用户角色信息列表
+     */
+    @Select("SELECT r.role_code as roleCode, r.role_name as roleName, r.role_type as roleType, r.data_scope_type as dataScopeType, ur.is_primary as isPrimary " +
+            "FROM sys_user_role ur " +
+            "JOIN sys_role r ON ur.role_code = r.role_code " +
+            "WHERE ur.user_num = #{userNum} AND ur.status = 1 AND ur.is_deleted = 0 AND r.status = 1 AND r.is_deleted = 0")
+    List<Map<String, Object>> selectUserRolesWithDataScope(@Param("userNum") String userNum);
 }
