@@ -162,7 +162,7 @@ export default {
               return;
             }
             
-            // 调用/api/check接口，获取完整的登录信息
+            // 调用/api/auth/check接口，获取完整的登录信息
             const loginInfo = await checkLogin({
               tempToken: this.loginData.tempToken,
               selectedOrgCode: this.form.selectedOrg.orgCode
