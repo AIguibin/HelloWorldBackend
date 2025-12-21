@@ -25,8 +25,10 @@ public interface SysUserOrgMapper extends BaseMapper<SysUserOrg> {
      * @param userNum 用户编号
      * @return 包含机构详细信息和用户职位的结果集
      */
-    @Select("SELECT uo.org_code, uo.user_num, uo.position, uo.is_primary, uo.effective_start, uo.effective_end, " +
-            "o.org_name, o.parent_org_code, o.org_level, o.org_sort_order, o.org_description " +
+    @Select("SELECT uo.org_code as orgCode, uo.user_num as userNum, uo.position as position, " +
+            "uo.is_primary as isPrimary, uo.effective_start as effectiveStart, uo.effective_end as effectiveEnd, " +
+            "o.org_name as orgName, o.parent_org_code as parentOrgCode, o.level as orgLevel, " +
+            "o.sort_order as orgSortOrder, o.description as orgDescription " +
             "FROM sys_user_org uo " +
             "LEFT JOIN sys_org o ON uo.org_code = o.org_code " +
             "WHERE uo.user_num = #{userNum} AND uo.status = 1 AND uo.is_deleted = 0 AND o.is_deleted = 0")

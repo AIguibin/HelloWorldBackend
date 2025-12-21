@@ -55,6 +55,7 @@ build/
 .out/
 .next/
 .nuxt/
+src/main/resources/static/
 
 # Environment variables
 .env
