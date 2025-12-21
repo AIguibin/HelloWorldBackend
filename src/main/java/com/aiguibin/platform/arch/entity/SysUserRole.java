@@ -14,6 +14,10 @@ import java.time.LocalDateTime;
 @Data
 @TableName("sys_user_role")
 public class SysUserRole {
+    /**
+     * UUID，32位随机字符串
+     */
+    private String uuid;
 
     /**
      * 自增ID，仅做序号

@@ -8,21 +8,25 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 系统权限表实体类
- * 对应sys_permission表，用于存储系统权限信息
+ * 统一权限定义表实体类
+ * 对应sys_permission表，用于存储统一权限定义信息
  */
 @Data
 @TableName("sys_permission")
 public class SysPermission {
+    /**
+     * UUID，32位随机字符串
+     */
+    private String uuid;
 
     /**
-     * 自增ID，仅做序号
+     * 自增ID
      */
     @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
-     * 权限编码，5位：P+4位数字
+     * 权限编码，PERM+16位数字
      */
     private String permCode;
 
@@ -32,54 +36,29 @@ public class SysPermission {
     private String permName;
 
     /**
-     * 权限标识（如：user:create）
+     * 权限标识（唯一业务标识）
      */
     private String permKey;
 
     /**
-     * 权限类型：1-菜单，2-操作，3-接口，4-数据，5-字段，6-时间，7-业务
+     * 权限类型：1-访问控制，2-数据范围，3-字段控制，4-时间控制，5-业务规则
      */
     private Integer permType;
 
     /**
-     * 关联的菜单编码（当perm_type=1,2时）
+     * 操作类型：VIEW-查看，CREATE-新增，UPDATE-修改，DELETE-删除，EXECUTE-执行
      */
-    private String menuCode;
+    private String actionType;
 
     /**
-     * 接口路径（当perm_type=3时）
+     * 生效类型：1-允许，2-禁止
      */
-    private String apiPath;
+    private Integer effectType;
 
     /**
-     * 业务实体类型（如：user,order，当perm_type=4,5时）
+     * 条件表达式（JSON格式）
      */
-    private String entityType;
-
-    /**
-     * 业务实体字段（当perm_type=5时）
-     */
-    private String entityField;
-
-    /**
-     * 规则类型：1-预定义，2-自定义SQL
-     */
-    private Integer ruleType;
-
-    /**
-     * 预定义范围：1-全部，2-本机构，3-本部门，4-本人
-     */
-    private Integer scopeType;
-
-    /**
-     * 自定义规则（JSON或SQL片段）
-     */
-    private String customRule;
-
-    /**
-     * 是否默认权限：0-否，1-是
-     */
-    private Integer isDefault;
+    private String conditionExpression;
 
     /**
      * 排序号

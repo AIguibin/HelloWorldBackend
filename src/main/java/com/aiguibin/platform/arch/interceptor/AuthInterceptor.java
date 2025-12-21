@@ -32,7 +32,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "未登录");
         }
         String token = auth.replace("Bearer ", "").trim();
-        String userNum = authService.getUserNumByToken(token);
+        String userNum = authService.getUserNumFromToken(token);
         if (userNum == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "登录已失效");
         }

@@ -7,9 +7,16 @@ const service = axios.create({
 });
 
 service.interceptors.request.use(config => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers['Authorization'] = `Bearer ${token}`;
+  // 输出实际请求的URL，用于调试
+  console.log('Request URL:', config.url);
+  // 对于check接口，不添加Authorization头，因为还没有生成正式token
+  if (!config.url.endsWith('/check')) {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+  } else {
+    console.log('Check interface: skipping Authorization header');
   }
   // 附加登录用户信息（将可能包含非 ASCII 的字段进行 URL 编码）
   try {
@@ -56,14 +63,11 @@ service.interceptors.response.use(
     const status = (err && err.response && err.response.status) || 0;
     const serverMsg = (err && err.response && err.response.data && err.response.data.message) || err.message || '网络错误';
     if (status === 401) {
-      // 认证失效：清空本地令牌并跳转登录页
-      localStorage.removeItem('token');
-      localStorage.removeItem('csrfToken');
-      localStorage.removeItem('user');
+      // 认证失效：清空所有本地存储并跳转登录页
+      localStorage.clear(); // 清空所有本地存储，确保状态一致性
       Message.error(serverMsg || '登录已失效，请重新登录');
-      if (window.location.hash !== '#/login') {
-        window.location.hash = '#/login';
-      }
+      // 使用完整URL跳转，避免路由守卫冲突
+      window.location.href = window.location.origin + window.location.pathname + '#/login';
     } else {
       Message.error(serverMsg);
     }

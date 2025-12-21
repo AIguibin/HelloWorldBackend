@@ -46,7 +46,7 @@ public class MenuService {
 
         // 过滤出目录和菜单类型（排除按钮和接口）
         List<Menu> visibleMenus = menus.stream()
-                .filter(m -> m.getMenuType() == 1 || m.getMenuType() == 2)
+                .filter(m -> "M".equals(m.getMenuType()) || "P".equals(m.getMenuType()))
                 .collect(Collectors.toList());
 
         // 找出所有根节点（parentMenuCode为空或为根目录编码）
@@ -84,8 +84,8 @@ public class MenuService {
     public List<String> getUserPermissions(Long userId) {
         List<Menu> menus = menuMapper.selectMenusByUserId(userId);
         return menus.stream()
-                .filter(m -> m.getPermissionKey() != null && !m.getPermissionKey().isEmpty())
-                .map(Menu::getPermissionKey)
+                .filter(m -> m.getResourceKey() != null && !m.getResourceKey().isEmpty())
+                .map(Menu::getResourceKey)
                 .distinct()
                 .collect(Collectors.toList());
     }

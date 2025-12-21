@@ -17,6 +17,11 @@ import java.time.LocalDateTime;
 @TableName("sys_operation_log")
 public class SysOperationLog {
     /**
+     * UUID，32位随机字符串
+     */
+    private String uuid;
+    
+    /**
      * 自增ID，仅做序号
      */
     @TableId(type = IdType.AUTO)
@@ -43,6 +48,11 @@ public class SysOperationLog {
     private String objectType;
     
     /**
+     * 模块名称
+     */
+    private String module;
+    
+    /**
      * 操作对象ID
      */
     private Long objectId;
@@ -53,7 +63,7 @@ public class SysOperationLog {
     private String objectCode;
     
     /**
-     * 操作结果：OK/FAIL
+     * 操作结果：SUCCESS/FAIL
      */
     private String result;
     
@@ -83,26 +93,24 @@ public class SysOperationLog {
     private String ipAddress;
     
     /**
-     * 浏览器信息
+     * 用户代理信息
      */
-    private String browserInfo;
+    private String userAgent;
     
     /**
-     * 操作系统信息
+     * 请求参数
      */
-    private String osInfo;
-
-    /**
-     * 创建人用户编号
-     */
-    @TableField(fill = FieldFill.INSERT)
-    private String createdBy;
+    private String requestParams;
     
     /**
-     * 创建时间
+     * 响应数据
      */
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createdTime;
+    private String responseData;
+    
+    /**
+     * 操作耗时（毫秒）
+     */
+    private Integer durationMs;
     
     /**
      * 是否删除：0-否，1-是

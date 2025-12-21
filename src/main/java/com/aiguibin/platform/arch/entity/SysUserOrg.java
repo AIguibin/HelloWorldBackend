@@ -17,6 +17,11 @@ import java.time.LocalDateTime;
 @TableName("sys_user_org")
 public class SysUserOrg {
     /**
+     * UUID，32位随机字符串
+     */
+    private String uuid;
+
+    /**
      * 自增ID，仅做序号
      */
     @TableId(type = IdType.AUTO)

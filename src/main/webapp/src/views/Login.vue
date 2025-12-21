@@ -57,7 +57,7 @@
           <!-- 第二步：选择机构 -->
           <el-form-item label="机构" prop="selectedOrg" v-if="loginStep === 1">
             <el-select v-model="form.selectedOrg" placeholder="请选择机构" clearable class="org-select">
-              <el-option v-for="org in loginData.orgDeptList" :key="org.orgCode" :label="org.orgName"
+              <el-option v-for="org in loginData.userAllOrgDeptList" :key="org.orgCode" :label="org.orgName"
                 :value="org"></el-option>
             </el-select>
           </el-form-item>
@@ -116,8 +116,10 @@ export default {
       },
       // 登录步骤：0-输入账号密码，1-选择机构
       loginStep: 0,
-      // 登录返回数据
-      loginData: {}
+      // 登录返回数据，初始化为包含空数组的对象，避免undefined错误
+      loginData: {
+        userAllOrgDeptList: []
+      }
     };
   },
   computed: {
@@ -142,13 +144,14 @@ export default {
         try {
           if (this.loginStep === 0) {
             // 第一步：提交账号密码登录
-            const data = await login(this.form.userNum, this.form.password);
-            console.log('登录成功:', data);
-            this.loginData = data;
+            const result = await login(this.form.userNum, this.form.password);
+            console.log('验证账户密码登录成功:', result);
+            // API直接返回了data内容，而不是{ code, message, data }结构
+            this.loginData = result;
             
             // 如果只有一个机构，直接选择该机构
-            if (data.orgDeptList && data.orgDeptList.length === 1) {
-              this.form.selectedOrg = data.orgDeptList[0];
+            if (result.userAllOrgDeptList && result.userAllOrgDeptList.length === 1) {
+              this.form.selectedOrg = result.userAllOrgDeptList[0];
             }
             // 进入机构选择步骤
             this.loginStep = 1;
@@ -159,38 +162,32 @@ export default {
               return;
             }
             
-            // 调用/api/auth/check接口，获取完整的登录信息
-            const checkData = await checkLogin({
+            // 调用/api/check接口，获取完整的登录信息
+            const loginInfo = await checkLogin({
               tempToken: this.loginData.tempToken,
               selectedOrgCode: this.form.selectedOrg.orgCode
             });
             
-            console.log('check登录成功:', checkData);
+            console.log('权限获取登录成功，登录信息:', loginInfo);
             
-            // 构建并保存完整的登录信息到localStorage（按照文档格式）
-            const loginInfo = {
-              auth: {
-                user: {
-                  userNum: checkData.user.userNum,
-                  userName: checkData.user.userName
-                },
-                currentOrg: {
-                  code: checkData.currentOrg.orgCode,
-                  name: checkData.currentOrg.orgName
-                },
-                currentDept: checkData.currentDept,
-                permissions: checkData.permissions,
-                dataScope: checkData.dataScope
-              },
-              token: {
-                access: checkData.session.accessToken,
-                expiresAt: Date.now() + checkData.session.expiresIn * 1000, // 转换为毫秒
-                orgCode: checkData.currentOrg.orgCode
-              },
-              availableOrgs: checkData.availableOrgs
-            };
-            
+            // 根据src\main\java\com\aiguibin\platform\arch\controller\AuthController.java的接口checkLogin的返回值，组装前端需要的登录信息
+            // 保存登录信息和token到localStorage
+           
             localStorage.setItem('loginInfo', JSON.stringify(loginInfo));
+            localStorage.setItem('token', loginInfo.session.accessToken);
+            localStorage.setItem('csrfToken', loginInfo.session.csrfToken);
+            
+          
+            localStorage.setItem('user', JSON.stringify(loginInfo.user));
+            localStorage.setItem('session', JSON.stringify(loginInfo.session));
+            localStorage.setItem('currentOrg', JSON.stringify(loginInfo.currentOrg));
+            localStorage.setItem('currentDept', JSON.stringify(loginInfo.currentDept));
+            localStorage.setItem('permissions', JSON.stringify(loginInfo.permissions));
+            localStorage.setItem('authorization', JSON.stringify(loginInfo.authorization));
+            localStorage.setItem('userAllOrgDeptList', JSON.stringify(loginInfo.userAllOrgDeptList));
+            localStorage.setItem('availableDepts', JSON.stringify(loginInfo.availableDepts));
+
+            
             
             // 跳转到首页
             this.$router.replace('/dashboard');

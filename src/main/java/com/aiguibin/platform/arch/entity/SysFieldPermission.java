@@ -8,18 +8,27 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 字段权限表实体类
+ * 字段权限子表实体类
  * 对应sys_field_permission表，用于存储字段级权限配置
  */
 @Data
 @TableName("sys_field_permission")
 public class SysFieldPermission {
+    /**
+     * UUID，32位随机字符串
+     */
+    private String uuid;
 
     /**
-     * 自增ID，仅做序号
+     * 自增ID
      */
     @TableId(type = IdType.AUTO)
     private Long id;
+
+    /**
+     * 关联权限编码
+     */
+    private String permCode;
 
     /**
      * 字段编码，15位
@@ -42,19 +51,29 @@ public class SysFieldPermission {
     private String fieldAlias;
 
     /**
-     * 角色编码
+     * 字段类型：1-可见，2-可编辑，3-必填，4-隐藏，5-只读
      */
-    private String roleCode;
-
-    /**
-     * 权限类型：1-可见，2-可编辑，3-必填，4-隐藏，5-只读
-     */
-    private Integer permType;
+    private Integer fieldType;
 
     /**
      * 条件表达式（JSON格式，满足条件时生效）
      */
     private String conditionExpression;
+
+    /**
+     * 字段默认值
+     */
+    private String defaultValue;
+
+    /**
+     * 验证规则
+     */
+    private String validationRules;
+
+    /**
+     * UI配置
+     */
+    private String uiConfig;
 
     /**
      * 排序号

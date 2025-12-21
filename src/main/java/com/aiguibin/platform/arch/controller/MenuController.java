@@ -75,7 +75,7 @@ public class MenuController {
                 return null;
             }
             String token = auth.replace("Bearer ", "").trim();
-            String userNum = authService.getUserNumByToken(token);
+            String userNum = authService.getUserNumFromToken(token);
             if (userNum == null) {
                 return null;
             }

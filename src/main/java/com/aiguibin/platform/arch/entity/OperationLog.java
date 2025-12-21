@@ -9,10 +9,10 @@ import java.time.LocalDateTime;
 
 /**
  * 操作日志表实体类
- * 对应operation_log表，用于记录系统操作日志
+ * 对应sys_operation_log表，用于记录系统操作日志
  */
 @Data
-@TableName("operation_log")
+@TableName("sys_operation_log")
 public class OperationLog {
     /**
      * 自增ID，仅做序号

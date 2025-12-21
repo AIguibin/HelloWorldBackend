@@ -17,6 +17,11 @@ import java.util.List;
 @TableName("sys_menu")
 public class Menu {
     /**
+     * UUID，32位随机字符串
+     */
+    private String uuid;
+    
+    /**
      * 自增ID，仅做序号
      */
     @TableId(type = IdType.AUTO)
@@ -33,9 +38,9 @@ public class Menu {
     private String menuName;
     
     /**
-     * 类型：1-目录，2-页面，3-按钮
+     * 类型：M-目录，P-页面，C-组件，B-按钮
      */
-    private Integer menuType;
+    private String menuType;
     
     /**
      * 父菜单编码
@@ -48,24 +53,24 @@ public class Menu {
     private String icon;
     
     /**
-     * 路由路径（前端使用）
+     * 前端路由路径
      */
     private String path;
     
     /**
-     * 组件路径（前端使用）
+     * 前端组件路径
      */
     private String component;
     
     /**
-     * 访问URL（后端API路径）
+     * 资源标识（如：system:user:list）
      */
-    private String url;
+    private String resourceKey;
     
     /**
-     * HTTP方法：GET,POST,PUT,DELETE等
+     * 资源类型：MENU-菜单，BUTTON-按钮，PAGE-页面
      */
-    private String httpMethod;
+    private String resourceType;
     
     /**
      * 是否外部链接：0-否，1-是
@@ -81,11 +86,6 @@ public class Menu {
      * 是否显示：0-否，1-是
      */
     private Integer isVisible;
-    
-    /**
-     * 权限标识（如：user:view）
-     */
-    private String permissionKey;
     
     /**
      * 排序号

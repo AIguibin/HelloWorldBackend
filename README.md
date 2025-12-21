@@ -32,7 +32,7 @@ aiguibin-platform-arch/
 ```
 
 ## 数据库准备
-- MySQL 建库：`aiguibin_arch_tables`
+- MySQL 建库：`aiguibin_platform_arch`
 - 表结构：
 
 ```sql
@@ -47,10 +47,11 @@ aiguibin-platform-arch/
 - 运行：`java -jar target/aiguibin-platform-arch.jar`
 - 调试：`sh local_debug_restart.sh full-restart`
 - 访问：`http://localhost:8080`
+- 前端：`cd /e/WorkSpace/HelloWorldBackend/aiguibin-platform-arch/src/main/webapp && npm run build`
 
 ## 认证与安全
-- 登录：`POST /api/login`，入参：`{ username, password }`
-- 返回：`token`（Bearer）、`csrfToken`（CSRF防护）、`username`、`chineseName: ""`
+- 登录：`POST /api/login`，入参：`{ userNum, password }`
+- 返回：`token`（Bearer）、`csrfToken`（CSRF防护）、`userNum`、`orgCode: ""`
 - 所有变更类接口（POST/PUT/PATCH/DELETE）必须在请求头携带：
   - `Authorization: Bearer <token>`
   - `X-CSRF-Token: <csrfToken>`
@@ -58,7 +59,7 @@ aiguibin-platform-arch/
 
 ## 用户功能
 - 用户管理接口（需 `Authorization` + `X-CSRF-Token`）：
-  - `GET /api/users?page=1&size=10&usernumb=&username=` 列表
+  - `GET /api/users?page=1&size=10&userNum=&userName=` 列表
   - `GET /api/users/{id}` 详情
   - `POST /api/users` 新增（初始密码强制为 `666666`）
   - `PUT /api/users/{id}` 更新（支持改口令）

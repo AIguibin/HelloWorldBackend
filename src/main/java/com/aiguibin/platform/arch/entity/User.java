@@ -22,6 +22,11 @@ public class User {
     @TableId(type = IdType.AUTO)
     private Long id;
 
+        /**
+     * UUID，32位随机字符串
+     */
+    private String uuid;
+
     /**
      * 用户编号，20位
      */

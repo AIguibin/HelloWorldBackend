@@ -8,55 +8,33 @@
           <i class="el-icon-connection system-icon"></i>
           <span class="brand-name">架构管理工作</span>
         </div>
-        
+
         <!-- 导航菜单 -->
         <nav class="main-nav">
           <ul class="nav-list">
-            <li 
-              v-for="menu in topMenuList" 
-              :key="menu.menuCode"
-              class="nav-item"
-              :class="{ 'active': isNavItemActive(menu) }"
-              @click="handleNavClick(menu)"
-              @mouseenter="handleNavMouseEnter(menu)"
-              @mouseleave="handleNavMouseLeave(menu)"
-            >
+            <li v-for="menu in topMenuList" :key="menu.menuCode" class="nav-item"
+              :class="{ 'active': isNavItemActive(menu) }" @click="handleNavClick(menu)"
+              @mouseenter="handleNavMouseEnter(menu)" @mouseleave="handleNavMouseLeave(menu)">
               <a href="#" class="nav-link">
                 <i :class="menu.icon || 'el-icon-menu'"></i>
                 <span>{{ menu.menuName }}</span>
               </a>
-              
+
               <!-- 下拉菜单 - 包含所有功能选项 -->
-              <div 
-                v-if="hasChildren(menu)" 
-                class="dropdown-menu"
-                :class="{ 'show': activeDropdown === menu.menuCode }"
-              >
+              <div v-if="hasChildren(menu)" class="dropdown-menu" :class="{ 'show': activeDropdown === menu.menuCode }">
                 <ul class="dropdown-list">
-                  <li 
-                    v-for="child in menu.children" 
-                    :key="child.menuCode"
-                    class="dropdown-item"
-                    :class="{ 'active': isNavItemActive(child) }"
-                    @click.stop="handleNavClick(child)"
-                  >
+                  <li v-for="child in menu.children" :key="child.menuCode" class="dropdown-item"
+                    :class="{ 'active': isNavItemActive(child) }" @click.stop="handleNavClick(child)">
                     <a href="#" class="dropdown-link">
                       {{ child.menuName }}
                     </a>
-                    
+
                     <!-- 三级菜单（如果有） -->
-                    <div 
-                      v-if="hasChildren(child)" 
-                      class="dropdown-submenu"
-                    >
+                    <div v-if="hasChildren(child)" class="dropdown-submenu">
                       <ul class="dropdown-submenu-list">
-                        <li 
-                          v-for="grandchild in child.children" 
-                          :key="grandchild.menuCode"
-                          class="dropdown-submenu-item"
-                          :class="{ 'active': isNavItemActive(grandchild) }"
-                          @click.stop="handleNavClick(grandchild)"
-                        >
+                        <li v-for="grandchild in child.children" :key="grandchild.menuCode"
+                          class="dropdown-submenu-item" :class="{ 'active': isNavItemActive(grandchild) }"
+                          @click.stop="handleNavClick(grandchild)">
                           <a href="#" class="dropdown-submenu-link">
                             {{ grandchild.menuName }}
                           </a>
@@ -69,7 +47,7 @@
             </li>
           </ul>
         </nav>
-        
+
         <!-- 用户信息区域 -->
         <div class="user-section">
           <!-- 当前日期显示 -->
@@ -77,7 +55,7 @@
             <i class="el-icon-date"></i>
             <span>{{ currentDate }}</span>
           </div>
-          
+
           <!-- 用户下拉菜单 -->
           <el-dropdown @command="handleCommand">
             <span class="user-info">
@@ -97,7 +75,7 @@
         </div>
       </div>
     </header>
-    
+
     <!-- 主体内容区域 -->
     <div class="main-content">
       <!-- 主内容区 - 占满整个宽度 -->
@@ -184,30 +162,30 @@ export default {
       const minutes = String(now.getMinutes()).padStart(2, '0');
       this.currentDate = `${year}-${month}-${day} ${hours}:${minutes}`;
     },
-    
+
     // 检查菜单是否有子菜单
     hasChildren(menu) {
       return menu && menu.children && Array.isArray(menu.children) && menu.children.length > 0;
     },
-    
+
     // 判断导航项是否激活
     isNavItemActive(menu) {
       if (!menu.path) return false;
       const currentPath = this.currentRoutePath;
-      
+
       // 精确匹配
       if (currentPath === menu.path) {
         return true;
       }
-      
+
       // 前缀匹配（用于嵌套路由）
       if (currentPath.startsWith(menu.path) && menu.path !== '/') {
         return currentPath === menu.path || currentPath.startsWith(menu.path + '/');
       }
-      
+
       return false;
     },
-    
+
     // 处理导航点击
     handleNavClick(menu) {
       if (menu.path) {
@@ -218,18 +196,18 @@ export default {
           }
         });
       }
-      
+
       // 切换下拉菜单显示状态
       this.activeDropdown = this.activeDropdown === menu.menuCode ? null : menu.menuCode;
     },
-    
+
     // 处理导航鼠标进入事件
     handleNavMouseEnter(menu) {
       if (this.hasChildren(menu)) {
         this.activeDropdown = menu.menuCode;
       }
     },
-    
+
     // 处理导航鼠标离开事件
     handleNavMouseLeave(menu) {
       // 延迟关闭下拉菜单，提升用户体验
@@ -240,12 +218,12 @@ export default {
         }
       }, 200);
     },
-    
+
     // 加载菜单数据
     async loadMenus() {
       try {
         const response = await getUserMenus();
-        
+
         if (response) {
           // 适配API响应格式
           this.topMenuList = response || [];
@@ -258,7 +236,7 @@ export default {
         this.topMenuList = [];
       }
     },
-    
+
     // 加载用户信息
     loadUserInfo() {
       try {
@@ -270,7 +248,7 @@ export default {
         console.error('加载用户信息失败:', e);
       }
     },
-    
+
     // 更新面包屑
     updateBreadcrumb(route) {
       const matched = route.matched.filter(item => item.meta && item.meta.title);
@@ -279,7 +257,7 @@ export default {
         title: item.meta.title
       }));
     },
-    
+
     // 处理用户下拉菜单命令
     handleCommand(command) {
       if (command === 'logout') {
@@ -288,13 +266,22 @@ export default {
         this.$router.push('/change-password');
       }
     },
-    
+
     // 退出登录
     logout() {
       // 清除本地存储的用户信息
-      localStorage.removeItem('token');
-      localStorage.removeItem('csrfToken');
+      localStorage.removeItem('loginInfo');
       localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('session');
+      localStorage.removeItem('csrfToken');    
+      localStorage.removeItem('currentOrg');
+      localStorage.removeItem('currentDept');
+      localStorage.removeItem('permissions');
+      localStorage.removeItem('authorization');
+      localStorage.removeItem('availableOrgs');
+      localStorage.removeItem('availableDepts');
+
       // 跳转到登录页
       this.$router.replace('/login');
     }
@@ -615,35 +602,35 @@ export default {
   .navbar-content {
     padding: 0 16px;
   }
-  
+
   .brand-name {
     display: none;
   }
-  
+
   .main-nav {
     margin: 0 20px;
   }
-  
+
   .nav-link span {
     display: none;
   }
-  
+
   .user-section {
     gap: 16px;
   }
-  
+
   .date-display {
     display: none;
   }
-  
+
   .content-area {
     padding: 16px;
   }
-  
+
   .page-content {
     padding: 16px;
   }
-  
+
   /* 移动端隐藏三级菜单 */
   .dropdown-submenu {
     display: none;
@@ -654,36 +641,36 @@ export default {
   .navbar-content {
     padding: 0 12px;
   }
-  
+
   .logo-section {
     gap: 8px;
   }
-  
+
   .system-icon {
     font-size: 20px;
   }
-  
+
   .main-nav {
     margin: 0 10px;
   }
-  
+
   .nav-link {
     padding: 0 10px;
   }
-  
+
   .user-section {
     gap: 12px;
   }
-  
+
   .user-info {
     padding: 6px 10px;
     font-size: 13px;
   }
-  
+
   .content-area {
     padding: 12px;
   }
-  
+
   .page-content {
     padding: 12px;
   }

@@ -21,6 +21,11 @@ import java.time.LocalDateTime;
 @TableName("biz_approval_flow")
 public class ApprovalFlow {
     /**
+     * UUID，32位随机字符串
+     */
+    private String uuid;
+    
+    /**
      * 自增ID，仅做序号
      */
     @TableId(type = IdType.AUTO)
