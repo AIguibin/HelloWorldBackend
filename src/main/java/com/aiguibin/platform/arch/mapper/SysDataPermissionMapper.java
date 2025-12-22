@@ -2,6 +2,10 @@ package com.aiguibin.platform.arch.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.aiguibin.platform.arch.entity.SysDataPermission;
+
+import java.util.List;
+import java.util.Map;
+
 import org.apache.ibatis.annotations.Mapper;
 
 /**
@@ -10,4 +14,6 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface SysDataPermissionMapper extends BaseMapper<SysDataPermission> {
+
+    List<Map<String, Object>> selectByPermCodes(List<String> permCodes);
 }
