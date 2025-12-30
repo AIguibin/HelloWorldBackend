@@ -3,8 +3,27 @@
 ### **1. 代码结构与命名规范**
 - **实体类(Entity)**：每个数据库表对应一个`UpperCamelCase`命名的Entity类
 - **Mapper接口**：每个Entity对应一个Mapper接口，按`UpperCamelCase`命名
-- **全局异常处理**：统一处理空值、验证异常、业务异常等
+- **全局异常处理**：统一处理空值、验证异常、业务异常等，
+- **全局异常捕获**：自定义业务异常 BusinessException
 - **详细日志**：关键业务节点添加`INFO/DEBUG`级别日志，便于监控排查
+- **统一返回格式**：Result<T> 类（包含 code:Integer、msg:String、data:T）
+- **命名规范**：
+  - 数据库表：下划线命名（如 product_info、order_main）
+  - 实体类：驼峰命名（对应表名，如 ProductInfo、OrderMain）
+  - Mapper接口：XXXMapper（如 ProductInfoMapper）
+  - Service接口：XXXService + 实现类：XXXServiceImpl
+  - Controller：XXXController（如 ProductController）
+  - 字段：数据库下划线→实体类驼峰（如 product_name → productName）
+- **任何功能开发，必须包含**：
+  - 数据库表 SQL 脚本（含索引、注释）
+  - 实体类（Entity）+ RO(入参) + VO（出参）
+  - Mapper 接口 + XML/SQL（或 MyBatis-Plus 注解）
+  - Service 接口 + ServiceImpl（含业务逻辑、事务）
+  - Controller（含接口注解、参数校验、返回Result）
+  - 各层依赖注入正确（如 Service 注入 Mapper，Controller 注入 Service）  
+  - 数据库表字段 → 实体类字段 → DTO字段 → Mapper SQL → Service 逻辑 → Controller 参数，必须完全一致（名称、类型、非空约束）
+  - 禁止出现“数据库有字段但实体类没有”“SQL用错字段名”等情况
+
 
 ### **2. 命名约定（严格执行）**
 | 组件类型 | 命名规范 | 示例 |
@@ -94,7 +113,8 @@ User getUserById(Long userId);
 ```
 
 ### **6. 开发流程规范**
-1. **代码编写** → 使用现有类/方法，避免重复
+0. **代码设计** → 先理解业务需求，并依据`sql/`下的表结构与初始化数据，再设计代码结构
+1. **代码编写** → 基于代码设计思考，使用现有类/方法，避免重复
 2. **代码审查** → 符合规范后再合并到主干
 3. **文档生成** → 所有文档放入 `.trae/documents/`
 4. **前端构建** → `npm run build`（生成dist目录）

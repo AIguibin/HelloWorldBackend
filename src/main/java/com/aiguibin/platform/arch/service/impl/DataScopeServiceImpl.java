@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.Comparator;
 import java.util.stream.Collectors;
 
 /**
@@ -41,7 +40,29 @@ public class DataScopeServiceImpl implements DataScopeService {
                                                          List<Map<String, Object>> roleOrgScopes,
                                                          String userNum,
                                                          String orgCode) {
+        // 验证输入参数
+        if (userNum == null || userNum.isEmpty()) {
+            log.error("用户编码参数为空");
+            throw new IllegalArgumentException("用户编码参数不能为空");
+        }
+        
+        if (orgCode == null || orgCode.isEmpty()) {
+            log.error("机构编码参数为空");
+            throw new IllegalArgumentException("机构编码参数不能为空");
+        }
+        
+        if (userRoles == null) {
+            log.warn("用户角色列表为null，使用默认空集合");
+            userRoles = new ArrayList<>();
+        }
+        
+        if (roleOrgScopes == null) {
+            log.warn("角色机构范围列表为null，使用默认空集合");
+            roleOrgScopes = new ArrayList<>();
+        }
+        
         Map<String, Object> dataPermissions = new HashMap<>();
+        log.info("开始计算用户[{}]在机构[{}]的数据范围", userNum, orgCode);
         
         // 1. 计算默认数据范围（来自sys_role.data_scope_type）
         Map<String, Object> defaultDataScope = calculateDefaultDataScope(userRoles);
@@ -70,7 +91,9 @@ public class DataScopeServiceImpl implements DataScopeService {
     public Map<String, Object> calculateDefaultDataScope(List<Map<String, Object>> userRoles) {
         Map<String, Object> defaultScope = new HashMap<>();
         
+        // 验证输入参数
         if (userRoles == null || userRoles.isEmpty()) {
+            log.info("用户角色列表为空，使用默认数据范围：本人数据");
             defaultScope.put("scopeType", DATA_SCOPE_SELF);
             defaultScope.put("scopeTypeLabel", "本人");
             defaultScope.put("source", "系统默认（无角色）");
@@ -100,6 +123,12 @@ public class DataScopeServiceImpl implements DataScopeService {
     
     @Override
     public Map<String, Object> calculateOrgAuthorityScope(List<Map<String, Object>> roleOrgScopes, String orgCode) {
+        // 验证输入参数
+        if (orgCode == null || orgCode.isEmpty()) {
+            log.error("机构编码参数为空");
+            throw new IllegalArgumentException("机构编码参数不能为空");
+        }
+        
         Map<String, Object> orgScope = new HashMap<>();
         
         orgScope.put("orgCode", orgCode);
@@ -107,6 +136,7 @@ public class DataScopeServiceImpl implements DataScopeService {
         orgScope.put("source", "sys_role_org");
         
         if (roleOrgScopes == null || roleOrgScopes.isEmpty()) {
+            log.info("角色机构范围列表为空，机构[{}]默认无访问权限", orgCode);
             return orgScope;
         }
         
@@ -117,8 +147,10 @@ public class DataScopeServiceImpl implements DataScopeService {
         
         if (!currentOrgScopes.isEmpty()) {
             // 取权限最高的记录（perm_type最小）
+            // 取权限最高的记录（perm_type最小，null值视为最大权限）
             Map<String, Object> bestScope = currentOrgScopes.stream()
-                .min(Comparator.comparing(scope -> (Integer) scope.get("permType")))
+                .min(Comparator.comparing(scope -> (Integer) scope.get("permType"), 
+                    Comparator.nullsLast(Comparator.naturalOrder())))
                 .orElse(currentOrgScopes.get(0));
             
             orgScope.put("hasAccess", true);
@@ -134,10 +166,11 @@ public class DataScopeServiceImpl implements DataScopeService {
                 .anyMatch(scope -> ORG_SCOPE_ALL.equals(scope.get("orgCode")));
             
             if (hasAllOrgAccess) {
-                // 取全部机构的最高权限配置
+                // 取全部机构的最高权限配置（perm_type最小，null值视为最大权限）
                 Map<String, Object> allOrgScope = roleOrgScopes.stream()
                     .filter(scope -> ORG_SCOPE_ALL.equals(scope.get("orgCode")))
-                    .min(Comparator.comparing(scope -> (Integer) scope.get("permType")))
+                    .min(Comparator.comparing(scope -> (Integer) scope.get("permType"),
+                        Comparator.nullsLast(Comparator.naturalOrder())))
                     .orElse(null);
                 
                 if (allOrgScope != null) {
@@ -170,7 +203,9 @@ public class DataScopeServiceImpl implements DataScopeService {
         // 查询角色拥有的数据权限（通过sys_perm_resource关联）
         List<Map<String, Object>> dataResources = sysPermResourceMapper.selectResourcesByRoleCodes(roleCodes, "DATA");
         
-        if (dataResources.isEmpty()) {
+        // 验证数据资源查询结果
+        if (dataResources==null) {
+            log.warn("用户[{}]的数据资源查询结果为空，返回默认空集合", userNum);
             return new ArrayList<>();
         }
         
@@ -183,23 +218,60 @@ public class DataScopeServiceImpl implements DataScopeService {
         // 查询数据权限详情
         List<Map<String, Object>> entityScopes = sysDataPermissionMapper.selectByPermCodes(permCodes);
         
+        // 验证数据权限查询结果
+        if (entityScopes == null) {
+            log.warn("权限编码[{}]对应的数据权限查询结果为null，返回默认空集合", permCodes);
+            return new ArrayList<>();
+        }
+        
+        if (entityScopes.isEmpty()) {
+            log.debug("权限编码[{}]对应的数据权限查询结果为空集合", permCodes);
+            return new ArrayList<>();
+        }
+        
         // 转换为标准格式
         return entityScopes.stream()
             .map(scope -> {
                 Map<String, Object> entityScope = new HashMap<>();
+                
+                // 验证单个权限记录的完整性
+                if (scope.get("permCode") == null) {
+                    log.warn("数据权限记录缺少permCode字段，忽略该记录");
+                    return null;
+                }
+                
+                if (scope.get("scopeType") == null) {
+                    log.warn("数据权限记录[{}]缺少scopeType字段，忽略该记录", scope.get("permCode"));
+                    return null;
+                }
+                
+                // 验证scopeType类型安全性
+                Integer scopeType = null;
+                try {
+                    scopeType = (Integer) scope.get("scopeType");
+                } catch (ClassCastException e) {
+                    log.error("数据权限记录[{}]的scopeType字段类型错误，应为Integer，实际为{}", 
+                             scope.get("permCode"), scope.get("scopeType").getClass().getName(), e);
+                    return null;
+                }
+                
+                // 构建实体数据范围对象
                 entityScope.put("permCode", scope.get("permCode"));
                 entityScope.put("dataName", scope.get("dataName"));
                 entityScope.put("entityType", scope.get("entityType"));
-                entityScope.put("scopeType", scope.get("scopeType"));
-                entityScope.put("scopeTypeLabel", getDataScopeLabel((Integer) scope.get("scopeType")));
+                entityScope.put("scopeType", scopeType);
+                entityScope.put("scopeTypeLabel", getDataScopeLabel(scopeType));
                 entityScope.put("includeChildren", scope.get("includeChildren"));
                 entityScope.put("ruleType", scope.get("ruleType"));
                 entityScope.put("rulePriority", scope.get("rulePriority"));
                 entityScope.put("isGlobal", scope.get("isGlobal"));
                 entityScope.put("status", scope.get("status"));
                 entityScope.put("source", "sys_data_permission");
+                
+                log.debug("成功转换数据权限记录[{}]，scopeType: {}", scope.get("permCode"), scopeType);
                 return entityScope;
             })
+            .filter(Objects::nonNull) // 过滤掉无效记录
             .collect(Collectors.toList());
     }
     
@@ -209,6 +281,32 @@ public class DataScopeServiceImpl implements DataScopeService {
                                                       List<Map<String, Object>> entityDataScopes,
                                                       String orgCode,
                                                       String userNum) {
+        // 验证输入参数
+        if (defaultDataScope == null) {
+            log.error("默认数据范围参数为null，orgCode: {}, userNum: {}", orgCode, userNum);
+            throw new IllegalArgumentException("默认数据范围参数不能为空");
+        }
+        
+        if (orgAuthorityScope == null) {
+            log.error("机构授权范围参数为null，orgCode: {}, userNum: {}", orgCode, userNum);
+            throw new IllegalArgumentException("机构授权范围参数不能为空");
+        }
+        
+        if (entityDataScopes == null) {
+            log.warn("实体数据范围参数为null，使用默认空集合，orgCode: {}, userNum: {}", orgCode, userNum);
+            entityDataScopes = new ArrayList<>();
+        }
+        
+        if (orgCode == null || orgCode.isEmpty()) {
+            log.error("机构编码参数为空，userNum: {}", userNum);
+            throw new IllegalArgumentException("机构编码参数不能为空");
+        }
+        
+        if (userNum == null || userNum.isEmpty()) {
+            log.error("用户编码参数为空，orgCode: {}", orgCode);
+            throw new IllegalArgumentException("用户编码参数不能为空");
+        }
+        
         Map<String, Object> effectiveScope = new HashMap<>();
         List<String> appliedRules = new ArrayList<>();
         
@@ -222,23 +320,29 @@ public class DataScopeServiceImpl implements DataScopeService {
             appliedRules.add("无机构访问权限，使用最小权限");
         }
         // 2. 优先使用实体数据范围（如果有）
-        else if (entityDataScopes != null && !entityDataScopes.isEmpty()) {
+        else if (!entityDataScopes.isEmpty()) {
             // 按优先级排序（数字越小优先级越高）
             List<Map<String, Object>> sortedScopes = entityDataScopes.stream()
                 .sorted(Comparator.comparing(scope -> (Integer) scope.get("rulePriority")))
                 .collect(Collectors.toList());
-            
+
             // 取优先级最高的实体范围
             Map<String, Object> highestPriorityScope = sortedScopes.get(0);
-            finalScopeType = (Integer) highestPriorityScope.get("scopeType");
-            calculationLogic = "实体规则(优先级" + highestPriorityScope.get("rulePriority") + ") → " + 
+            Integer entityScopeType = (Integer) highestPriorityScope.get("scopeType");
+            // 确保实体范围类型不为空，为空时使用本人数据范围
+            finalScopeType = entityScopeType != null ? entityScopeType : DATA_SCOPE_SELF;
+            Object rulePriority = highestPriorityScope.get("rulePriority");
+            Object dataName = highestPriorityScope.get("dataName");
+            calculationLogic = "实体规则(优先级" + (rulePriority != null ? rulePriority : "未知") + ") → " +
                               getDataScopeLabel(finalScopeType);
-            appliedRules.add("应用实体规则: " + highestPriorityScope.get("dataName"));
+            appliedRules.add("应用实体规则: " + (dataName != null ? dataName : "未知实体"));     
         }
-        // 3. 其次使用机构授权范围
-        else if ((Boolean) orgAuthorityScope.get("hasAccess")) {
-            Integer orgRangeType = (Integer) orgAuthorityScope.get("orgRangeType");
-            
+        // 3. 其次使用机构授权范围（经过第1步检查，hasAccess必定为true）
+        else {
+            Integer orgRangeType = (Integer) orgAuthorityScope.get("orgRangeType");        
+            // 确保机构范围类型不为空，默认为1（仅本机构）
+            orgRangeType = orgRangeType != null ? orgRangeType : 1;
+
             if (orgRangeType == 2) { // 包含下级机构
                 finalScopeType = DATA_SCOPE_ORG_WITH_CHILDREN;
                 calculationLogic = "机构授权(包含下级) → 本机构及下级";
@@ -246,14 +350,8 @@ public class DataScopeServiceImpl implements DataScopeService {
                 finalScopeType = DATA_SCOPE_ORG;
                 calculationLogic = "机构授权(仅本机构) → 本机构";
             }
-            
+
             appliedRules.add("应用机构授权规则");
-        }
-        // 4. 最后使用角色默认范围
-        else {
-            finalScopeType = (Integer) defaultDataScope.get("scopeType");
-            calculationLogic = "角色默认范围 → " + getDataScopeLabel(finalScopeType);
-            appliedRules.add("应用角色默认范围");
         }
         
         // 生成SQL条件
@@ -274,6 +372,27 @@ public class DataScopeServiceImpl implements DataScopeService {
                                             Map<String, Object> orgAuthorityScope,
                                             List<Map<String, Object>> entityDataScopes,
                                             Map<String, Object> effectiveScope) {
+        // 验证输入参数
+        if (defaultDataScope == null) {
+            log.error("默认数据范围参数为null");
+            throw new IllegalArgumentException("默认数据范围参数不能为空");
+        }
+        
+        if (orgAuthorityScope == null) {
+            log.error("机构授权范围参数为null");
+            throw new IllegalArgumentException("机构授权范围参数不能为空");
+        }
+        
+        if (effectiveScope == null) {
+            log.error("有效数据范围参数为null");
+            throw new IllegalArgumentException("有效数据范围参数不能为空");
+        }
+        
+        if (entityDataScopes == null) {
+            log.warn("实体数据范围参数为null，使用默认空集合");
+            entityDataScopes = new ArrayList<>();
+        }
+        
         List<Map<String, Object>> path = new ArrayList<>();
         
         // 角色默认范围节点

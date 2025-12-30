@@ -83,9 +83,17 @@ public class PermissionCheckServiceImpl implements PermissionCheckService {
             
             // 4. 查询用户在该机构下的部门信息
             List<Map<String, Object>> userDeptsInOrg = userOrgDeptService.selectAccessibleDeptsByUserNumAndOrgCode(userNum, orgCode);
+            if (userDeptsInOrg == null || userDeptsInOrg.isEmpty()) {
+                log.error("用户[{}]在机构[{}]下没有可访问的部门信息", userNum, orgCode);
+                throw new RuntimeException("用户在该机构下没有可访问的部门");
+            }
             
             // 5. 查询用户角色信息
             List<Map<String, Object>> userRoles = sysUserRoleMapper.selectUserRolesWithDataScope(userNum);
+            if (userRoles == null || userRoles.isEmpty()) {
+                log.error("用户[{}]没有分配任何角色", userNum);
+                throw new RuntimeException("用户没有分配任何角色");
+            }
             
             // 6. 查询角色的机构数据范围
             List<Map<String, Object>> roleOrgScopes = new ArrayList<>();
@@ -94,37 +102,79 @@ public class PermissionCheckServiceImpl implements PermissionCheckService {
                         .map(role -> (String) role.get("roleCode"))
                         .collect(Collectors.toList());
                 roleOrgScopes = sysRoleOrgMapper.selectRoleOrgScopesByRoleCodes(roleCodes);
+                if (roleOrgScopes == null) {
+                    log.error("查询角色[{}]的机构数据范围失败", String.join(",", roleCodes));
+                    roleOrgScopes = new ArrayList<>();
+                }
             }
             
             // 7. 计算用户在该机构下的数据范围（增强版）
             Map<String, Object> dataPermissions = dataScopeService.calculateEnhancedDataScope(userRoles, roleOrgScopes, userNum, orgCode);
+            if (dataPermissions == null) {
+                log.error("计算用户[{}]在机构[{}]下的数据范围失败", userNum, orgCode);
+                throw new RuntimeException("计算数据范围失败");
+            }
             
             // 8. 查询用户所有权限定义
             List<Map<String, Object>> allPermissions = getAllPermissions();
+            if (allPermissions == null) {
+                log.error("查询所有权限定义失败");
+                throw new RuntimeException("查询权限定义失败");
+            }
             
             // 9. 用户直接权限（当前为空列表，如有直接授权可在此补充）
             List<Map<String, Object>> userPermissions = getUserPermissions(userNum);
+            if (userPermissions == null) {
+                userPermissions = new ArrayList<>();
+            }
             
             // 10. 角色权限
             List<Map<String, Object>> rolePermissions = getRolePermissions(userRoles);
+            if (rolePermissions == null) {
+                log.error("查询用户[{}]的角色权限失败", userNum);
+                throw new RuntimeException("查询角色权限失败");
+            }
             
             // 11. 菜单权限
             List<Map<String, Object>> menuPermissions = getMenuPermissions(userRoles);
+            if (menuPermissions == null) {
+                log.error("查询用户[{}]的菜单权限失败", userNum);
+                throw new RuntimeException("查询菜单权限失败");
+            }
             
             // 12. 页面权限（包含按钮权限）
             List<Map<String, Object>> pagePermissions = getPagePermissions(userRoles);
+            if (pagePermissions == null) {
+                log.error("查询用户[{}]的页面权限失败", userNum);
+                throw new RuntimeException("查询页面权限失败");
+            }
             
             // 13. 时间权限
             List<Map<String, Object>> timePermissions = getTimePermissions(userRoles);
+            if (timePermissions == null) {
+                timePermissions = new ArrayList<>();
+            }
             
             // 14. 字段权限
             List<Map<String, Object>> fieldPermissions = getFieldPermissions(userRoles);
+            if (fieldPermissions == null) {
+                log.error("查询用户[{}]的字段权限失败", userNum);
+                throw new RuntimeException("查询字段权限失败");
+            }
             
             // 15. API权限
             List<Map<String, Object>> apiPermissions = getApiPermissions(userRoles);
+            if (apiPermissions == null) {
+                log.error("查询用户[{}]的API权限失败", userNum);
+                throw new RuntimeException("查询API权限失败");
+            }
             
             // 16. 业务权限
             List<Map<String, Object>> bizPermissions = getBizPermissions(userRoles);
+            if (bizPermissions == null) {
+                log.error("查询用户[{}]的业务权限失败", userNum);
+                throw new RuntimeException("查询业务权限失败");
+            }
             
             // 17. 构建返回数据
             Map<String, Object> result = new HashMap<>();

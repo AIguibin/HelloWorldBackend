@@ -169,23 +169,28 @@ export default {
             });
             
             console.log('权限获取登录成功，登录信息:', loginInfo);
-            
-            // 根据src\main\java\com\aiguibin\platform\arch\controller\AuthController.java的接口checkLogin的返回值，组装前端需要的登录信息
-            // 保存登录信息和token到localStorage
-           
-            localStorage.setItem('loginInfo', JSON.stringify(loginInfo));
+
             localStorage.setItem('token', loginInfo.session.accessToken);
             localStorage.setItem('csrfToken', loginInfo.session.csrfToken);
             
-          
+            // 保存用户信息
             localStorage.setItem('user', JSON.stringify(loginInfo.user));
             localStorage.setItem('session', JSON.stringify(loginInfo.session));
-            localStorage.setItem('currentOrg', JSON.stringify(loginInfo.currentOrg));
-            localStorage.setItem('currentDept', JSON.stringify(loginInfo.currentDept));
-            localStorage.setItem('permissions', JSON.stringify(loginInfo.permissions));
-            localStorage.setItem('authorization', JSON.stringify(loginInfo.authorization));
-            localStorage.setItem('userAllOrgDeptList', JSON.stringify(loginInfo.userAllOrgDeptList));
-            localStorage.setItem('availableDepts', JSON.stringify(loginInfo.availableDepts));
+            
+            // 保存当前机构部门信息
+            localStorage.setItem('currentOrgDepts', JSON.stringify(loginInfo.currentOrgDepts));
+            
+            // 保存所有权限
+            localStorage.setItem('allPermissions', JSON.stringify(loginInfo.allPermissions));
+            localStorage.setItem('userPermissions', JSON.stringify(loginInfo.userPermissions));
+            localStorage.setItem('rolePermissions', JSON.stringify(loginInfo.rolePermissions));
+            localStorage.setItem('menuPermissions', JSON.stringify(loginInfo.menuPermissions));
+            localStorage.setItem('pagePermissions', JSON.stringify(loginInfo.pagePermissions));
+            localStorage.setItem('dataPermissions', JSON.stringify(loginInfo.dataPermissions));
+            localStorage.setItem('fieldPermissions', JSON.stringify(loginInfo.fieldPermissions));
+            localStorage.setItem('apiPermissions', JSON.stringify(loginInfo.apiPermissions));
+            localStorage.setItem('bizPermissions', JSON.stringify(loginInfo.bizPermissions));
+            localStorage.setItem('timePermissions', JSON.stringify(loginInfo.timePermissions));
 
             
             
