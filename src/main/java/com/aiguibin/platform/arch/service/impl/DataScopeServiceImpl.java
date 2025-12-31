@@ -322,20 +322,29 @@ public class DataScopeServiceImpl implements DataScopeService {
         // 2. 优先使用实体数据范围（如果有）
         else if (!entityDataScopes.isEmpty()) {
             // 按优先级排序（数字越小优先级越高）
-            List<Map<String, Object>> sortedScopes = entityDataScopes.stream()
-                .sorted(Comparator.comparing(scope -> (Integer) scope.get("rulePriority")))
-                .collect(Collectors.toList());
+            List<Map<String, Object>> sortedScopes;
+            try {
+                sortedScopes = entityDataScopes.stream()
+                    .sorted(Comparator.comparing(scope -> (Integer) scope.get("rulePriority")))
+                    .collect(Collectors.toList());
 
-            // 取优先级最高的实体范围
-            Map<String, Object> highestPriorityScope = sortedScopes.get(0);
-            Integer entityScopeType = (Integer) highestPriorityScope.get("scopeType");
-            // 确保实体范围类型不为空，为空时使用本人数据范围
-            finalScopeType = entityScopeType != null ? entityScopeType : DATA_SCOPE_SELF;
-            Object rulePriority = highestPriorityScope.get("rulePriority");
-            Object dataName = highestPriorityScope.get("dataName");
-            calculationLogic = "实体规则(优先级" + (rulePriority != null ? rulePriority : "未知") + ") → " +
-                              getDataScopeLabel(finalScopeType);
-            appliedRules.add("应用实体规则: " + (dataName != null ? dataName : "未知实体"));     
+                // 取优先级最高的实体范围
+                Map<String, Object> highestPriorityScope = sortedScopes.get(0);
+                Integer entityScopeType = (Integer) highestPriorityScope.get("scopeType");
+                // 确保实体范围类型不为空，为空时使用本人数据范围
+                finalScopeType = entityScopeType != null ? entityScopeType : DATA_SCOPE_SELF;
+                Object rulePriority = highestPriorityScope.get("rulePriority");
+                Object dataName = highestPriorityScope.get("dataName");
+                calculationLogic = "实体规则(优先级" + (rulePriority != null ? rulePriority : "未知") + ") → " +
+                                  getDataScopeLabel(finalScopeType);
+                appliedRules.add("应用实体规则: " + (dataName != null ? dataName : "未知实体"));     
+            } catch (NullPointerException e) {
+                log.error("处理实体数据范围时发生空指针异常，entityDataScopes: {}", entityDataScopes, e);
+                // 出现异常时，使用本人数据范围作为默认值
+                finalScopeType = DATA_SCOPE_SELF;
+                calculationLogic = "实体规则处理异常 → 本人数据";
+                appliedRules.add("实体规则处理异常，使用最小权限");
+            }
         }
         // 3. 其次使用机构授权范围（经过第1步检查，hasAccess必定为true）
         else {

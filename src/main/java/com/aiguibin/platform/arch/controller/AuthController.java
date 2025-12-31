@@ -111,23 +111,20 @@ public class AuthController {
         // 获取CSRF Token
         String csrfToken = authService.getCsrfToken(accessToken);
         // 构建会话信息
-        Map<String, Object> session = new HashMap<>();
-        session.put("accessToken", accessToken);
-        session.put("tokenType", "Bearer");
-        session.put("csrfToken", csrfToken);
-        session.put("expiresIn", 7200); // 2小时过期
-        session.put("refreshToken", authService.generateRefreshToken(userNum, selectedOrgCode));
-        session.put("loginTime", new Date());
-        session.put("selectedOrgCode", selectedOrgCode);
-        session.put("selectedOrgTime", new Date());
+        result.put("accessToken", accessToken);
+        result.put("tokenType", "Bearer");
+        result.put("csrfToken", csrfToken);
+        result.put("expiresIn", 7200); // 2小时过期
+        result.put("refreshToken", authService.generateRefreshToken(userNum, selectedOrgCode));
+        result.put("loginTime", new Date());
+        result.put("selectedOrgCode", selectedOrgCode);
+        result.put("selectedOrgTime", new Date());
         // 按照格式生成sessionId: SESSION_当前时间_用户名_机构编码
         String sessionId = String.format("SESSION_%s_%s_%s",
                 new Date().toString().replaceAll("\\s+", "_").replaceAll(":", ""),
                 userNum,
                 selectedOrgCode);
-        session.put("sessionId", sessionId);
-
-        result.put("session", session);
+        result.put("sessionId", sessionId);
 
         return ApiResponse.success(result);
     }

@@ -22,7 +22,7 @@ public interface SysDataPermissionMapper extends BaseMapper<SysDataPermission> {
      * @return 数据权限列表
      */
     @Select("<script>" +
-            "SELECT perm_code as permCode, data_name as dataName, entity_type as entityType, scope_type as scopeType, include_children as includeChildren, rule_type as ruleType, custom_sql as customSql, rule_expression as ruleExpression, status " +
+            "SELECT perm_code as permCode, data_name as dataName, entity_type as entityType, scope_type as scopeType, include_children as includeChildren, rule_type as ruleType, custom_sql as customSql, rule_expression as ruleExpression, rule_priority as rulePriority, condition_fields as conditionFields, is_global as isGlobal, status " +
             "FROM sys_data_permission " +
             "WHERE 1=1 " +
             "<if test='permCodes != null and permCodes.size() > 0'>" +

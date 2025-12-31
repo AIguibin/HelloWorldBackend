@@ -170,16 +170,22 @@ export default {
             
             console.log('权限获取登录成功，登录信息:', loginInfo);
 
-            localStorage.setItem('token', loginInfo.session.accessToken);
-            localStorage.setItem('csrfToken', loginInfo.session.csrfToken);
+            localStorage.setItem('token', loginInfo.accessToken);
+            localStorage.setItem('csrfToken', loginInfo.csrfToken);
+            
+            localStorage.setItem('tokenType', loginInfo.tokenType);
+            localStorage.setItem('expiresIn', loginInfo.expiresIn);
+            localStorage.setItem('refreshToken', loginInfo.refreshToken);
+            localStorage.setItem('loginTime', loginInfo.loginTime);
+            localStorage.setItem('selectedOrgCode', loginInfo.selectedOrgCode);
+            localStorage.setItem('selectedOrgTime', loginInfo.selectedOrgTime);
+            localStorage.setItem('sessionId', loginInfo.sessionId);
             
             // 保存用户信息
             localStorage.setItem('user', JSON.stringify(loginInfo.user));
-            localStorage.setItem('session', JSON.stringify(loginInfo.session));
             
             // 保存当前机构部门信息
             localStorage.setItem('currentOrgDepts', JSON.stringify(loginInfo.currentOrgDepts));
-            
             // 保存所有权限
             localStorage.setItem('allPermissions', JSON.stringify(loginInfo.allPermissions));
             localStorage.setItem('userPermissions', JSON.stringify(loginInfo.userPermissions));
