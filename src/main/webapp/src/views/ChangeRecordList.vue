@@ -7,7 +7,7 @@
         <div class="search-inputs-wrapper">
           <!-- 默认显示的前3个搜索项 -->
           <el-input v-model="search.groupName" placeholder="组名" class="search-input" />
-          <el-input v-model="search.developer" placeholder="开发负责人" class="search-input" />
+          <el-input v-model="search.developerName" placeholder="开发负责人" class="search-input" />
           <el-input v-model="search.serviceName" placeholder="服务名称" class="search-input" />
           <el-input v-model="search.defectNumber" placeholder="缺陷编号" class="search-input" />
           <el-select v-model="search.developType" placeholder="开发类别" class="search-select">
@@ -71,20 +71,23 @@
         <!-- 基本信息 -->
         <el-table-column prop="defectNumber" label="缺陷编号" width="140" :show-overflow-tooltip="true" />
         <el-table-column prop="groupName" label="组名" width="140" :show-overflow-tooltip="true" />
-        <el-table-column prop="developer" label="开发负责人" width="140" :show-overflow-tooltip="true" />
+        <el-table-column prop="developerName" label="开发负责人" width="140" :show-overflow-tooltip="true" />
         <el-table-column prop="developType" label="开发类别" width="140" :show-overflow-tooltip="true">
           <template slot-scope="scope">
             {{ getDictLabel('DEVELOP_TYPE', scope.row.developType) }}
           </template>
         </el-table-column>
-        <el-table-column prop="branchName" label="分支名称" width="140" :show-overflow-tooltip="true" />
+        <el-table-column prop="sourceBranch" label="源分支" width="140" :show-overflow-tooltip="true" />
+        <el-table-column prop="targetBranch" label="目标分支" width="140" :show-overflow-tooltip="true" />
         <el-table-column prop="serviceName" label="服务名称" width="160" :show-overflow-tooltip="true" />
         <!-- 问题与方案 -->
         <el-table-column prop="problemDescription" width="220" label="问题描述" :show-overflow-tooltip="true" />
         <el-table-column prop="changeDesc" width="220" label="变更描述" :show-overflow-tooltip="true" />
         <el-table-column prop="impactAnalysis" width="220" label="影响分析" :show-overflow-tooltip="true" />
-        <el-table-column prop="solution" label="解决方案" :show-overflow-tooltip="true" />
+        <el-table-column prop="solutionDescription" label="解决方案" :show-overflow-tooltip="true" />
         <el-table-column prop="codeList" width="220" label="代码清单" :show-overflow-tooltip="true" />
+        <el-table-column prop="shellPath" width="220" label="脚本清单" :show-overflow-tooltip="true" />
+        <el-table-column prop="configList" width="220" label="配置说明" :show-overflow-tooltip="true" />
         <!-- 影响范围 -->
         <el-table-column prop="involveExternalSystem" label="涉及外部系统" width="120" :show-overflow-tooltip="true">
           <template slot-scope="scope">
@@ -95,6 +98,12 @@
         <el-table-column prop="crossService" label="是否跨服务" width="120" :show-overflow-tooltip="true">
           <template slot-scope="scope">
             <el-tag :type="scope.row.crossService ? 'warning' : 'info'">{{ scope.row.crossService ? '是' : '否'
+            }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="includeShell" label="是否包含脚本" width="120" :show-overflow-tooltip="true">
+          <template slot-scope="scope">
+            <el-tag :type="scope.row.includeShell ? 'warning' : 'info'">{{ scope.row.includeShell ? '是' : '否'
             }}</el-tag>
           </template>
         </el-table-column>
@@ -134,12 +143,13 @@
         <el-table-column prop="releaseDate" label="发版日期" width="140" />
         <el-table-column prop="defectNumber" label="缺陷编号" width="140" />
         <el-table-column prop="groupName" label="组名" width="140" />
-        <el-table-column prop="developer" label="开发负责人" width="140" />
-        <el-table-column prop="branchName" label="分支名称" width="140" />
+        <el-table-column prop="developerName" label="开发负责人" width="140" />
+        <el-table-column prop="sourceBranch" label="源分支" width="140" />
+        <el-table-column prop="targetBranch" label="目标分支" width="140" />
         <el-table-column prop="serviceName" label="服务名称" width="160" />
         <el-table-column prop="problemDescription" label="问题描述" />
         <el-table-column prop="impactAnalysis" label="问题影响分析" />
-        <el-table-column prop="solution" label="解决方案" />
+        <el-table-column prop="solutionDescription" label="解决方案" />
         <el-table-column prop="involveExternalSystem" label="涉及外部系统" width="120">
           <template slot-scope="scope">
             <el-tag :type="scope.row.involveExternalSystem ? 'warning' : 'info'">{{ scope.row.involveExternalSystem ?
@@ -190,7 +200,7 @@ export default {
       // 新增：控制搜索项展开/收起的状态
       isSearchExpanded: false,
       // 移除 isReleased 搜索项，保留其他
-      search: { groupName: '', developer: '', serviceName: '', defectNumber: '', currentStatus: '', developType: '' },
+      search: { groupName: '', developerName: '', serviceName: '', defectNumber: '', currentStatus: '', developType: '' },
       searchRange: [],
       // 新增：导出相关字段，避免未定义导致渲染异常
       downloadStatus: '已合版',
@@ -202,15 +212,19 @@ export default {
         releaseDate: '',
         defectNumber: '',
         groupName: '',
-        developer: '',
-        branchName: '',
+        developerNum: '',
+        developerName: '',
+        sourceBranch: '',
+        targetBranch: '',
         serviceName: '',
         problemDescription: '',
         impactAnalysis: '',
-        solution: '',
-        involveExternalSystem: 0,
+        solutionDescription: '',
+        includeShell: 0,
         crossService: 0,
         codeList: '',
+        shellPath: '',
+        configList: '',
         remark: '',
         version: '',
         changeDesc: ''
@@ -319,15 +333,19 @@ export default {
         releaseDate: '',
         defectNumber: '',
         groupName: '',
-        developer: '',
-        branchName: '',
+        developerNum: '',
+        developerName: '',
+        sourceBranch: '',
+        targetBranch: '',
         serviceName: '',
         problemDescription: '',
         impactAnalysis: '',
-        solution: '',
-        involveExternalSystem: 0,
+        solutionDescription: '',
+        includeShell: 0,
         crossService: 0,
         codeList: '',
+        shellPath: '',
+        configList: '',
         remark: '',
         version: '',
         changeDesc: ''
@@ -423,7 +441,7 @@ export default {
 
     onDownloadCsv() {
       this.fetchListRaw(1000).then(rows => {
-        const headers = ['序号', '当前状态', '发版日期', '缺陷编号', '组别', '开发负责人', '分支名称', '服务名称', '问题描述', '影响分析', '解决方案', '涉及外部系统', '跨服务', '代码清单', '备注', '版本号', '变更描述', '创建时间', '更新时间', '创建人', '更新人', '删除标志'];
+        const headers = ['序号', '当前状态', '发版日期', '缺陷编号', '组别', '开发负责人', '源分支', '目标分支', '服务名称', '问题描述', '影响分析', '解决方案', '涉及外部系统', '跨服务', '是否包含脚本', '代码清单', '脚本清单', '配置说明', '备注', '版本号', '变更描述', '创建时间', '更新时间', '创建人', '更新人', '删除标志'];
         const escape = v => {
           if (v == null) return '';
           const s = String(v).replace(/\r?\n/g, ' ');
@@ -437,22 +455,26 @@ export default {
             cr.releaseDate,
             cr.defectNumber,
             cr.groupName,
-            cr.developer,
-            cr.branchName,
+            cr.developerName,
+            cr.sourceBranch,
+            cr.targetBranch,
             cr.serviceName,
             cr.problemDescription,
             cr.impactAnalysis,
-            cr.solution,
+            cr.solutionDescription,
             cr.involveExternalSystem,
             cr.crossService,
+            cr.includeShell,
             cr.codeList,
+            cr.shellPath,
+            cr.configList,
             cr.remark,
             cr.version,
             cr.changeDesc,
-            cr.createTime,
-            cr.updateTime,
-            cr.createUser,
-            cr.updateUser,
+            cr.createdTime,
+            cr.updatedTime,
+            cr.createdBy,
+            cr.updatedBy,
             cr.isDeleted
           ].map(escape).join(',');
           lines.push(line);

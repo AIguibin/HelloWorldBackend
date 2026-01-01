@@ -193,14 +193,18 @@ public class ApprovalServiceImpl implements ApprovalService {
         h.setGroupName(src.getGroupName());
         h.setDeveloperNum(src.getDeveloperNum());
         h.setDeveloperName(src.getDeveloperName());
-        h.setBranchName(src.getBranchName());
+        h.setSourceBranch(src.getSourceBranch());
+        h.setTargetBranch(src.getTargetBranch());
         h.setServiceName(src.getServiceName());
         h.setProblemDescription(src.getProblemDescription());
         h.setImpactAnalysis(src.getImpactAnalysis());
-        h.setSolution(src.getSolution());
+        h.setSolutionDescription(src.getSolutionDescription());
         h.setInvolveExternalSystem(src.getInvolveExternalSystem());
         h.setCrossService(src.getCrossService());
+        h.setIncludeShell(src.getIncludeShell());
         h.setCodeList(src.getCodeList());
+        h.setShellPath(src.getShellPath());
+        h.setConfigList(src.getConfigList());
         h.setRemark(src.getRemark());
         h.setVersion(src.getVersion());
         h.setChangeDesc(src.getChangeDesc());
@@ -211,6 +215,13 @@ public class ApprovalServiceImpl implements ApprovalService {
         h.setApproverName(src.getApproverName());
         h.setApprovalTime(src.getApprovalTime());
         h.setApprovalRemark(src.getApprovalRemark());
+        h.setFlowId(src.getFlowId());
+        h.setCurrentNodeId(src.getCurrentNodeId());
+        h.setApprovalInstanceId(src.getApprovalInstanceId());
+        h.setApprovalStatus(src.getApprovalStatus());
+        h.setSubmitTime(src.getSubmitTime());
+        h.setRejectReason(src.getRejectReason());
+        h.setRejectNodeId(src.getRejectNodeId());
         changeHistoryMapper.insert(h);
     }
 

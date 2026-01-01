@@ -28,9 +28,12 @@ public class ExcelEntity {
     @ExcelProperty("开发负责人")
     @ColumnWidth(20)
     private String developer;
-    @ExcelProperty("分支名称")
+    @ExcelProperty("源分支名称")
     @ColumnWidth(20)
-    private String branchName;
+    private String sourceBranch;
+    @ExcelProperty("目标分支名称")
+    @ColumnWidth(20)
+    private String targetBranch;
     @ExcelProperty("服务名称")
     @ColumnWidth(20)
     private String serviceName;
@@ -42,16 +45,25 @@ public class ExcelEntity {
     private String impactAnalysis;
     @ExcelProperty("解决方案")
     @ColumnWidth(20)
-    private String solution;
+    private String solutionDescription;
     @ExcelProperty("涉及外部系统")
     @ColumnWidth(20)
     private Integer involveExternalSystem;
     @ExcelProperty("跨服务")
     @ColumnWidth(20)
     private Integer crossService;
+    @ExcelProperty("是否包含脚本")
+    @ColumnWidth(20)
+    private Integer includeShell;
     @ExcelProperty("代码清单")
     @ColumnWidth(20)
     private String codeList;
+    @ExcelProperty("脚本清单")
+    @ColumnWidth(20)
+    private String shellPath;
+    @ExcelProperty("配置说明")
+    @ColumnWidth(20)
+    private String configList;
     @ExcelProperty("备注")
     @ColumnWidth(20)
     private String remark;

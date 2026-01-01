@@ -62,22 +62,22 @@ public class ChangeHistory {
     private String operationDescription;
     
     /**
-     * 操作时的当前状态
+     * 操作时的当前状态（关联字典）：已提请，审批中，已合并，已部署，测试中，待投产，已投产
      */
     private String currentStatus;
     
     /**
-     * 发布日期
+     * 提请投产日期
      */
     private LocalDate releaseDate;
     
     /**
-     * 缺陷编号
+     * 问题编号
      */
     private String defectNumber;
     
     /**
-     * 组别
+     * 模块组别
      */
     private String groupName;
     
@@ -92,9 +92,14 @@ public class ChangeHistory {
     private String developerName;
     
     /**
-     * 分支名称
+     * 源分支名称
      */
-    private String branchName;
+    private String sourceBranch;
+    
+    /**
+     * 目标分支名称
+     */
+    private String targetBranch;
     
     /**
      * 服务名称
@@ -114,7 +119,7 @@ public class ChangeHistory {
     /**
      * 解决方案
      */
-    private String solution;
+    private String solutionDescription;
     
     /**
      * 是否涉及外围系统：0-否，1-是
@@ -127,9 +132,24 @@ public class ChangeHistory {
     private Integer crossService;
     
     /**
+     * 是否包含脚本：0-否，1-是
+     */
+    private Integer includeShell;
+    
+    /**
      * 代码清单
      */
     private String codeList;
+    
+    /**
+     * 脚本清单
+     */
+    private String shellPath;
+    
+    /**
+     * 配置说明
+     */
+    private String configList;
     
     /**
      * 备注说明
@@ -147,7 +167,7 @@ public class ChangeHistory {
     private String changeDesc;
     
     /**
-     * 开发类别
+     * 开发类别（关联字典）：前端代码，后端代码，脚本文件，配置清单
      */
     private String developType;
     
@@ -180,6 +200,41 @@ public class ChangeHistory {
      * 审批备注
      */
     private String approvalRemark;
+    
+    /**
+     * 关联流程ID
+     */
+    private String flowId;
+    
+    /**
+     * 当前节点ID
+     */
+    private String currentNodeId;
+    
+    /**
+     * 审批实例ID
+     */
+    private String approvalInstanceId;
+    
+    /**
+     * 审批状态：DRAFT-草稿，PENDING-待审批，APPROVED-已通过，REJECTED-已拒绝，CANCELED-已取消
+     */
+    private String approvalStatus;
+    
+    /**
+     * 提交审批时间
+     */
+    private LocalDateTime submitTime;
+    
+    /**
+     * 拒绝原因
+     */
+    private String rejectReason;
+    
+    /**
+     * 拒绝节点ID
+     */
+    private String rejectNodeId;
     
     /**
      * 关联审批任务ID

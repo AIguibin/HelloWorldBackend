@@ -40,7 +40,7 @@ public class CodeScriptChangeExportController {
             int r = 0;
             Row header = sheet.createRow(r++);
 
-            String[] titles = {"序号", "当前状态", "发版日期", "缺陷编号", "组别", "开发负责人编号", "开发负责人姓名", "分支名称", "服务名称", "问题描述", "影响分析", "解决方案", "涉及外部系统", "跨服务", "代码清单", "备注", "版本号", "变更描述", "创建时间", "更新时间", "创建人", "更新人", "删除标志"};
+            String[] titles = {"序号", "当前状态", "发版日期", "缺陷编号", "组别", "开发负责人编号", "开发负责人姓名", "源分支名称", "目标分支名称", "服务名称", "问题描述", "影响分析", "解决方案", "涉及外部系统", "跨服务", "是否包含脚本", "代码清单", "脚本清单", "配置说明", "备注", "版本号", "变更描述", "创建时间", "更新时间", "创建人", "更新人", "删除标志"};
             for (int i = 0; i < titles.length; i++) {
                 header.createCell(i).setCellValue(titles[i]);
             }
@@ -57,22 +57,26 @@ public class CodeScriptChangeExportController {
                 row.createCell(0x04).setCellValue(cr.getGroupName() == null ? "" : cr.getGroupName());
                 row.createCell(0x05).setCellValue(cr.getDeveloperNum() == null ? "" : cr.getDeveloperNum());
                 row.createCell(0x06).setCellValue(cr.getDeveloperName() == null ? "" : cr.getDeveloperName());
-                row.createCell(0x07).setCellValue(cr.getBranchName() == null ? "" : cr.getBranchName());
-                row.createCell(0x08).setCellValue(cr.getServiceName() == null ? "" : cr.getServiceName());
-                row.createCell(0x09).setCellValue(cr.getProblemDescription() == null ? "" : cr.getProblemDescription());
-                row.createCell(0x0a).setCellValue(cr.getImpactAnalysis() == null ? "" : cr.getImpactAnalysis());
-                row.createCell(0x0b).setCellValue(cr.getSolution() == null ? "" : cr.getSolution());
-                row.createCell(0x0c).setCellValue(cr.getInvolveExternalSystem() == null ? "" : String.valueOf(cr.getInvolveExternalSystem()));
-                row.createCell(0x0d).setCellValue(cr.getCrossService() == null ? "" : String.valueOf(cr.getCrossService()));
-                row.createCell(0x0e).setCellValue(cr.getCodeList() == null ? "" : cr.getCodeList());
-                row.createCell(0x0f).setCellValue(cr.getRemark() == null ? "" : cr.getRemark());
-                row.createCell(0x10).setCellValue(cr.getVersion() == null ? "" : cr.getVersion());
-                row.createCell(0x11).setCellValue(cr.getChangeDesc() == null ? "" : cr.getChangeDesc());
-                row.createCell(0x12).setCellValue(cr.getCreatedTime() == null ? "" : dt.format(cr.getCreatedTime()));
-                row.createCell(0x13).setCellValue(cr.getUpdatedTime() == null ? "" : dt.format(cr.getUpdatedTime()));
-                row.createCell(0x14).setCellValue(cr.getCreatedBy() == null ? "" : cr.getCreatedBy());
-                row.createCell(0x15).setCellValue(cr.getUpdatedBy() == null ? "" : cr.getUpdatedBy());
-                row.createCell(0x16).setCellValue(cr.getIsDeleted() == null ? "" : String.valueOf(cr.getIsDeleted()));
+                row.createCell(0x07).setCellValue(cr.getSourceBranch() == null ? "" : cr.getSourceBranch());
+                row.createCell(0x08).setCellValue(cr.getTargetBranch() == null ? "" : cr.getTargetBranch());
+                row.createCell(0x09).setCellValue(cr.getServiceName() == null ? "" : cr.getServiceName());
+                row.createCell(0x0a).setCellValue(cr.getProblemDescription() == null ? "" : cr.getProblemDescription());
+                row.createCell(0x0b).setCellValue(cr.getImpactAnalysis() == null ? "" : cr.getImpactAnalysis());
+                row.createCell(0x0c).setCellValue(cr.getSolutionDescription() == null ? "" : cr.getSolutionDescription());
+                row.createCell(0x0d).setCellValue(cr.getInvolveExternalSystem() == null ? "" : String.valueOf(cr.getInvolveExternalSystem()));
+                row.createCell(0x0e).setCellValue(cr.getCrossService() == null ? "" : String.valueOf(cr.getCrossService()));
+                row.createCell(0x0f).setCellValue(cr.getIncludeShell() == null ? "" : String.valueOf(cr.getIncludeShell()));
+                row.createCell(0x10).setCellValue(cr.getCodeList() == null ? "" : cr.getCodeList());
+                row.createCell(0x11).setCellValue(cr.getShellPath() == null ? "" : cr.getShellPath());
+                row.createCell(0x12).setCellValue(cr.getConfigList() == null ? "" : cr.getConfigList());
+                row.createCell(0x13).setCellValue(cr.getRemark() == null ? "" : cr.getRemark());
+                row.createCell(0x14).setCellValue(cr.getVersion() == null ? "" : cr.getVersion());
+                row.createCell(0x15).setCellValue(cr.getChangeDesc() == null ? "" : cr.getChangeDesc());
+                row.createCell(0x16).setCellValue(cr.getCreatedTime() == null ? "" : dt.format(cr.getCreatedTime()));
+                row.createCell(0x17).setCellValue(cr.getUpdatedTime() == null ? "" : dt.format(cr.getUpdatedTime()));
+                row.createCell(0x18).setCellValue(cr.getCreatedBy() == null ? "" : cr.getCreatedBy());
+                row.createCell(0x19).setCellValue(cr.getUpdatedBy() == null ? "" : cr.getUpdatedBy());
+                row.createCell(0x1a).setCellValue(cr.getIsDeleted() == null ? "" : String.valueOf(cr.getIsDeleted()));
             }
 
             for (int i = 0; i < titles.length; i++) {
