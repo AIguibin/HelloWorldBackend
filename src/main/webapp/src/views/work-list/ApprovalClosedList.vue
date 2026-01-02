@@ -1,5 +1,5 @@
 <template>
-  <div class="approval-todo-page">
+  <div class="approval-closed-page">
     <!-- 搜索栏 -->
     <div class="search-bar">
       <div class="search-container">
@@ -8,9 +8,9 @@
           <!-- 默认显示的搜索项 -->
           <el-input v-model="search.assignee" placeholder="审批人" class="search-input" />
           <el-select v-model="search.taskStatus" placeholder="任务状态" class="search-select">
-            <el-option label="待审批" value="PENDING" />
             <el-option label="已完成" value="COMPLETED" />
             <el-option label="已拒绝" value="REJECTED" />
+            <el-option label="已取消" value="CANCELED" />
           </el-select>
           <el-input v-model="search.businessCode" placeholder="业务编码" class="search-input" />
           <el-input v-model="search.businessTitle" placeholder="业务标题" class="search-input" />
@@ -41,30 +41,24 @@
     <!-- 数据表格 -->
     <div class="table-container">
       <el-table :data="list" stripe class="data-table" :fit="true" border v-loading="loading">
-        <el-table-column width="200" label="操作" fixed="right">
+        <el-table-column width="180" label="操作" fixed="right">
           <template slot-scope="scope">
-            <el-button size="mini" @click="handleApprove(scope.row)" class="table-btn" :disabled="!canEdit" v-permission="'approval:task:approve'">处理</el-button>
-            <el-button size="mini" @click="handleTransfer(scope.row)" class="table-btn transfer-btn" :disabled="!canEdit" v-permission="'approval:task:transfer'">转办</el-button>
             <el-button size="mini" @click="handleDetail(scope.row)" class="table-btn detail-btn" v-permission="'approval:task:detail'">查看详情</el-button>
           </template>
         </el-table-column>
         <el-table-column prop="taskId" label="任务ID" width="160" :show-overflow-tooltip="true" />
-        <el-table-column prop="businessCode" label="业务编码" width="140" :show-overflow-tooltip="true" />
+        <el-table-column prop="businessCode" label="业务编码" width="140" />
         <el-table-column prop="businessTitle" label="业务标题" width="200" :show-overflow-tooltip="true" />
         <el-table-column prop="currentNode" label="当前节点" width="120" :show-overflow-tooltip="true">
           <template slot-scope="scope">
-            <el-tag :type="getNodeTagType(scope.row.currentNode)">{{ scope.row.currentNode || '未分配' }}</el-tag>
+            <el-tag :type="getNodeTagType(scope.row.currentNode)">{{ scope.row.currentNode || '已结束' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="assignTime" label="接收时间" width="180">
           <template slot-scope="scope">{{ formatDateTime(scope.row.assignTime) }}</template>
         </el-table-column>
-        <el-table-column prop="expireTime" label="过期时间" width="180">
-          <template slot-scope="scope">
-            <span :class="{ 'expire-warning': isExpireWarning(scope.row.expireTime) }">
-              {{ formatDateTime(scope.row.expireTime) }}
-            </span>
-          </template>
+        <el-table-column prop="closeTime" label="结束时间" width="180">
+          <template slot-scope="scope">{{ formatDateTime(scope.row.closeTime) }}</template>
         </el-table-column>
         <el-table-column prop="assignee" label="审批人" width="140" :show-overflow-tooltip="true" />
         <el-table-column prop="businessType" label="业务类型" width="140" :show-overflow-tooltip="true">
@@ -72,18 +66,20 @@
             <el-tag :type="getBusinessTypeTagType(scope.row.businessType)">{{ scope.row.businessType || '变更记录' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="readStatus" label="状态" width="80" :show-overflow-tooltip="true">
+        <el-table-column prop="approvalResult" label="审批结果" width="100">
           <template slot-scope="scope">
-            <el-tag :type="scope.row.readStatus === 'UNREAD' ? 'warning' : 'success'">
-              {{ scope.row.readStatus === 'UNREAD' ? '未读' : '已读' }}
+            <el-tag :type="getResultTagType(scope.row.approvalResult)">
+              {{ getResultLabel(scope.row.approvalResult) }}
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="changeDesc" label="变更描述" show-overflow-tooltip="true"/>
+        <el-table-column prop="operationDescription" label="操作描述" width="180" show-overflow-tooltip="true"/>
         <!-- 空数据提示 -->
         <template slot="empty">
           <div class="empty-data">
             <i class="el-icon-info"></i>
-            <span>暂无待办任务</span>
+            <span>暂无已结任务</span>
           </div>
         </template>
         <!-- 加载失败提示 -->
@@ -101,54 +97,17 @@
       <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="page" :page-sizes="[5, 10, 20, 30]" :page-size="pageSize" layout="total,sizes,prev,pager,next,jumper" :total="total">
       </el-pagination>
     </div>
-
-    <!-- 审批处理对话框 -->
-    <approval-process-dialog 
-      ref="approvalProcessDialog" 
-      :visible="showProcessDialog"
-      :task="selectedTask" 
-      :business-data="{}" 
-      @success="onProcessSuccess" 
-      @update:visible="showProcessDialog = $event"
-    />
-
-    <!-- 转办对话框 -->
-    <el-dialog :visible.sync="showTransferDialog" title="任务转办" width="50%">
-      <el-form :model="transferForm" label-width="80px">
-        <el-form-item label="任务ID" prop="taskId">
-          <el-input v-model="transferForm.taskId" disabled />
-        </el-form-item>
-        <el-form-item label="当前审批人" prop="currentAssignee">
-          <el-input v-model="transferForm.currentAssignee" disabled />
-        </el-form-item>
-        <el-form-item label="新审批人" prop="newAssignee" required>
-          <el-select v-model="transferForm.newAssignee" placeholder="请选择新审批人" style="width: 100%">
-            <el-option v-for="user in userOptions" :key="user.value" :label="user.label" :value="user.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="转办原因" prop="remark" required>
-          <el-input v-model="transferForm.remark" type="textarea" rows="3" placeholder="请输入转办原因" />
-        </el-form-item>
-      </el-form>
-      <div style="text-align:right; margin-top:12px;">
-        <el-button @click="showTransferDialog = false">取 消</el-button>
-        <el-button type="primary" @click="onTransferSubmit">确 定</el-button>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
 <script>
 // 导入API函数
-import { getApprovalTodoTasks, approveTask, transferTask } from '../api';
-// 导入审批处理对话框组件（假设已创建）
-import ApprovalProcessDialog from './ApprovalProcessDialog.vue';
+import { getApprovalCompletedTasks } from '../../api';
 // 导入权限混入
-import permissionMixin from '../utils/permissionMixin';
+import permissionMixin from '../../utils/permissionMixin';
 
 export default {
-  name: 'ApprovalTodoList',
-  components: { ApprovalProcessDialog },
+  name: 'ApprovalClosedList',
   mixins: [permissionMixin],
   data() {
     return {
@@ -170,25 +129,9 @@ export default {
         { value: '节点1', label: '节点1 - 项目经理审批' },
         { value: '节点2', label: '节点2 - 部门经理审批' },
         { value: '节点3', label: '节点3 - 总监审批' },
-        { value: '节点4', label: '节点4 - 总经理审批' }
+        { value: '节点4', label: '节点4 - 总经理审批' },
+        { value: '已结束', label: '流程已结束' }
       ],
-      // 用户选项（示例数据，实际应从API获取）
-      userOptions: [
-        { value: 'user001', label: '张三' },
-        { value: 'user002', label: '李四' },
-        { value: 'user003', label: '王五' },
-        { value: 'user004', label: '赵六' }
-      ],
-      showProcessDialog: false,
-      showTransferDialog: false,
-      selectedTask: null,
-      transferForm: {
-        taskId: '',
-        currentAssignee: '',
-        newAssignee: '',
-        remark: ''
-      },
-      pollingTimer: null,
       loading: false, // 加载状态
       loadError: false, // 加载错误状态
       errorMessage: '' // 错误信息
@@ -196,12 +139,6 @@ export default {
   },
   mounted() {
     this.fetchList();
-    // 启动轮询机制，每30秒刷新一次待办列表
-    this.startPolling();
-  },
-  beforeDestroy() {
-    // 组件销毁前清除轮询定时器
-    this.stopPolling();
   },
   computed: {
     canEdit() {
@@ -219,7 +156,7 @@ export default {
         return '';
       }
     },
-    // 获取待办任务列表
+    // 获取已结任务列表
     async fetchList(page = 1) {
       this.page = page;
       this.loading = true;
@@ -240,13 +177,13 @@ export default {
         params.endTime = this.formatDate(this.searchRange[1]);
       }
       try {
-        // 使用正确的API函数调用，传递当前用户编号作为assigneeNum
-        const data = await getApprovalTodoTasks(currentUserNum, params);
+        // 使用正确的API函数调用，传递当前用户编号作为operatorNum
+        const data = await getApprovalCompletedTasks(currentUserNum, params);
         this.list = data.records || [];
         this.total = data.total || 0;
       } catch (e) {
         this.loadError = true;
-        this.errorMessage = '待办任务列表加载失败';
+        this.errorMessage = '已结任务列表加载失败';
         this.$message && this.$message.error(this.errorMessage);
       } finally {
         this.loading = false;
@@ -298,6 +235,9 @@ export default {
     },
     // 节点标签类型
     getNodeTagType(node) {
+      if (node === '已结束') {
+        return 'success';
+      }
       switch (node) {
         case '节点1':
           return 'info';
@@ -324,75 +264,36 @@ export default {
           return '';
       }
     },
-    
-    // 判断是否临近过期（24小时内过期）
-    isExpireWarning(expireTime) {
-      if (!expireTime) {
-        return false;
-      }
-      try {
-        const expireDate = new Date(expireTime);
-        const now = new Date();
-        const diffMs = expireDate - now;
-        // 24小时内过期显示警告
-        return diffMs > 0 && diffMs < 24 * 60 * 60 * 1000;
-      } catch (e) {
-        return false;
+    // 审批结果标签类型
+    getResultTagType(result) {
+      switch (result) {
+        case 'APPROVED':
+          return 'success';
+        case 'REJECTED':
+          return 'danger';
+        case 'CANCELED':
+          return 'warning';
+        default:
+          return 'info';
       }
     },
-    // 处理审批
-    handleApprove(row) {
-      this.selectedTask = row;
-      this.showProcessDialog = true;
-    },
-    // 转办任务
-    handleTransfer(row) {
-      this.selectedTask = row;
-      this.transferForm = {
-        taskId: row.taskId,
-        currentAssignee: row.assignee,
-        newAssignee: '',
-        remark: ''
-      };
-      this.showTransferDialog = true;
+    // 审批结果显示文本
+    getResultLabel(result) {
+      switch (result) {
+        case 'APPROVED':
+          return '已通过';
+        case 'REJECTED':
+          return '已拒绝';
+        case 'CANCELED':
+          return '已取消';
+        default:
+          return '未知';
+      }
     },
     // 查看详情
     handleDetail(row) {
       // 跳转到详情页面或打开详情对话框
       this.$message && this.$message.info('查看详情功能待实现');
-    },
-    // 审批处理成功回调
-    onProcessSuccess() {
-      this.showProcessDialog = false;
-      this.fetchList(this.page);
-      this.$message && this.$message.success('审批处理成功');
-    },
-    // 转办提交
-    async onTransferSubmit() {
-      try {
-        await transferTask(this.transferForm.taskId, this.transferForm.newAssignee, this.transferForm.remark);
-        this.showTransferDialog = false;
-        this.fetchList(this.page);
-        this.$message && this.$message.success('任务转办成功');
-      } catch (e) {
-        this.$message && this.$message.error('任务转办失败');
-      }
-    },
-    
-    // 启动轮询机制
-    startPolling() {
-      // 轮询间隔设置为30秒，符合项目标准
-      this.pollingTimer = setInterval(() => {
-        this.fetchList(this.page);
-      }, 30000);
-    },
-    
-    // 停止轮询机制
-    stopPolling() {
-      if (this.pollingTimer) {
-        clearInterval(this.pollingTimer);
-        this.pollingTimer = null;
-      }
     }
   }
 };
@@ -400,7 +301,7 @@ export default {
 
 <style scoped>
 /* 复用现有样式 */
-.approval-todo-page {
+.approval-closed-page {
   padding: 0;
   margin: 0 auto;
   padding: 0 8px;
@@ -587,12 +488,6 @@ export default {
   background: linear-gradient(90deg, rgba(255, 182, 193, 0.15) 0%, rgba(221, 160, 221, 0.15) 100%);
 }
 
-.transfer-btn:hover {
-  border-color: #409EFF;
-  color: #409EFF;
-  background: rgba(64, 158, 255, 0.15);
-}
-
 .detail-btn:hover {
   border-color: #9370DB;
   color: #9370DB;
@@ -747,12 +642,6 @@ export default {
 .data-table ::v-deep .el-tag--primary {
   background: rgba(64, 158, 255, 0.1);
   color: #409EFF;
-}
-
-/* 过期警告样式 */
-.data-table .expire-warning {
-  color: #f56c6c;
-  font-weight: 500;
 }
 
 /* 空数据和加载错误提示样式 */

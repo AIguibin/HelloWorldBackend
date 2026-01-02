@@ -152,9 +152,9 @@
 </template>
 
 <script>
-import { approveTask, rejectTask, transferTask } from '../api';
+import { approveTask, rejectTask, transferTask } from '../../api';
 // 导入权限混入
-import permissionMixin from '../utils/permissionMixin';
+import permissionMixin from '../../utils/permissionMixin';
 
 export default {
   name: 'ApprovalProcessDialog',

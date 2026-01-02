@@ -11,8 +11,7 @@ import ChangeRecordHistory from '../views/ChangeRecordHistory.vue';
 import VersionManagement from '../views/VersionManagement.vue';
 import DevelopmentStandards from '../views/DevelopmentStandards.vue';
 // 导入审批相关组件
-import ApprovalTodoList from '../views/ApprovalTodoList.vue';
-import ApprovalProcessDialog from '../views/ApprovalProcessDialog.vue';
+import WorkListTodo from '../views/work-list/WorkListTodo.vue';
 
 // 忽略重复导航错误（Vue Router 3 在重复 push/replace 时会抛 NavigationDuplicated）
 const originalPush = Router.prototype.push;
@@ -43,8 +42,7 @@ const componentMap = {
   'views/VersionManagement': VersionManagement,
   'views/DevelopmentStandards': DevelopmentStandards,
   'views/SystemSettings': SystemSettings,
-  'views/ApprovalTodoList': ApprovalTodoList,
-  'views/ApprovalProcessDialog': ApprovalProcessDialog
+  'views/work-list/WorkListTodo': WorkListTodo
 };
 
 // 将菜单转换为路由
@@ -154,12 +152,12 @@ const router = new Router({
           component: ChangeRecordHistory,
           meta: { title: '变更记录历史' }
         },
-        // 审批相关路由
+        // 待办事项页面（包含待办、已办、已结三个tab）
         {
-          path: '/approval-todos',
-          name: 'ApprovalTodoList',
-          component: ApprovalTodoList,
-          meta: { title: '待办任务列表' }
+          path: '/work-list/todo',
+          name: 'WorkListTodo',
+          component: WorkListTodo,
+          meta: { title: '待办事项' }
         }
       ]
     }
