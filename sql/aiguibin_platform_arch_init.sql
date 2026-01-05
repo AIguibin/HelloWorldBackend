@@ -1,5 +1,5 @@
 -- ----------------------------
--- Chat2DB export data , export time: 2025-12-22 03:14:17
+-- Chat2DB export data , export time: 2026-01-05 00:01:29
 -- ----------------------------
 SET FOREIGN_KEY_CHECKS=0;
 -- ----------------------------
@@ -170,8 +170,8 @@ CREATE TABLE `biz_business_type` (
 -- ----------------------------
 DROP TABLE IF EXISTS `biz_change_history`;
 CREATE TABLE `biz_change_history` (
-  `uuid` varchar(32) NOT NULL COMMENT 'UUID，32位随机字符串',
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '历史记录ID',
+  `uuid` varchar(32) NOT NULL COMMENT 'UUID，32位随机字符串',
   `record_id` bigint unsigned NOT NULL COMMENT '关联的主记录ID',
   `record_code` varchar(20) NOT NULL COMMENT '变更记录编码',
   `operation_type` varchar(20) NOT NULL COMMENT '操作类型：CREATE/UPDATE/DELETE/APPROVE/REJECT',
@@ -179,30 +179,41 @@ CREATE TABLE `biz_change_history` (
   `operation_user_name` varchar(50) NOT NULL COMMENT '操作用户姓名',
   `operation_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
   `operation_description` varchar(500) DEFAULT NULL COMMENT '操作描述',
-  `current_status` varchar(50) DEFAULT NULL COMMENT '操作时的当前状态',
-  `release_date` date DEFAULT NULL COMMENT '发布日期',
-  `defect_number` varchar(100) DEFAULT NULL COMMENT '缺陷编号',
-  `group_name` varchar(100) DEFAULT NULL COMMENT '组别',
+  `current_status` varchar(50) DEFAULT NULL COMMENT '操作时的当前状态（关联字典）：已提请，审批中，已合并，已部署，测试中，待投产，已投产',
+  `release_date` date DEFAULT NULL COMMENT '提请投产日期',
+  `defect_number` varchar(100) DEFAULT NULL COMMENT '问题编号',
+  `group_name` varchar(100) DEFAULT NULL COMMENT '模块组别',
   `developer_num` varchar(20) DEFAULT NULL COMMENT '开发负责人用户编号',
   `developer_name` varchar(50) DEFAULT NULL COMMENT '开发负责人姓名',
-  `branch_name` varchar(100) DEFAULT NULL COMMENT '分支名称',
+  `source_branch` varchar(100) DEFAULT NULL COMMENT '源分支名称',
+  `target_branch` varchar(100) DEFAULT NULL COMMENT '目标分支名称',
   `service_name` varchar(100) DEFAULT NULL COMMENT '服务名称',
   `problem_description` text COMMENT '问题描述',
   `impact_analysis` text COMMENT '问题影响分析',
-  `solution` text COMMENT '解决方案',
-  `involve_external_system` tinyint DEFAULT NULL COMMENT '是否涉及外围系统',
-  `cross_service` tinyint DEFAULT NULL COMMENT '是否跨服务',
+  `solution_description` text COMMENT '解决方案',
+  `involve_external_system` tinyint DEFAULT NULL COMMENT '是否涉及外围系统：0-否，1-是',
+  `cross_service` tinyint DEFAULT NULL COMMENT '是否跨服务：0-否，1-是',
+  `include_shell` tinyint DEFAULT NULL COMMENT '是否包含脚本：0-否，1-是',
   `code_list` text COMMENT '代码清单',
+  `shell_path` text COMMENT '脚本清单',
+  `config_list` text COMMENT '配置说明',
   `remark` text COMMENT '备注说明',
   `version` varchar(50) DEFAULT NULL COMMENT '版本号',
   `change_desc` text COMMENT '变更描述',
-  `develop_type` varchar(32) DEFAULT NULL COMMENT '开发类别',
+  `develop_type` varchar(32) DEFAULT NULL COMMENT '开发类别（关联字典）：前端代码，后端代码，脚本文件，配置清单',
   `org_code` varchar(10) DEFAULT NULL COMMENT '所属机构编码',
   `dept_code` varchar(15) DEFAULT NULL COMMENT '所属部门编码',
   `approver_num` varchar(20) DEFAULT NULL COMMENT '审批人用户编号',
   `approver_name` varchar(50) DEFAULT NULL COMMENT '审批人姓名',
   `approval_time` datetime DEFAULT NULL COMMENT '审批时间',
   `approval_remark` text COMMENT '审批备注',
+  `flow_id` varchar(32) DEFAULT NULL COMMENT '关联流程ID',
+  `current_node_id` varchar(32) DEFAULT NULL COMMENT '当前节点ID',
+  `approval_instance_id` varchar(32) DEFAULT NULL COMMENT '审批实例ID',
+  `approval_status` varchar(32) DEFAULT NULL COMMENT '审批状态：DRAFT-草稿，PENDING-待审批，APPROVED-已通过，REJECTED-已拒绝，CANCELED-已取消',
+  `submit_time` datetime DEFAULT NULL COMMENT '提交审批时间',
+  `reject_reason` text COMMENT '拒绝原因',
+  `reject_node_id` varchar(32) DEFAULT NULL COMMENT '拒绝节点ID',
   `approval_task_id` varchar(32) DEFAULT NULL COMMENT '关联审批任务ID',
   `approval_log_id` varchar(32) DEFAULT NULL COMMENT '关联审批日志ID',
   `approval_operation_type` varchar(32) DEFAULT NULL COMMENT '审批操作类型',
@@ -224,27 +235,31 @@ CREATE TABLE `biz_change_history` (
 -- ----------------------------
 DROP TABLE IF EXISTS `biz_change_record`;
 CREATE TABLE `biz_change_record` (
-  `uuid` varchar(32) NOT NULL COMMENT 'UUID，32位随机字符串',
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '序号',
-  `record_code` varchar(20) NOT NULL COMMENT '变更记录编码，CHG+年月日+4位序列',
-  `current_status` varchar(50) DEFAULT 'PENDING_APPROVAL' COMMENT '当前状态（关联字典）',
-  `release_date` date DEFAULT NULL COMMENT '发布日期',
-  `defect_number` varchar(100) DEFAULT NULL COMMENT '缺陷编号',
-  `group_name` varchar(100) DEFAULT NULL COMMENT '组别',
+  `uuid` varchar(32) NOT NULL COMMENT 'UUID，32位随机字符串',
+  `record_code` varchar(20) NOT NULL COMMENT '变更记录编码，CHG+年月日时分秒+4位序列',
+  `current_status` varchar(50) DEFAULT 'PENDING_APPROVAL' COMMENT '当前状态（关联字典）：已提请，审批中，已合并，已部署，测试中，待投产，已投产',
+  `release_date` date DEFAULT NULL COMMENT '提请投产日期',
+  `defect_number` varchar(100) DEFAULT NULL COMMENT '问题编号',
+  `group_name` varchar(100) DEFAULT NULL COMMENT '模块组别',
+  `service_name` varchar(100) DEFAULT NULL COMMENT '服务名称',
   `developer_num` varchar(20) DEFAULT NULL COMMENT '开发负责人用户编号',
   `developer_name` varchar(50) DEFAULT NULL COMMENT '开发负责人姓名',
-  `branch_name` varchar(100) DEFAULT NULL COMMENT '分支名称',
-  `service_name` varchar(100) DEFAULT NULL COMMENT '服务名称',
+  `source_branch` varchar(100) DEFAULT NULL COMMENT '源分支名称',
+  `target_branch` varchar(100) DEFAULT NULL COMMENT '目标分支名称',
   `problem_description` text COMMENT '问题描述',
   `impact_analysis` text COMMENT '问题影响分析',
-  `solution` text COMMENT '解决方案',
+  `solution_description` text COMMENT '解决方案',
   `involve_external_system` tinyint DEFAULT '0' COMMENT '是否涉及外围系统：0-否，1-是',
   `cross_service` tinyint DEFAULT '0' COMMENT '是否跨服务：0-否，1-是',
+  `include_shell` tinyint DEFAULT '0' COMMENT '是否包含脚本：0-否，1-是',
   `code_list` text COMMENT '代码清单',
+  `shell_path` text COMMENT '脚本清单',
+  `config_list` text COMMENT '配置说明',
   `remark` text COMMENT '备注说明',
   `version` varchar(50) DEFAULT NULL COMMENT '版本号',
   `change_desc` text COMMENT '变更描述',
-  `develop_type` varchar(32) DEFAULT NULL COMMENT '开发类别（关联字典）',
+  `develop_type` varchar(32) DEFAULT NULL COMMENT '开发类别（关联字典）：前端代码，后端代码，脚本文件，配置清单',
   `org_code` varchar(10) DEFAULT NULL COMMENT '所属机构编码',
   `dept_code` varchar(15) DEFAULT NULL COMMENT '所属部门编码',
   `approver_num` varchar(20) DEFAULT NULL COMMENT '审批人用户编号',
@@ -437,7 +452,7 @@ CREATE TABLE `sys_dict_item` (
   KEY `idx_dict_value` (`dict_value`),
   KEY `idx_status` (`status`),
   KEY `idx_is_deleted` (`is_deleted`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='字典项表';
+) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='字典项表';
 
 -- ----------------------------
 -- Table structure for table sys_dict_type
@@ -461,7 +476,7 @@ CREATE TABLE `sys_dict_type` (
   UNIQUE KEY `uk_dict_type_code` (`dict_type_code`),
   KEY `idx_status` (`status`),
   KEY `idx_is_deleted` (`is_deleted`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='字典类型表';
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='字典类型表';
 
 -- ----------------------------
 -- Table structure for table sys_field_permission
@@ -533,7 +548,7 @@ CREATE TABLE `sys_menu` (
   KEY `idx_resource_type` (`resource_type`),
   KEY `idx_path` (`path`(100)),
   KEY `idx_status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='菜单/按钮资源表';
+) ENGINE=InnoDB AUTO_INCREMENT=1171 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='菜单/按钮资源表';
 
 -- ----------------------------
 -- Table structure for table sys_operation_log

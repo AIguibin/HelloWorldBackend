@@ -63,8 +63,7 @@
         <!-- 当前状态与发版日期 -->
         <el-table-column prop="currentStatus" label="当前状态" width="120">
           <template slot-scope="scope">
-            <el-tag :type="statusTagType(scope.row.currentStatus)">{{ getDictLabel('CURRENT_STATUS',
-              scope.row.currentStatus) || '待审批' }}</el-tag>
+            <el-tag :type="statusTagType(scope.row.currentStatus)">{{ getStatusName(scope.row.currentStatus) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="releaseDate" label="发版日期" width="140" :show-overflow-tooltip="true" />
@@ -137,7 +136,7 @@
         <el-table-column prop="operationDescription" label="操作描述" />
         <el-table-column prop="currentStatus" label="当前状态" width="120">
           <template slot-scope="scope">
-            <el-tag :type="statusTagType(scope.row.currentStatus)">{{ scope.row.currentStatus || '待审批' }}</el-tag>
+            <el-tag :type="statusTagType(scope.row.currentStatus)">{{ getStatusName(scope.row.currentStatus) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="releaseDate" label="发版日期" width="140" />
@@ -208,7 +207,7 @@ export default {
       showForm: false,
       editTarget: null,
       form: {
-        currentStatus: '待审批',
+        currentStatus: '01',
         releaseDate: '',
         defectNumber: '',
         groupName: '',
@@ -329,7 +328,7 @@ export default {
     openCreate() {
       this.editTarget = null;
       this.form = {
-        currentStatus: '待审批',
+        currentStatus: '01',
         releaseDate: '',
         defectNumber: '',
         groupName: '',
@@ -378,11 +377,31 @@ export default {
     },
     statusTagType(s) {
       switch (s) {
-        case '01': case '待审批': return 'warning';
-        case '02': case '待评审': return 'info';
-        case '03': case '待合版': return 'primary';
-        case '04': case '已合版': return 'success';
+        case '01': return 'warning'; // 草稿态
+        case '02': return 'warning'; // 已提请
+        case '03': return 'primary'; // 审批中
+        case '04': return 'success'; // 已合并
+        case '05': return 'success'; // 已部署
+        case '06': return 'info';    // 测试中
+        case '07': return 'success'; // 已评审
+        case '08': return 'warning'; // 待投产
+        case '09': return 'success'; // 已投产
         default: return '';
+      }
+    },
+    // 获取状态名称
+    getStatusName(status) {
+      switch (status) {
+        case '01': return '草稿态';
+        case '02': return '已提请';
+        case '03': return '审批中';
+        case '04': return '已合并';
+        case '05': return '已部署';
+        case '06': return '测试中';
+        case '07': return '已评审';
+        case '08': return '待投产';
+        case '09': return '已投产';
+        default: return '未知状态';
       }
     },
     // 修复：模板引用的导航与登录方法

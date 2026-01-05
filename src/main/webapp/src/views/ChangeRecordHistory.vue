@@ -19,7 +19,7 @@
           <el-table-column prop="releaseDate" label="发版日期" width="130" />
           <el-table-column label="当前状态" width="90">
             <template slot-scope="scope">
-              <el-tag :type="statusTagType(scope.row.currentStatus)">{{ scope.row.currentStatus || '未知' }}</el-tag>
+              <el-tag :type="statusTagType(scope.row.currentStatus)">{{ getStatusName(scope.row.currentStatus) }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="changeDesc" label="变更描述" show-overflow-tooltip="true"/>
@@ -75,11 +75,31 @@ export default {
     },
     statusTagType(s) {
       switch (s) {
-        case '01': case '待审批': return 'warning';
-        case '02': case '待评审': return 'info';
-        case '03': case '待合版': return 'primary';
-        case '04': case '已合版': return 'success';
+        case '01': return 'warning'; // 草稿态
+        case '02': return 'warning'; // 已提请
+        case '03': return 'primary'; // 审批中
+        case '04': return 'success'; // 已合并
+        case '05': return 'success'; // 已部署
+        case '06': return 'info';    // 测试中
+        case '07': return 'success'; // 已评审
+        case '08': return 'warning'; // 待投产
+        case '09': return 'success'; // 已投产
         default: return '';
+      }
+    },
+    // 获取状态名称
+    getStatusName(status) {
+      switch (status) {
+        case '01': return '草稿态';
+        case '02': return '已提请';
+        case '03': return '审批中';
+        case '04': return '已合并';
+        case '05': return '已部署';
+        case '06': return '测试中';
+        case '07': return '已评审';
+        case '08': return '待投产';
+        case '09': return '已投产';
+        default: return '未知状态';
       }
     },
     formatDateTime(v) {

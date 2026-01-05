@@ -32,7 +32,7 @@ public class ChangeRecord {
     private String recordCode;
     
     /**
-     * 当前状态（关联字典）：已提请，审批中，已合并，已部署，测试中，待投产，已投产
+     * 当前状态（关联字典）：01-草稿态，02-已提请，03-审批中，04-已合并，05-已部署，06-测试中，07-已评审，08-待投产，09-已投产
      */
     private String currentStatus;
     
