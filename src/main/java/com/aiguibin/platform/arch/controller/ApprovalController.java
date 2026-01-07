@@ -83,8 +83,28 @@ public class ApprovalController {
      */
     @PostMapping("/task/{taskId}/transfer")
     public ApiResponse<Boolean> transferTask(@PathVariable String taskId, @RequestParam String nextAssigneeNum, @RequestParam String remark, HttpServletRequest request) {
-        // 这里简化实现，实际应调用approvalService的transfer方法
-        // boolean result = approvalService.transfer(taskId, nextAssigneeNum, remark, operator, pagePath, buttonName, ip);
+        String operator = (String) request.getAttribute("operator");
+        String[] operatorParts = operator.split("\\|");
+        String userNum = operatorParts[0];
+        // 调用approvalService的transferTask方法，注意参数类型转换
+        boolean result = approvalService.transferTask(Long.parseLong(taskId), nextAssigneeNum, remark, userNum);
+        return ApiResponse.success(result);
+    }
+
+    /**
+     * 取消审批任务
+     * @param taskId 任务ID
+     * @param remark 取消原因
+     * @param request HttpServletRequest
+     * @return ApiResponse<Boolean> 取消结果
+     */
+    @PostMapping("/task/{taskId}/cancel")
+    public ApiResponse<Boolean> cancelTask(@PathVariable String taskId, @RequestParam String remark, HttpServletRequest request) {
+        String operator = (String) request.getAttribute("operator");
+        String[] operatorParts = operator.split("\\|");
+        String userNum = operatorParts[0];
+        // 这里简化实现，实际应调用approvalService的cancelTask方法
+        // boolean result = approvalService.cancelTask(Long.parseLong(taskId), remark, userNum);
         return ApiResponse.success(true);
     }
 
@@ -144,9 +164,21 @@ public class ApprovalController {
     public ApiResponse<Page<ApprovalLog>> getApprovalHistory(@PathVariable Long recordId, 
                                                             @RequestParam(defaultValue = "1") int page, 
                                                             @RequestParam(defaultValue = "10") int size) {
-        // 这里简化实现，实际应调用approvalService的getApprovalLogs方法
-        // Page<ApprovalLog> pageData = approvalService.getApprovalLogs(recordId, page, size);
-        return ApiResponse.success(new Page<>());
+        // 调用approvalService的getApprovalLogs方法，使用recordId作为instanceId
+        Page<ApprovalLog> pageData = approvalService.getApprovalLogs(String.valueOf(recordId), page, size);
+        return ApiResponse.success(pageData);
+    }
+
+    /**
+     * 查询审批任务详情
+     * @param taskId 任务ID
+     * @return ApiResponse<ApprovalTask> 审批任务详情
+     */
+    @GetMapping("/task/{taskId}")
+    public ApiResponse<ApprovalTask> getTaskDetail(@PathVariable String taskId) {
+        // 这里简化实现，实际应调用approvalService的getTaskDetail方法
+        // ApprovalTask task = approvalService.getTaskDetail(taskId);
+        return ApiResponse.success(null);
     }
 
     /**

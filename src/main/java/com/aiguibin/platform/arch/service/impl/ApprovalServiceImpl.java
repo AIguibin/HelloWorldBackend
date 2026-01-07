@@ -1162,6 +1162,106 @@ public class ApprovalServiceImpl implements ApprovalService {
         return "TASK" + DateTimeFormatter.ofPattern("yyyyMMdd").format(LocalDateTime.now()) + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean cancelApprovalProcess(Long businessId, String businessType, String userNum) {
+        // 1. 查询所有关联的审批任务
+        LambdaQueryWrapper<ApprovalTask> taskQuery = new LambdaQueryWrapper<>();
+        taskQuery.eq(ApprovalTask::getBusinessId, businessId)
+                .eq(ApprovalTask::getBusinessType, businessType)
+                .eq(ApprovalTask::getIsDeleted, 0)
+                .ne(ApprovalTask::getTaskStatus, "REJECTED")
+                .ne(ApprovalTask::getTaskStatus, "APPROVED")
+                .ne(ApprovalTask::getTaskStatus, "CANCELED");
+        List<ApprovalTask> tasks = approvalTaskMapper.selectList(taskQuery);
+
+        if (tasks.isEmpty()) {
+            return false;
+        }
+
+        // 2. 查询业务数据
+        ChangeRecord record = changeRecordMapper.selectById(businessId);
+        if (record == null) {
+            return false;
+        }
+
+        String operator = userNum + "|" + userService.getUserByUserNum(userNum).getUserName();
+        String beforeStatus = record.getCurrentStatus();
+
+        // 3. 更新所有任务状态为已取消
+        for (ApprovalTask task : tasks) {
+            task.setTaskStatus("CANCELED");
+            task.setApprovalTime(LocalDateTime.now());
+            task.setUpdatedBy(operator);
+            approvalTaskMapper.updateById(task);
+
+            // 记录审批日志
+            saveApprovalLog(task, "CANCEL", operator, "取消审批流程", task.getCurrentStatus(), "CANCELED");
+        }
+
+        // 4. 更新业务数据状态
+        record.setCurrentStatus("已取消");
+        record.setApprovalStatus("CANCELED");
+        record.setUpdatedBy(operator);
+        changeRecordMapper.updateById(record);
+
+        // 5. 记录操作日志
+        saveHistory(record, "CANCEL", operator, "取消审批流程");
+        saveOpLog(operator, "CANCEL", businessType, businessId, "OK", "取消审批流程成功", "", "", "");
+
+        return true;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean withdrawApprovalProcess(Long businessId, String businessType, String userNum) {
+        // 1. 查询业务数据
+        ChangeRecord record = changeRecordMapper.selectById(businessId);
+        if (record == null) {
+            return false;
+        }
+
+        // 2. 验证只有创建人才能撤回
+        if (!record.getCreatedBy().equals(userNum)) {
+            return false;
+        }
+
+        // 3. 查询当前流程的所有待办任务
+        LambdaQueryWrapper<ApprovalTask> taskQuery = new LambdaQueryWrapper<>();
+        taskQuery.eq(ApprovalTask::getBusinessId, businessId)
+                .eq(ApprovalTask::getBusinessType, businessType)
+                .eq(ApprovalTask::getIsDeleted, 0)
+                .eq(ApprovalTask::getTaskStatus, "PENDING");
+        List<ApprovalTask> pendingTasks = approvalTaskMapper.selectList(taskQuery);
+
+        String operator = userNum + "|" + userService.getUserByUserNum(userNum).getUserName();
+        String beforeStatus = record.getCurrentStatus();
+
+        // 4. 撤回逻辑：将流程回滚到草稿状态
+        record.setCurrentStatus("01");
+        record.setApprovalStatus("DRAFT");
+        record.setCurrentNodeId("NODE_DEV_APPLY");
+        record.setUpdatedBy(operator);
+        changeRecordMapper.updateById(record);
+
+        // 5. 更新所有待办任务状态为已撤回
+        for (ApprovalTask task : pendingTasks) {
+            task.setTaskStatus("CANCELED");
+            task.setApprovalTime(LocalDateTime.now());
+            task.setUpdatedBy(operator);
+            approvalTaskMapper.updateById(task);
+
+            // 记录审批日志
+            saveApprovalLog(task, "WITHDRAW", operator, "撤回审批流程", task.getCurrentStatus(), "CANCELED");
+        }
+
+        // 6. 记录操作日志
+        saveHistory(record, "WITHDRAW", operator, "撤回审批流程");
+        saveOpLog(operator, "WITHDRAW", businessType, businessId, "OK", "撤回审批流程成功", "", "", "");
+
+        return true;
+    }
+
     /**
      * 记录审批日志
      */

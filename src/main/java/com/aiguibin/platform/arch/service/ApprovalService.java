@@ -47,6 +47,24 @@ public interface ApprovalService {
     boolean transferTask(Long taskId, String nextAssigneeNum, String remark, String userNum);
 
     /**
+     * 取消审批流程
+     * @param businessId 业务ID
+     * @param businessType 业务类型
+     * @param userNum 操作人用户编号
+     * @return 操作结果
+     */
+    boolean cancelApprovalProcess(Long businessId, String businessType, String userNum);
+
+    /**
+     * 撤回审批流程
+     * @param businessId 业务ID
+     * @param businessType 业务类型
+     * @param userNum 操作人用户编号
+     * @return 操作结果
+     */
+    boolean withdrawApprovalProcess(Long businessId, String businessType, String userNum);
+
+    /**
      * 查询待办任务
      * @param userNum 审批人用户编号
      * @param businessType 业务类型
