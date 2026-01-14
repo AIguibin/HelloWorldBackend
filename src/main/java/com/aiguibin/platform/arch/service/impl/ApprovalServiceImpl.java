@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.aiguibin.platform.arch.entity.*;
 import com.aiguibin.platform.arch.mapper.*;
 import com.aiguibin.platform.arch.service.ApprovalService;
+import com.aiguibin.platform.arch.service.BusinessTypeService;
 import com.aiguibin.platform.arch.service.NotifyService;
 import com.aiguibin.platform.arch.service.PermissionService;
 import com.aiguibin.platform.arch.service.UserService;
@@ -53,6 +54,9 @@ public class ApprovalServiceImpl implements ApprovalService {
 
     @Resource
     private UserService userService;
+    
+    @Resource
+    private BusinessTypeService businessTypeService;
 
     @Override
     @Transactional
@@ -453,10 +457,10 @@ public class ApprovalServiceImpl implements ApprovalService {
             throw new IllegalArgumentException("操作人用户编号不能为空");
         }
 
-        // 2. 业务数据合法性验证 - 通过现有Mapper执行数据存在性校验
-        ChangeRecord record = changeRecordMapper.selectById(businessId);
-        if (record == null) {
-            throw new RuntimeException("业务数据不存在，无法启动审批流程");
+        // 2. 获取业务类型配置 - 从biz_business_type表获取业务类型配置
+        BusinessType businessTypeConfig = businessTypeService.getBusinessTypeByCode(businessType);
+        if (businessTypeConfig == null) {
+            throw new RuntimeException("业务类型配置不存在");
         }
 
         // 3. 操作人权限验证 - 验证当前用户是否有权限启动该业务的审批流程
@@ -499,11 +503,11 @@ public class ApprovalServiceImpl implements ApprovalService {
             throw new RuntimeException("未找到有效的审批人配置");
         }
 
-        // 9. 更新业务数据状态 - 启动审批流程
-        ChangeRecord updatedRecord = updateBusinessDataStatus(record, flow, firstNode, flowInstanceCode, userNum);
+        // 9. 根据业务类型动态更新业务数据状态 - 启动审批流程
+        Map<String, Object> businessData = updateBusinessDataStatus(businessId, businessType, businessTypeConfig, flow, firstNode, flowInstanceCode, userNum);
 
         // 10. 创建首个节点的待办任务 - 为每个审批人生成任务记录
-        List<ApprovalTask> createdTasks = createFirstNodeTasks(updatedRecord, flow, firstNode, approvers, flowInstanceCode, userNum);
+        List<ApprovalTask> createdTasks = createFirstNodeTasks(businessId, businessType, businessTypeConfig, businessData, flow, firstNode, approvers, flowInstanceCode, userNum);
 
         // 11. 记录操作日志 - 双日志记录机制
         // 从 UserService 获取用户姓名，若接口不存在则降级使用空串避免编译错误
@@ -515,49 +519,90 @@ public class ApprovalServiceImpl implements ApprovalService {
             userName = "";
         }
         String operator = userNum + "|" + userName;
-        saveHistory(updatedRecord, "SUBMIT", operator, "提交审批");
-        saveOpLog(operator, "SUBMIT", "ChangeRecord", businessId, "OK", "提交审批成功", "", "", "");
+        
+        // 保存操作日志
+        saveOpLog(operator, "SUBMIT", businessTypeConfig.getMainTableName(), businessId, "OK", "提交审批成功", "", "", "");
 
         // 12. 发送审批启动通知 - 调用现有通知服务
-        sendApprovalStartNotification(updatedRecord, createdTasks, operator);
+        sendApprovalStartNotification(businessData, createdTasks, operator);
 
         // 13. 返回流程实例ID - 作为后续操作的唯一标识
         return businessId;
     }
 
     /**
-     * 更新业务数据状态
-     * @param record 业务记录
+     * 根据业务类型动态更新业务数据状态
+     * @param businessId 业务ID
+     * @param businessType 业务类型
+     * @param businessTypeConfig 业务类型配置
      * @param flow 审批流程
      * @param firstNode 首个审批节点
      * @param flowInstanceCode 流程实例编码
      * @param userNum 操作人
-     * @return 更新后的业务记录
+     * @return 更新后的业务数据
      */
-    private ChangeRecord updateBusinessDataStatus(ChangeRecord record, ApprovalFlow flow, ApprovalNode firstNode,
-                                                 String flowInstanceCode, String userNum) {
-        // 设置审批流程相关字段
-        record.setFlowId(flow.getFlowId());
-        record.setCurrentNodeId(firstNode.getNodeId());
-        // 设置current_status为"审批中-节点1"
-        record.setCurrentStatus(String.format("审批中-节点%d", firstNode.getNodeOrder()));
-        record.setApprovalInstanceId(flowInstanceCode);
-        record.setApprovalStatus(ApprovalStatus.PENDING_NODE1.getStatusName());
-        record.setSubmitTime(LocalDateTime.now());
-        record.setUpdatedBy(userNum);
+    private Map<String, Object> updateBusinessDataStatus(Long businessId, String businessType, 
+                                                        BusinessType businessTypeConfig, ApprovalFlow flow, 
+                                                        ApprovalNode firstNode, String flowInstanceCode, 
+                                                        String userNum) {
+        // 初始化业务数据Map
+        Map<String, Object> businessData = new HashMap<>();
+        
+        // 根据业务类型动态处理不同的业务数据
+        switch (businessType) {
+            case "CHANGE_RECORD":
+                // 处理变更记录
+                ChangeRecord record = changeRecordMapper.selectById(businessId);
+                if (record == null) {
+                    throw new RuntimeException("变更记录不存在");
+                }
+                
+                // 设置审批流程相关字段
+                record.setFlowId(flow.getFlowId());
+                record.setCurrentNodeId(firstNode.getNodeId());
+                // 设置current_status为"审批中-节点1"
+                record.setCurrentStatus(String.format("审批中-节点%d", firstNode.getNodeOrder()));
+                record.setApprovalInstanceId(flowInstanceCode);
+                record.setApprovalStatus("PENDING");
+                record.setSubmitTime(LocalDateTime.now());
+                record.setUpdatedBy(userNum);
 
-        // 更新业务数据
-        int updateCount = changeRecordMapper.updateById(record);
-        if (updateCount == 0) {
-            throw new RuntimeException("更新业务数据状态失败");
+                // 更新业务数据
+                int updateCount = changeRecordMapper.updateById(record);
+                if (updateCount == 0) {
+                    throw new RuntimeException("更新变更记录状态失败");
+                }
+                
+                // 保存业务数据到Map
+                businessData.put("businessId", businessId);
+                businessData.put("record", record);
+                businessData.put("businessCode", record.getRecordCode());
+                break;
+                
+            // 可以添加其他业务类型的处理逻辑
+            // case "RELEASE":
+            //     // 处理发版记录
+            //     break;
+            // case "DB_CHANGE":
+            //     // 处理数据库变更
+            //     break;
+            // case "CONFIG_CHANGE":
+            //     // 处理配置变更
+            //     break;
+                
+            default:
+                throw new RuntimeException("不支持的业务类型: " + businessType);
         }
-
-        return record;
+        
+        return businessData;
     }
 
     /**
      * 创建首个节点的待办任务
-     * @param record 业务记录
+     * @param businessId 业务ID
+     * @param businessType 业务类型
+     * @param businessTypeConfig 业务类型配置
+     * @param businessData 业务数据
      * @param flow 审批流程
      * @param firstNode 首个审批节点
      * @param approvers 审批人列表
@@ -565,9 +610,37 @@ public class ApprovalServiceImpl implements ApprovalService {
      * @param userNum 操作人
      * @return 创建的任务列表
      */
-    private List<ApprovalTask> createFirstNodeTasks(ChangeRecord record, ApprovalFlow flow, ApprovalNode firstNode,
+    private List<ApprovalTask> createFirstNodeTasks(Long businessId, String businessType, 
+                                                  BusinessType businessTypeConfig, Map<String, Object> businessData,
+                                                  ApprovalFlow flow, ApprovalNode firstNode,
                                                   List<String> approvers, String flowInstanceCode, String userNum) {
         List<ApprovalTask> createdTasks = new ArrayList<>();
+
+        // 获取业务编码
+        String businessCode = (String) businessData.get("businessCode");
+        
+        // 根据业务类型获取当前状态
+        String currentStatus = "";
+        switch (businessType) {
+            case "CHANGE_RECORD":
+                ChangeRecord record = (ChangeRecord) businessData.get("record");
+                currentStatus = record.getCurrentStatus();
+                break;
+            // 可以添加其他业务类型的处理逻辑
+            // case "RELEASE":
+            //     ReleaseRecord releaseRecord = (ReleaseRecord) businessData.get("releaseRecord");
+            //     currentStatus = releaseRecord.getCurrentStatus();
+            //     break;
+        }
+
+        // 获取操作人姓名
+        String userName;
+        try {
+            userName = userService.getUserByUserNum(userNum).getUserName();
+        } catch (Exception e) {
+            userName = "";
+        }
+        String operator = userNum + "|" + userName;
 
         // 为每个审批人生成待办任务
         for (String approverNum : approvers) {
@@ -576,12 +649,12 @@ public class ApprovalServiceImpl implements ApprovalService {
             task.setFlowId(flow.getFlowId());
             task.setNodeId(firstNode.getNodeId());
             task.setBusinessType(flow.getBusinessType());
-            task.setBusinessId(record.getId());
-            task.setBusinessCode(record.getRecordCode());
+            task.setBusinessId(businessId);
+            task.setBusinessCode(businessCode);
             task.setApproverNum(approverNum);
             task.setApproverName(userService.getUserByUserNum(approverNum).getUserName());
             task.setTaskStatus("PENDING");
-            task.setCurrentStatus(record.getCurrentStatus());
+            task.setCurrentStatus(currentStatus);
             task.setAssignTime(LocalDateTime.now());
             task.setCreatedBy(userNum);
             task.setUpdatedBy(userNum);
@@ -591,8 +664,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             createdTasks.add(task);
 
             // 记录审批日志
-            saveApprovalLog(task, "SUBMIT", userNum + "|" + userService.getUserByUserNum(userNum).getUserName(),
-                          "提交审批", "", record.getCurrentStatus());
+            saveApprovalLog(task, "SUBMIT", operator, "提交审批", "", currentStatus);
         }
 
         return createdTasks;
@@ -600,19 +672,45 @@ public class ApprovalServiceImpl implements ApprovalService {
 
     /**
      * 发送审批启动通知
-     * @param record 业务记录
+     * @param businessData 业务数据
      * @param tasks 创建的任务列表
      * @param operator 操作人
      */
-    private void sendApprovalStartNotification(ChangeRecord record, List<ApprovalTask> tasks, String operator) {
+    private void sendApprovalStartNotification(Map<String, Object> businessData, List<ApprovalTask> tasks, String operator) {
         try {
+            // 获取业务类型和业务编码
+            String businessType = "";
+            String businessCode = (String) businessData.get("businessCode");
+            String businessName = "";
+            
+            // 从任务列表中获取业务类型
+            if (!tasks.isEmpty()) {
+                businessType = tasks.get(0).getBusinessType();
+            }
+            
+            // 根据业务类型获取具体业务数据
+            switch (businessType) {
+                case "CHANGE_RECORD":
+                    ChangeRecord record = (ChangeRecord) businessData.get("record");
+                    businessName = "变更记录";
+                    break;
+                // 可以添加其他业务类型的处理逻辑
+                // case "RELEASE":
+                //     ReleaseRecord releaseRecord = (ReleaseRecord) businessData.get("releaseRecord");
+                //     businessName = "发版记录";
+                //     break;
+                default:
+                    businessName = "审批任务";
+                    break;
+            }
+            
             // 构造通知内容
             Map<String, Object> notifyContent = new HashMap<>();
-            notifyContent.put("businessId", record.getId());
-            notifyContent.put("businessType", "CHANGE_RECORD");
-            notifyContent.put("businessCode", record.getRecordCode());
+            notifyContent.put("businessId", businessData.get("businessId"));
+            notifyContent.put("businessType", businessType);
+            notifyContent.put("businessCode", businessCode);
             notifyContent.put("title", "新的审批任务");
-            notifyContent.put("content", String.format("您有一条新的变更记录审批任务，请及时处理。"));
+            notifyContent.put("content", String.format("您有一条新的%s审批任务，请及时处理。", businessName));
             notifyContent.put("operator", operator);
             notifyContent.put("createTime", LocalDateTime.now());
 
@@ -623,7 +721,9 @@ public class ApprovalServiceImpl implements ApprovalService {
             }
         } catch (Exception e) {
             // 通知发送失败不影响主流程，仅记录日志
-            saveOpLog(operator, "NOTIFY", "ApprovalTask", record.getId(), "FAIL",
+            // 使用businessData中的businessId代替task.getBusinessId()
+            Long businessId = (Long) businessData.get("businessId");
+            saveOpLog(operator, "NOTIFY", "ApprovalTask", businessId, "FAIL",
                     "审批通知发送失败: " + e.getMessage(), "", "", "");
         }
     }

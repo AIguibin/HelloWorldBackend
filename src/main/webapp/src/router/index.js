@@ -12,6 +12,7 @@ import VersionManagement from '../views/VersionManagement.vue';
 import DevelopmentStandards from '../views/DevelopmentStandards.vue';
 // 导入审批相关组件
 import WorkListTodo from '../views/work-list/WorkListTodo.vue';
+import ApprovalForm from '../views/approval/ApprovalForm.vue';
 
 // 忽略重复导航错误（Vue Router 3 在重复 push/replace 时会抛 NavigationDuplicated）
 const originalPush = Router.prototype.push;
@@ -42,7 +43,8 @@ const componentMap = {
   'views/VersionManagement': VersionManagement,
   'views/DevelopmentStandards': DevelopmentStandards,
   'views/SystemSettings': SystemSettings,
-  'views/work-list/WorkListTodo': WorkListTodo
+  'views/work-list/WorkListTodo': WorkListTodo,
+  'views/approval/ApprovalForm': ApprovalForm
 };
 
 // 将菜单转换为路由
@@ -158,6 +160,13 @@ const router = new Router({
           name: 'WorkListTodo',
           component: WorkListTodo,
           meta: { title: '待办事项' }
+        },
+        // 审批申请表单页面
+        {
+          path: '/approval-form',
+          name: 'ApprovalForm',
+          component: ApprovalForm,
+          meta: { title: '审批申请表单' }
         }
       ]
     }

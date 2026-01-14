@@ -50,13 +50,13 @@
     <div class="table-container">
       <el-table :data="list" stripe class="data-table" :fit="true" border>
         <el-table-column width="280" label="操作" fixed="right">
-          <template slot-scope="scope">
-            <el-button size="mini" @click="openEdit(scope.row)" class="table-btn">编辑</el-button>
-            <el-button size="mini" @click="openHistory(scope.row)" class="table-btn history-btn">历史</el-button>
-            <el-button size="mini" @click="goDetail(scope.row)" class="table-btn detail-btn">详情</el-button>
-            <el-button v-if="canSubmitApproval(scope.row)" size="mini" type="primary" @click="submitApproval(scope.row)" class="table-btn approve-btn">提交审批</el-button>
-          </template>
-        </el-table-column>
+            <template slot-scope="scope">
+              <el-button size="mini" @click="openEdit(scope.row)" class="table-btn">编辑</el-button>
+              <el-button size="mini" @click="openHistory(scope.row)" class="table-btn history-btn">历史</el-button>
+              <el-button size="mini" @click="goDetail(scope.row)" class="table-btn detail-btn">详情</el-button>
+              <el-button v-if="canSubmitApproval(scope.row)" size="mini" type="primary" @click="goToApprovalForm(scope.row)" class="table-btn approve-btn">发起审批</el-button>
+            </template>
+          </el-table-column>
         <!-- 序号（原ID） -->
         <!-- <el-table-column prop="id" label="序号" width="80" /> -->
         <el-table-column prop="version" label="版本号" width="160" :show-overflow-tooltip="true" />
@@ -184,7 +184,7 @@
 </template>
 
 <script>
-import { listChangeRecords, createChangeRecord, updateChangeRecord, deleteChangeRecord, exportChangeRecords, getDictItemsByType, submitApproval } from '../api';
+import { listChangeRecords, createChangeRecord, updateChangeRecord, deleteChangeRecord, exportChangeRecords, getDictItemsByType } from '../api';
 import ChangeRecordForm from './ChangeRecordForm.vue';
 
 export default {
@@ -551,16 +551,17 @@ export default {
       }
     },
     
-    // 新增：提交审批
-    async submitApproval(row) {
-      try {
-        // 调用提交审批API
-        await submitApproval(row.id);
-        this.$message.success('提交审批成功');
-        this.fetchList(this.page);
-      } catch (e) {
-        this.$message.error('提交审批失败');
-      }
+    // 新增：跳转到审批表单
+    goToApprovalForm(row) {
+      // 跳转到ApprovalForm页面，并携带业务ID和业务类型
+      this.$router.push({
+        path: '/approval-form',
+        query: {
+          businessId: row.id,
+          businessType: 'CHANGE_RECORD',
+          businessCode: row.recordCode
+        }
+      });
     },
     //分页
     handleSizeChange(val) {

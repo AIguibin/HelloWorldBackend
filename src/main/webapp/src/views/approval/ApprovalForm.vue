@@ -1,7 +1,8 @@
 <template>
   <div class="approval-form-container">
+    <form-validator ref="validator" :rules="formRules" />
     <el-card shadow="hover" title="审批申请表单">
-      <el-form :model="formData" :rules="formRules" ref="approvalForm" label-width="120px">
+      <el-form :model="formData" ref="approvalForm" label-width="120px">
         <!-- 业务类型选择 -->
         <el-form-item label="业务类型" prop="businessType">
           <el-select v-model="formData.businessType" placeholder="请选择业务类型" @change="handleBusinessTypeChange">
@@ -23,15 +24,54 @@
           <el-input v-model="formData.reason" type="textarea" :rows="4" placeholder="请输入申请原因"></el-input>
         </el-form-item>
 
-        <!-- 动态表单字段 -->
-        <template v-if="currentBusinessType">
+            <!-- 动态表单字段 -->
+        <template v-if="currentBusinessType && dynamicFields.length > 0">
           <!-- 根据业务类型动态渲染不同的表单字段 -->
-          <el-form-item v-if="currentBusinessType.typeCode === 'CHANGE_RECORD'" label="变更记录编码">
-            <el-input v-model="formData.changeRecordCode" placeholder="请输入变更记录编码"></el-input>
-          </el-form-item>
-          
-          <el-form-item v-if="currentBusinessType.typeCode === 'RELEASE'" label="发版版本号">
-            <el-input v-model="formData.version" placeholder="请输入发版版本号"></el-input>
+          <el-form-item
+            v-for="field in dynamicFields"
+            :key="field.fieldName"
+            :label="field.fieldLabel"
+            :prop="field.fieldName"
+          >
+            <el-input
+              v-if="field.fieldType === 'input'"
+              v-model="formData[field.fieldName]"
+              :placeholder="field.props.placeholder"
+              :clearable="field.props.clearable"
+              :type="field.props.type || 'text'"
+            ></el-input>
+            
+            <el-select
+              v-else-if="field.fieldType === 'select'"
+              v-model="formData[field.fieldName]"
+              :placeholder="field.props.placeholder"
+              :clearable="field.props.clearable"
+            >
+              <el-option
+                v-for="option in field.options"
+                :key="option.value"
+                :label="option.label"
+                :value="option.value"
+              ></el-option>
+            </el-select>
+            
+            <el-input
+              v-else-if="field.fieldType === 'textarea'"
+              v-model="formData[field.fieldName]"
+              :type="'textarea'"
+              :placeholder="field.props.placeholder"
+              :rows="field.props.rows || 4"
+              :clearable="field.props.clearable"
+            ></el-input>
+            
+            <el-date-picker
+              v-else-if="field.fieldType === 'date' || field.fieldType === 'datetime'"
+              v-model="formData[field.fieldName]"
+              :type="field.fieldType"
+              :placeholder="field.props.placeholder"
+              :format="field.props.format || (field.fieldType === 'datetime' ? 'yyyy-MM-dd HH:mm:ss' : 'yyyy-MM-dd')"
+              :value-format="field.props.valueFormat || (field.fieldType === 'datetime' ? 'yyyy-MM-dd HH:mm:ss' : 'yyyy-MM-dd')"
+            ></el-date-picker>
           </el-form-item>
         </template>
 
@@ -64,8 +104,15 @@
 </template>
 
 <script>
+import FormValidator from '@/components/FormValidator.vue';
+import ApprovalService from '@/services/ApprovalService';
+import eventBus from '@/utils/eventBus';
+
 export default {
   name: 'ApprovalForm',
+  components: {
+    FormValidator
+  },
   data() {
     return {
       formData: {
@@ -73,15 +120,23 @@ export default {
         title: '',
         reason: '',
         changeRecordCode: '',
-        version: ''
+        changeRecordId: '',
+        version: '',
+        releaseDate: '',
+        dbName: '',
+        sqlScript: '',
+        configName: '',
+        configType: ''
       },
       formRules: {
-        businessType: [{ required: true, message: '请选择业务类型', trigger: 'change' }],
-        title: [{ required: true, message: '请输入申请标题', trigger: 'blur' }],
-        reason: [{ required: true, message: '请输入申请原因', trigger: 'blur' }]
+        businessType: { required: true },
+        title: { required: true, maxLength: 100 },
+        reason: { required: true, maxLength: 500 }
       },
       businessTypes: [],
       currentBusinessType: null,
+      // 动态表单字段配置
+      dynamicFields: [],
       fileList: [],
       dialogImageUrl: '',
       dialogVisible: false
@@ -108,28 +163,237 @@ export default {
     handleBusinessTypeChange(value) {
       this.currentBusinessType = this.businessTypes.find(type => type.typeCode === value)
       // 重置动态字段
-      this.formData.changeRecordCode = ''
-      this.formData.version = ''
+      this.resetDynamicFields()
+      // 加载动态表单字段
+      this.loadDynamicFields()
+    },
+
+    // 重置动态字段
+    resetDynamicFields() {
+      // 重置所有动态字段
+      Object.keys(this.formData).forEach(key => {
+        if (!['businessType', 'title', 'reason'].includes(key)) {
+          this.formData[key] = ''
+        }
+      })
+    },
+
+    // 加载动态表单字段
+    loadDynamicFields() {
+      if (!this.currentBusinessType) {
+        this.dynamicFields = []
+        return
+      }
+
+      // 根据业务类型加载动态表单字段
+      switch (this.currentBusinessType.typeCode) {
+        case 'CHANGE_RECORD':
+          this.dynamicFields = [
+            {
+              fieldName: 'changeRecordCode',
+              fieldLabel: '变更记录编码',
+              fieldType: 'input',
+              props: {
+                type: 'input',
+                placeholder: '请输入变更记录编码',
+                clearable: true
+              },
+              rules: {
+                required: true,
+                maxLength: 50
+              }
+            },
+            {
+              fieldName: 'changeRecordId',
+              fieldLabel: '变更记录ID',
+              fieldType: 'input',
+              props: {
+                type: 'number',
+                placeholder: '请输入变更记录ID',
+                clearable: true
+              },
+              rules: {
+                required: true,
+                pattern: /^\d+$/,
+                message: '请输入有效的数字ID'
+              }
+            }
+          ]
+          break
+        case 'RELEASE':
+          this.dynamicFields = [
+            {
+              fieldName: 'version',
+              fieldLabel: '发版版本号',
+              fieldType: 'input',
+              props: {
+                placeholder: '请输入发版版本号',
+                clearable: true
+              },
+              rules: {
+                required: true,
+                maxLength: 50,
+                pattern: /^\d+\.\d+\.\d+$/, message: '请输入有效的版本号格式，如1.0.0'
+              }
+            },
+            {
+              fieldName: 'releaseDate',
+              fieldLabel: '计划发版日期',
+              fieldType: 'date',
+              props: {
+                type: 'date',
+                placeholder: '请选择计划发版日期',
+                format: 'yyyy-MM-dd',
+                valueFormat: 'yyyy-MM-dd'
+              },
+              rules: {
+                required: true
+              }
+            }
+          ]
+          break
+        case 'DB_CHANGE':
+          this.dynamicFields = [
+            {
+              fieldName: 'dbName',
+              fieldLabel: '数据库名称',
+              fieldType: 'input',
+              props: {
+                placeholder: '请输入数据库名称',
+                clearable: true
+              },
+              rules: {
+                required: true,
+                maxLength: 50
+              }
+            },
+            {
+              fieldName: 'sqlScript',
+              fieldLabel: 'SQL脚本',
+              fieldType: 'textarea',
+              props: {
+                type: 'textarea',
+                placeholder: '请输入SQL脚本',
+                rows: 6,
+                clearable: true
+              },
+              rules: {
+                required: true,
+                minLength: 10
+              }
+            }
+          ]
+          break
+        case 'CONFIG_CHANGE':
+          this.dynamicFields = [
+            {
+              fieldName: 'configName',
+              fieldLabel: '配置名称',
+              fieldType: 'input',
+              props: {
+                placeholder: '请输入配置名称',
+                clearable: true
+              },
+              rules: {
+                required: true,
+                maxLength: 100
+              }
+            },
+            {
+              fieldName: 'configType',
+              fieldLabel: '配置类型',
+              fieldType: 'select',
+              props: {
+                placeholder: '请选择配置类型',
+                clearable: true
+              },
+              options: [
+                { label: '系统配置', value: 'SYSTEM' },
+                { label: '应用配置', value: 'APPLICATION' },
+                { label: '环境配置', value: 'ENVIRONMENT' }
+              ],
+              rules: {
+                required: true
+              }
+            }
+          ]
+          break
+        default:
+          this.dynamicFields = []
+      }
+
+      // 更新表单规则
+      this.updateFormRules()
+    },
+
+    // 更新表单规则
+    updateFormRules() {
+      // 重置表单规则
+      this.formRules = {
+        businessType: { required: true },
+        title: { required: true, maxLength: 100 },
+        reason: { required: true, maxLength: 500 }
+      }
+
+      // 添加动态字段规则
+      this.dynamicFields.forEach(field => {
+        if (field.rules) {
+          this.formRules[field.fieldName] = field.rules
+        }
+      })
+    },
+
+    // 获取字段组件
+    getFieldComponent(fieldType) {
+      return this.fieldComponents[fieldType] || 'el-input'
     },
 
     // 提交表单
     submitForm() {
-      this.$refs.approvalForm.validate((valid) => {
-        if (valid) {
-          // 调用API提交审批
-          this.$http.post('/api/approval-requests', this.formData)
-            .then(response => {
-              this.$message.success('提交审批成功')
-              this.$router.push('/work-list/todo')
-            })
-            .catch(error => {
-              this.$message.error('提交审批失败')
-              console.error('提交审批失败:', error)
-            })
-        } else {
-          return false
-        }
-      })
+      // 使用通用表单验证组件进行验证
+      const validationResult = this.$refs.validator.validate(this.formData)
+      
+      if (validationResult.valid) {
+        // 调用统一审批服务提交审批
+        ApprovalService.triggerApproval({
+          businessId: this.formData.changeRecordId || this.formData.version,
+          businessType: this.formData.businessType,
+          userId: this.$store.state.user && this.$store.state.user.id ? this.$store.state.user.id : localStorage.getItem('userNum'),
+          metadata: {
+            title: this.formData.title,
+            reason: this.formData.reason,
+            ...this.formData
+          }
+        })
+        .then(response => {
+          this.$message.success('提交审批成功')
+          
+          // 发布审批触发事件
+          eventBus.emit(eventBus.events.APPROVAL_TRIGGERED, {
+            businessId: this.formData.changeRecordId || this.formData.version,
+            businessType: this.formData.businessType,
+            userId: this.$store.state.user && this.$store.state.user.id ? this.$store.state.user.id : localStorage.getItem('userNum'),
+            metadata: {
+              title: this.formData.title,
+              reason: this.formData.reason,
+              ...this.formData
+            }
+          });
+          
+          this.$router.push('/work-list/todo')
+        })
+        .catch(error => {
+          this.$message.error('提交审批失败')
+          console.error('提交审批失败:', error)
+        })
+      } else {
+        // 显示验证错误
+        const errorMessage = this.$refs.validator.getErrorString(validationResult.errors, '<br>')
+        this.$message.error({
+          message: errorMessage,
+          dangerouslyUseHTMLString: true
+        })
+      }
     },
 
     // 保存草稿
@@ -147,8 +411,26 @@ export default {
 
     // 重置表单
     resetForm() {
-      this.$refs.approvalForm.resetFields()
+      // 重置表单数据
+      this.formData = {
+        businessType: '',
+        title: '',
+        reason: '',
+        changeRecordCode: '',
+        changeRecordId: '',
+        version: '',
+        releaseDate: '',
+        dbName: '',
+        sqlScript: '',
+        configName: '',
+        configType: ''
+      }
+      // 重置动态字段
+      this.dynamicFields = []
+      // 重置文件列表
       this.fileList = []
+      // 重置当前业务类型
+      this.currentBusinessType = null
     },
 
     // 预览附件

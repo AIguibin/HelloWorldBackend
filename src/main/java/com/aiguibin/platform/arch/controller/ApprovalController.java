@@ -40,6 +40,24 @@ public class ApprovalController {
     }
 
     /**
+     * 统一审批触发接口
+     * @param businessId 业务ID
+     * @param businessType 业务类型
+     * @param request HttpServletRequest
+     * @return ApiResponse<Long> 提交结果，包含流程实例ID
+     */
+    @PostMapping("/trigger")
+    public ApiResponse<Long> triggerApproval(@RequestParam Long businessId, 
+                                           @RequestParam String businessType, 
+                                           HttpServletRequest request) {
+        String operator = (String) request.getAttribute("operator");
+        String[] operatorParts = operator.split("\\|");
+        String userNum = operatorParts[0];
+        Long instanceId = approvalService.startApprovalProcess(businessId, businessType, userNum);
+        return ApiResponse.success(instanceId);
+    }
+
+    /**
      * 同意审批
      * @param taskId 任务ID
      * @param remark 审批备注

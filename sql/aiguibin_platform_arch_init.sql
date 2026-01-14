@@ -1,5 +1,5 @@
 -- ----------------------------
--- Chat2DB export data , export time: 2026-01-05 00:01:29
+-- Chat2DB export data , export time: 2026-01-11 20:29:08
 -- ----------------------------
 SET FOREIGN_KEY_CHECKS=0;
 -- ----------------------------
@@ -27,7 +27,7 @@ CREATE TABLE `biz_approval_flow` (
   KEY `idx_business_type` (`business_type`),
   KEY `idx_is_active` (`is_active`),
   KEY `idx_is_deleted` (`is_deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='审批流程定义表';
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='审批流程定义表';
 
 -- ----------------------------
 -- Table structure for table biz_approval_log
@@ -53,6 +53,8 @@ CREATE TABLE `biz_approval_log` (
   `created_by` varchar(20) NOT NULL COMMENT '创建人用户编号',
   `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `is_deleted` tinyint DEFAULT '0' COMMENT '是否删除：0-否，1-是',
+  `updated_by` varchar(20) DEFAULT NULL COMMENT '更新人用户编号',
+  `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_uuid` (`uuid`),
   UNIQUE KEY `uk_log_id` (`log_id`),
@@ -65,7 +67,7 @@ CREATE TABLE `biz_approval_log` (
   KEY `idx_operator_num` (`operator_num`),
   KEY `idx_operation_time` (`operation_time`),
   KEY `idx_is_deleted` (`is_deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='审批流转记录表';
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='审批流转记录表';
 
 -- ----------------------------
 -- Table structure for table biz_approval_node
@@ -95,7 +97,7 @@ CREATE TABLE `biz_approval_node` (
   KEY `idx_approver_num` (`approver_num`),
   KEY `idx_is_active` (`is_active`),
   KEY `idx_is_deleted` (`is_deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='审批节点定义表';
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='审批节点定义表';
 
 -- ----------------------------
 -- Table structure for table biz_approval_task
@@ -134,7 +136,7 @@ CREATE TABLE `biz_approval_task` (
   KEY `idx_assign_time` (`assign_time`),
   KEY `idx_approval_time` (`approval_time`),
   KEY `idx_is_deleted` (`is_deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='待办任务表';
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='待办任务表';
 
 -- ----------------------------
 -- Table structure for table biz_business_type
@@ -295,7 +297,7 @@ CREATE TABLE `biz_change_record` (
   KEY `idx_approval_instance_id` (`approval_instance_id`),
   KEY `idx_approval_status` (`approval_status`),
   KEY `idx_submit_time` (`submit_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='变更记录表';
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='变更记录表';
 
 -- ----------------------------
 -- Table structure for table sys_api_resource
@@ -694,7 +696,7 @@ CREATE TABLE `sys_role` (
   UNIQUE KEY `uk_role_name` (`role_name`),
   KEY `idx_role_type` (`role_type`),
   KEY `idx_status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='角色信息表';
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='角色信息表';
 
 -- ----------------------------
 -- Table structure for table sys_role_org
@@ -835,7 +837,7 @@ CREATE TABLE `sys_user` (
   KEY `idx_is_locked` (`is_locked`),
   KEY `idx_phone` (`phone`),
   KEY `idx_email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户信息表';
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户信息表';
 
 -- ----------------------------
 -- Table structure for table sys_user_dept
@@ -927,6 +929,6 @@ CREATE TABLE `sys_user_role` (
   KEY `idx_is_primary` (`is_primary`),
   KEY `idx_status` (`status`),
   KEY `idx_effective_time` (`effective_start`,`effective_end`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户角色关联表';
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户角色关联表';
 
 SET FOREIGN_KEY_CHECKS=1;
