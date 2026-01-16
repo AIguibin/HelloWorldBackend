@@ -116,7 +116,7 @@ User getUserById(Long userId);
 0. **代码设计** → 先理解业务需求，并依据`sql/`下的表结构与初始化数据，再设计代码结构
 1. **代码编写** → 基于代码设计思考，使用现有类/方法，避免重复
 2. **代码审查** → 符合规范后再合并到主干
-3. **文档生成** → 所有文档放入 `.trae/documents/`
+3. **文档生成** → 所有文档放入 `.trae/plan/`
 4. **前端构建** → `npm run build`（生成dist目录）
 5. **后端重启** → Debug模式下重启SpringBoot应用
 
@@ -165,7 +165,7 @@ user_name → AS userName → userName → {{ userName }}
 
 ## 📁 **文档结构**
 ```
-.trae/documents/
+.trae/plan/
 ├── api-design/          # API设计文档
 ├── database/           # 数据库设计文档
 ├── coding-standards/   # 编码规范文档
