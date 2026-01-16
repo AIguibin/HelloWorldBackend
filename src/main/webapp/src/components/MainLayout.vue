@@ -188,6 +188,11 @@ export default {
 
     // 处理导航点击
     handleNavClick(menu) {
+      // 如果是目录类型，不支持点击
+      if (menu.menuType === "M") {
+        return;
+      }
+      
       if (menu.path) {
         this.$router.push(menu.path).catch(err => {
           // 忽略重复导航的错误
