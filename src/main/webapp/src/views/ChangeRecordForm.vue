@@ -280,11 +280,11 @@ export default {
       try {
         // 加载当前状态字典
         const statusRes = await getDictItemsByType('CURRENT_STATUS');
-        this.currentStatusOptions = statusRes.data || [];
+        this.currentStatusOptions = statusRes || [];
 
         // 加载开发类别字典
         const developRes = await getDictItemsByType('DEVELOP_TYPE');
-        this.developTypeOptions = developRes.data || [];
+        this.developTypeOptions = developRes || [];
       } catch (error) {
         console.error('加载字典数据失败:', error);
       }

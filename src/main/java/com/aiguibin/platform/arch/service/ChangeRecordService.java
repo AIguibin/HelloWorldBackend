@@ -134,6 +134,7 @@ public class ChangeRecordService {
 
     private void saveHistory(ChangeRecord src, String opType, String operator, String desc) {
         ChangeHistory h = new ChangeHistory();
+        h.setUuid(java.util.UUID.randomUUID().toString().replaceAll("-", ""));
         h.setRecordId(src.getId());
         h.setRecordCode(src.getRecordCode());
         h.setOperationType(opType);
@@ -189,7 +190,17 @@ public class ChangeRecordService {
 
     private void saveOpLog(String operator, String type, String objType, Long objId, String result, String msg, String pagePath, String buttonName, String ip) {
         OperationLog log = new OperationLog();
-        log.setOperator(operator);
+        // 生成UUID
+        log.setUuid(java.util.UUID.randomUUID().toString().replaceAll("-", ""));
+        // 从operator中解析出用户编号和用户名，格式为 "userNum|userName"
+        String[] operatorParts = operator.split("\\|");
+        if (operatorParts.length == 2) {
+            log.setOperatorNum(operatorParts[0]);
+            log.setOperatorName(operatorParts[1]);
+        } else {
+            log.setOperatorNum(operator);
+            log.setOperatorName(operator);
+        }
         log.setOperationType(type);
         log.setObjectType(objType);
         log.setObjectId(objId);

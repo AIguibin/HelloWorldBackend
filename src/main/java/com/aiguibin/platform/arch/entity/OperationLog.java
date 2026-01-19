@@ -15,15 +15,25 @@ import java.time.LocalDateTime;
 @TableName("sys_operation_log")
 public class OperationLog {
     /**
+     * UUID，32位随机字符串
+     */
+    private String uuid;
+    
+    /**
      * 自增ID，仅做序号
      */
     @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
-     * 操作用户
+     * 操作人用户编号
      */
-    private String operator;
+    private String operatorNum;
+    
+    /**
+     * 操作人姓名
+     */
+    private String operatorName;
     
     /**
      * 操作类型
