@@ -229,7 +229,8 @@ export default {
       try {
         // 优先从本地存储获取菜单数据
         const cachedMenus = localStorage.getItem('menuPermissions');
-        if (cachedMenus) {
+        // 临时处理：如果本地存储中有数据，直接跳过，因为权限验证在路由守卫中
+        if (!cachedMenus) {
           try {
             const menus = JSON.parse(cachedMenus);
             // 适配API响应格式
@@ -247,7 +248,9 @@ export default {
           // 适配API响应格式
           this.topMenuList = response || [];
           // 将菜单数据存储到本地存储
-          localStorage.setItem('menuPermissions', JSON.stringify(response));
+          // localStorage.setItem('menuPermissions', JSON.stringify(response));
+          // 给一个无需权限菜单列表，用于展示所有的菜单
+          localStorage.setItem('menuNoPermissions', JSON.stringify(response));
         } else {
           console.error('加载菜单失败: API返回空响应');
           this.topMenuList = [];

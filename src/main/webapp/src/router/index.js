@@ -148,7 +148,9 @@ export function addDynamicRoutes(menus) {
 export async function initDynamicRoutes() {
   try {
     // 从本地存储读取菜单数据
-    const cachedMenus = localStorage.getItem('menuPermissions');
+    // const cachedMenus = localStorage.getItem('menuPermissions');
+    // 临时处理无需要权限菜单
+    const cachedMenus = localStorage.getItem('menuNoPermissions');
     if (cachedMenus) {
       try {
         const menus = JSON.parse(cachedMenus);
