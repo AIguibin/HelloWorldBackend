@@ -2,10 +2,8 @@ package com.aiguibin.platform.arch.controller;
 
 import com.aiguibin.platform.arch.entity.ApprovalFlow;
 import com.aiguibin.platform.arch.entity.ApprovalNode;
-import com.aiguibin.platform.arch.mapper.ApprovalNodeMapper;
 import com.aiguibin.platform.arch.model.ApiResponse;
 import com.aiguibin.platform.arch.service.ApprovalFlowService;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,9 +22,6 @@ public class ApprovalFlowController {
 
     @Resource
     private ApprovalFlowService approvalFlowService;
-
-    @Resource
-    private ApprovalNodeMapper approvalNodeMapper;
 
     /**
      * 查询所有审批流程
@@ -56,12 +51,7 @@ public class ApprovalFlowController {
      */
     @GetMapping("/{flowId}/nodes")
     public ApiResponse<List<ApprovalNode>> getApprovalNodes(@PathVariable String flowId) {
-        LambdaQueryWrapper<ApprovalNode> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(ApprovalNode::getFlowId, flowId)
-                .eq(ApprovalNode::getIsActive, 1)
-                .eq(ApprovalNode::getIsDeleted, 0)
-                .orderByAsc(ApprovalNode::getNodeOrder);
-        List<ApprovalNode> approvalNodes = approvalNodeMapper.selectList(queryWrapper);
+        List<ApprovalNode> approvalNodes = approvalFlowService.getApprovalNodes(flowId);
         return ApiResponse.success(approvalNodes);
     }
 

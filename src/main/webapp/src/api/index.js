@@ -35,3 +35,6 @@ export const getApprovalHistory = (recordId, params) => request.get(`/approval/h
 export const getApprovalTodoTasks = (assigneeNum, params) => request.get('/approval/tasks/todo', { params: { ...params, assigneeNum } });
 export const getApprovalProcessedTasks = (operatorNum, params) => request.get('/approval/tasks/processed', { params: { ...params, operatorNum } });
 export const getApprovalCompletedTasks = (operatorNum, params) => request.get('/approval/tasks/completed', { params: { ...params, operatorNum } });
+
+// 业务类型 API
+export const getBusinessTypes = () => request.get('/business-types');

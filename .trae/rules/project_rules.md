@@ -1,173 +1,125 @@
-## 📋 项目规范
+# 全栈架构师高级开发规则 (Senior Full-Stack Architect Rules)
 
-### **1. 代码结构与命名规范**
-- **实体类(Entity)**：每个数据库表对应一个`UpperCamelCase`命名的Entity类
-- **Mapper接口**：每个Entity对应一个Mapper接口，按`UpperCamelCase`命名
-- **全局异常处理**：统一处理空值、验证异常、业务异常等，
-- **全局异常捕获**：自定义业务异常 BusinessException
-- **详细日志**：关键业务节点添加`INFO/DEBUG`级别日志，便于监控排查
-- **统一返回格式**：Result<T> 类（包含 code:Integer、msg:String、data:T）
-- **命名规范**：
-  - 数据库表：下划线命名（如 product_info、order_main）
-  - 实体类：驼峰命名（对应表名，如 ProductInfo、OrderMain）
-  - Mapper接口：XXXMapper（如 ProductInfoMapper）
-  - Service接口：XXXService + 实现类：XXXServiceImpl
-  - Controller：XXXController（如 ProductController）
-  - 字段：数据库下划线→实体类驼峰（如 product_name → productName）
-- **任何功能开发，必须包含**：
-  - 数据库表 SQL 脚本（含索引、注释）
-  - 实体类（Entity）+ RO(入参) + VO（出参）
-  - Mapper 接口 + XML/SQL（或 MyBatis-Plus 注解）
-  - Service 接口 + ServiceImpl（含业务逻辑、事务）
-  - Controller（含接口注解、参数校验、返回Result）
-  - 各层依赖注入正确（如 Service 注入 Mapper，Controller 注入 Service）  
-  - 数据库表字段 → 实体类字段 → DTO字段 → Mapper SQL → Service 逻辑 → Controller 参数，必须完全一致（名称、类型、非空约束）
-  - 禁止出现“数据库有字段但实体类没有”“SQL用错字段名”等情况
+## 🛠 1. 核心身份与思考逻辑
 
-
-### **2. 命名约定（严格执行）**
-| 组件类型 | 命名规范 | 示例 |
-|---------|---------|------|
-| Java类 | UpperCamelCase | `UserController` |
-| 方法/参数 | lowerCamelCase | `getUserById()` |
-| 前端请求/响应参数 | lowerCamelCase | `{ "userName": "张三" }` |
-| 数据库字段 | snake_case | `user_name` |
-| 前端变量/属性 | lowerCamelCase | `userName` |
-| 前端文件/组件 | lowerCamelCase | `userList.vue` |
-
-### **3. 数据库与SQL规范**
-```sql
--- ❌ 避免：字段名直接暴露
-SELECT user_name FROM users;
-
--- ✅ 必须：使用AS转换为驼峰
-SELECT 
-    user_id AS userId,
-    user_name AS userName,
-    create_time AS createTime
-FROM users;
-```
-
-### **4. 注释规范（Javadoc格式）**
-**实体类示例：**
-```java
-/**
- * 用户实体类
- * 对应数据库表：sys_user
- */
-public class User {
-    /**
-     * 用户ID - 主键
-     * 类型：Long，必填：是，默认值：无，备注：自增主键
-     */
-    private Long userId;
+- **身份定位**: 你是一位拥有 10 年以上经验的资深全栈架构师，擅长处理复杂的系统依赖、代码重构及性能优化。
+  
+- **环境感知**:
+  
+  - 在处理请求前，优先通过 `package.json`, `pom.xml`, `requirements.txt` 识别当前项目的具体技术版本。
     
-    /**
-     * 用户名
-     * 类型：String，必填：是，默认值：无，备注：唯一，长度3-20
-     */
-    private String userName;
-    // ... 其他字段
-}
-```
-
-**方法注释示例：**
-```java
-/**
- * 根据ID查询用户
- * @param userId 用户ID，必填
- * @return 用户实体，查询成功返回User对象，未找到返回null
- * @throws ServiceException 参数非法或系统异常时抛出
- * @影响数据库：SELECT操作
- */
-User getUserById(Long userId);
-```
-
-### **5. 前后端交互规范**
-**请求/响应格式：**
-```json
-// 请求（lowerCamelCase）
-{
-    "pageNum": 1,
-    "pageSize": 10,
-    "userName": "张三"
-}
-
-// 成功响应（统一包装）
-{
-    "code": 200,
-    "message": "操作成功",
-    "data": {
-        "userId": 1,
-        "userName": "张三",
-        "createTime": "2024-01-01 10:00:00"
-    }
-}
-
-// 错误响应
-{
-    "code": 500,
-    "message": "系统内部错误",
-    "data": null
-}
-```
-
-### **6. 开发流程规范**
-0. **代码设计** → 先理解业务需求，并依据`sql/`下的表结构与初始化数据，再设计代码结构
-1. **代码编写** → 基于代码设计思考，使用现有类/方法，避免重复
-2. **代码审查** → 符合规范后再合并到主干
-3. **文档生成** → 所有文档放入 `.trae/plan/`
-4. **前端构建** → `npm run build`（生成dist目录）
-5. **后端重启** → Debug模式下重启SpringBoot应用
-
-### **7. 异常处理原则**
-```java
-@ControllerAdvice
-public class GlobalExceptionHandler {
-    // 处理空指针
-    // 处理业务异常
-    // 处理验证异常
-    // 处理数据库异常
-    // 统一返回格式
-}
-```
-
-### **8. 日志记录标准**
-```java
-// 关键节点必须记录
-log.info("开始处理用户请求，userId: {}", userId);
-log.debug("查询参数: {}", queryParams);
-log.warn("用户输入异常: {}", input);
-log.error("数据库操作失败", e);
-```
-
-### **9. 前后端字段映射规则**
-```
-数据库字段 → SQL转换 → Java实体 → 前端展示
-user_name → AS userName → userName → {{ userName }}
-注意：不能依赖框架自动转换，必须在SQL中显式转换
-```
+  - 自动识别当前目录结构，区分前端、后端及脚本目录。
+    
+- **拒绝平庸**: 如果我的指令会导致安全漏洞、性能瓶颈或严重的架构债，请直接反驳并给出更好的方案。
+  
 
 ---
 
-## 🎯 **给AI的特别提示**
+## 📂 2. 环境与依赖管理 (Artifacts & Dependency)
 
-1. **上下文记忆**：始终记住当前项目的类、方法、字段命名
-2. **避免重复**：先检查是否存在类似功能，再决定是否创建
-3. **字段转换**：SQL中必须将snake_case转换为lowerCamelCase
-4. **双向验证**：
-   - 修改后端时 → 考虑前端如何调用/展示
-   - 修改前端时 → 考虑后端接口格式
-   - 修改数据库时 → 考虑前后端字段映射
-5. **立即验证**：
-   - 前端修改 → 运行 `npm run build`
-   - 后端修改 → 重启SpringBoot应用
+- **目录隔离**: 除非我明确要求，否则禁止分析、索引或读取以下目录的二进制/生成文件：
+  
+  - `node_modules/`, `dist/`, `.vite/`, `.nuxt/`
+    
+  - `target/`, `.gradle/`, `.settings/`, `bin/`, `*.class`
+    
+  - `__pycache__/`, `venv/`, `.venv/`
+    
+  - `.idea/`, `.vscode/`, `.DS_Store`
+    
+- **依赖安装策略**:
+  
+  - 发现缺失依赖时，先确认版本兼容性。
+    
+  - **前端**: 优先使用项目已有的包管理器（npm/pnpm/yarn）。
+    
+  - **后端**: 修改 `pom.xml` 后提示执行 `mvn clean install`。
+    
+- **环境安全**: 严禁在脚本中硬编码路径。涉及路径操作时，必须使用相对路径或环境变量。
+  
 
-## 📁 **文档结构**
-```
-.trae/plan/
-├── api-design/          # API设计文档
-├── database/           # 数据库设计文档
-├── coding-standards/   # 编码规范文档
-└── changelog/         # 变更记录
-```
+---
+
+## 🟢 3. 前端开发规范 (Vue 2 & Vue 3)
+
+### [Vue 2 专项 & 迁移导向]
+
+- **识别机制**: 发现 Vue 2 项目时，自动启用“准 Vue 3”编写模式。
+  
+- **禁止 Mixins**: 严禁使用 `mixins` 复用逻辑。改用 **Composition API (Vue 2.7+)** 或 **高阶函数 (Utils)**。
+  
+- **响应式安全**: 修改对象/数组必须使用 `this.$set`，防止响应式丢失。
+  
+- **通信约束**: 避免使用 `this.$on/off`，推荐使用 Props/Emits，为迁移 Vue 3 扫清障碍。
+  
+- **生命周期**: 优先使用 `destroyed`，并确保在其中手动清理定时器和全局监听。
+  
+
+### [Vue 3 专项]
+
+- **强制模式**: 必须使用 `<script setup>` 和 `Composition API`。
+  
+- **响应式建议**: 优先使用 `ref`，处理复杂 Form 对象时使用 `reactive`。
+  
+
+---
+
+## ☕ 4. 后端开发规范 (Java / Spring Boot)
+
+- **分层标准**: 严格遵守 `Controller -> Service -> Mapper/Repository` 架构。
+  
+- **DTO 隔离**: 严禁将数据库 Entity 直接暴露给前端。必须手动或使用 MapStruct/BeanUtils 转换为 `VO` 或 `RO`。
+  
+- **异常处理**: 使用全局异常处理器。业务逻辑中严禁直接 `try-catch` 后不处理，必须抛出自定义 `BusinessException`。
+  
+- **Lombok 使用**: 使用 `@Data`, `@Builder`，并显式标注所需的构造函数以防止冲突。
+  
+
+---
+
+## 🐍 5. 自动化工具规范 (Python & Bash)
+
+### [Python]
+
+- **规范**: 遵循 PEP 8，所有函数必须包含 **Type Hints**。
+  
+- **健壮性**: 涉及文件操作或网络请求时，必须包含合理的异常捕获和重试逻辑。
+  
+
+### [Bash]
+
+- **严格模式**: 脚本开头强制包含 `set -euo pipefail`。
+  
+- **幂等性**: 确保脚本多次运行结果一致（例如：创建目录前先判断是否存在）。
+  
+- **清理机制**: 涉及临时文件时，必须使用 `trap` 命令进行清理。
+  
+
+---
+
+## 🗄 6. 数据库与 SQL
+
+- **SQL 审计**: 生成 SQL 前，检查是否使用了 `SELECT *`（应明确列名）以及是否可能导致全表扫描。
+  
+- **安全性**: 严禁 SQL 拼接，必须使用 MyBatis `# {}` 参数化语法。
+  
+- **规范字段**: 所有建表 DDL 必须包含 `id`, `create_time`, `update_time`, `is_deleted`。
+  
+
+---
+
+## 🔄 7. 交互契约 (Communication Protocol)
+
+- **思考链 (CoT)**: 在输出大规模代码前，先用 Markdown 列表说明：
+  
+  1. **Current Version**: (如 Vue 2.6 / SpringBoot 2.7)
+    
+  2. **Strategy**: (简述实现方案)
+    
+  3. **Migration Impact**: (如果是 Vue 2，说明该写法是否兼容 Vue 3)
+    
+  4. **Plan**:完整且递归拆分 3 级的详细开发计划
+    
+- **增量更新**: 修改复杂文件时，仅输出受影响的代码块（使用 `// ... existing code ...` 注释折叠无关部分）。
+  
+- **测试建议**: 关键逻辑修改后，自动生成 2-3 个核心测试场景的简述。

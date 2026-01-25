@@ -1,0 +1,562 @@
+---
+name: "aiguibin-project-structure"
+description: "提供项目结构文档和开发规范，包括代码结构、命名约定、数据库规范、前后端交互等，指导开发团队遵循统一规范进行开发。"
+---
+
+# 项目结构与开发规范技能
+
+## 功能介绍
+
+该技能提供完整的项目结构文档和开发规范，指导开发团队按照统一标准进行项目开发，确保代码质量、可维护性和可扩展性。适用于前后端开发、数据库设计、代码审查等场景。
+
+
+
+## 项目规范
+
+### 1. 代码结构与命名规范
+
+- **实体类(Entity)**：每个数据库表对应一个`UpperCamelCase`命名的Entity类
+- **Mapper接口**：每个Entity对应一个Mapper接口，按`UpperCamelCase`命名
+- **全局异常处理**：统一处理空值、验证异常、业务异常等
+- **全局异常捕获**：自定义业务异常 BusinessException
+- **详细日志**：关键业务节点添加`INFO/DEBUG`级别日志，便于监控排查
+- **统一返回格式**：Result<T> 类（包含 code:Integer、msg:String、data:T）
+
+### 2. 开发规则
+
+#### 2.1 数据获取规则
+- **禁止硬编码数据**：相关数据必须从API动态获取，避免使用模拟数据
+- **API调用规范**：所有API调用必须添加完善的错误处理机制
+- **数据实时性**：数据必须反映最新的状态，确保数据一致性
+
+#### 2.2 状态管理规则
+- **状态转换逻辑**：状态转换必须遵循业务规则，确保状态转换的原子性
+- **状态转换日志**：状态转换过程必须添加详细的日志记录
+- **状态一致性**：确保前端状态与后端数据保持同步
+
+#### 2.3 API设计规则
+- **参数一致性**：前后端API参数必须保持一致，避免因参数不匹配导致的错误
+- **接口完整性**：所有API接口必须有完整的实现，避免接口缺失
+- **接口命名规范**：API路径必须清晰反映业务功能，使用RESTful风格
+
+#### 2.4 控制器设计规则
+- **职责明确**：控制器职责必须明确，避免接口路径冲突
+- **参数验证**：所有API参数必须进行验证，确保数据合法性
+- **错误处理**：所有API必须有完善的错误处理机制
+
+### 3. 数据库与实体开发规则
+
+#### 3.1 实体类规则
+- **字段一致性**：实体类字段必须与数据库表字段保持一致
+- **命名规范**：数据库字段使用下划线命名，实体类字段使用驼峰命名
+- **注解规范**：实体类必须使用正确的MyBatis-Plus注解
+
+#### 3.2 数据库操作规则
+- **事务管理**：数据库操作必须考虑事务和原子性
+- **SQL规范**：SQL语句必须清晰，避免复杂的嵌套查询
+- **性能优化**：数据库操作必须考虑性能，添加适当的索引
+
+#### 3.3 数据字典规则
+- **同步更新**：状态字典必须同步更新，确保前后端使用一致的字典值
+- **字典设计**：字典表必须包含完整的字典类型和字典项
+- **字典使用**：代码中必须使用字典值，避免直接使用硬编码的状态值
+
+#### 3.4 数据初始化规则
+- **初始化脚本**：数据库初始化脚本必须包含完整的初始数据
+- **数据完整性**：初始化数据必须保证完整性和一致性
+- **脚本版本控制**：初始化脚本必须进行版本控制，便于追溯
+
+### 4. 前端开发规则
+
+#### 4.1 组件设计规则
+- **组件复用**：组件必须设计为可复用的，避免重复代码
+- **组件职责**：组件职责必须明确，避免组件功能过于复杂
+- **组件通信**：组件间通信必须使用Vuex或props/events机制
+
+#### 4.2 表单开发规则
+- **表单验证**：所有表单必须添加验证规则，确保数据合法性
+- **空值处理**：表单必须处理空值情况，避免出现空指针错误
+- **动态表单**：支持根据业务类型动态生成表单字段
+
+#### 4.3 状态管理规则
+- **Vuex使用**：复杂状态必须使用Vuex管理，避免状态混乱
+- **状态更新**：状态更新必须通过mutations，避免直接修改状态
+- **异步操作**：异步操作必须放在actions中，避免在mutations中处理异步逻辑
+
+#### 4.4 API调用规则
+- **API封装**：API调用必须进行封装，避免重复代码
+- **错误处理**：所有API调用必须添加错误处理，确保系统稳定性
+- **加载状态**：API调用过程中必须显示加载状态，提升用户体验
+
+### 5. 代码结构规则
+
+#### 5.1 目录结构规则
+- **模块化设计**：代码必须按照功能模块进行组织
+- **分层架构**：遵循控制器层→服务层→数据访问层的分层架构
+- **资源分离**：静态资源必须与代码分离，便于管理
+
+#### 5.2 命名规范
+| 组件类型 | 命名规范 | 示例 |
+|---------|---------|------|
+| Java类 | UpperCamelCase | `UserController` |
+| 方法/参数 | lowerCamelCase | `getUserById()` |
+| 前端请求/响应参数 | lowerCamelCase | `{ "userName": "张三" }` |
+| 数据库字段 | snake_case | `user_name` |
+| 前端变量/属性 | lowerCamelCase | `userName` |
+| 前端文件/组件 | lowerCamelCase | `userList.vue` |
+| 常量 | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT` |
+
+#### 5.3 注释规范
+- **类注释**：所有类必须添加Javadoc注释，说明类的功能和用途
+- **方法注释**：所有方法必须添加Javadoc注释，说明方法的功能、参数和返回值
+- **关键代码注释**：关键业务逻辑必须添加注释，便于理解和维护
+
+#### 5.4 日志规范
+- **日志级别**：根据业务重要性选择适当的日志级别
+- **日志内容**：日志内容必须清晰反映业务操作，包含关键参数
+- **异常日志**：异常日志必须包含完整的堆栈信息，便于排查问题
+
+### 6. 开发流程规则
+
+#### 6.1 需求分析规则
+- **需求理解**：必须充分理解需求，避免误解需求
+- **需求拆分**：复杂需求必须拆分为可实现的子任务
+- **技术选型**：根据需求选择合适的技术方案
+
+#### 6.2 代码开发规则
+- **编码规范**：必须遵循项目的编码规范
+- **代码复用**：优先使用现有代码，避免重复开发
+- **单元测试**：关键功能必须编写单元测试
+
+#### 6.3 代码审查规则
+- **代码质量**：代码必须通过代码审查，确保代码质量
+- **规范检查**：代码必须符合项目的开发规范
+- **功能验证**：代码必须验证功能正确性
+
+#### 6.4 部署规则
+- **构建流程**：前端代码必须通过构建流程生成生产版本
+- **部署脚本**：必须使用自动化部署脚本，避免手动部署
+- **版本管理**：必须进行版本管理，便于回滚
+
+### 7. 问题修复规则
+
+#### 7.1 问题定位规则
+- **问题分析**：必须充分分析问题，找出根本原因
+- **日志排查**：利用日志排查问题，定位问题所在
+- **重现问题**：必须能够重现问题，便于验证修复效果
+
+#### 7.2 修复方案规则
+- **方案设计**：必须设计合理的修复方案，避免引入新问题
+- **影响评估**：必须评估修复方案的影响范围
+- **风险控制**：必须考虑修复方案的风险，制定风险控制措施
+
+#### 7.3 修复验证规则
+- **功能验证**：必须验证修复后的功能是否正常
+- **回归测试**：必须进行回归测试，确保不影响其他功能
+- **性能验证**：必须验证修复后的性能是否符合要求
+
+### 8. 最佳实践
+
+#### 8.1 审批流程最佳实践
+- **使用状态机管理流程**：避免复杂的if-else逻辑
+- **流程节点可配置**：支持动态配置审批节点
+- **流程操作可追溯**：所有流程操作必须有完整的日志记录
+
+#### 8.2 数据库最佳实践
+- **使用MyBatis-Plus简化开发**：避免编写重复的SQL
+- **合理设计索引**：提升查询性能
+- **使用事务管理**：确保数据一致性
+- **分库分表**：处理大数据量场景
+
+#### 8.3 前端最佳实践
+- **组件化开发**：提高代码复用率
+- **响应式设计**：适配不同设备
+- **性能优化**：减少HTTP请求，优化渲染性能
+- **用户体验优化**：提供友好的用户界面和交互体验
+
+#### 8.4 团队协作最佳实践
+- **代码审查**：确保代码质量
+- **文档更新**：及时更新文档，保持文档与代码一致
+- **知识共享**：定期分享技术和业务知识
+- **持续集成**：自动化构建和测试流程
+
+## 给AI的特别提示
+
+1. **上下文记忆**：始终记住当前项目的类、方法、字段命名
+2. **避免重复**：先检查是否存在类似功能，再决定是否创建
+3. **字段转换**：SQL中必须将snake_case转换为lowerCamelCase
+4. **双向验证**：
+   - 修改后端时 → 考虑前端如何调用/展示
+   - 修改前端时 → 考虑后端接口格式
+   - 修改数据库时 → 考虑前后端字段映射
+5. **立即验证**：
+   - 前端修改 → 运行 `npm run build`
+   - 后端修改 → 重启SpringBoot应用
+6. **优先使用chat2DB的mcp工具查询数据库表结构和数据**
+7. **计划文档**：产出的plan开头的计划文档放在.trae/plan/目录下
+8. **其他文档**：其他文档（如设计文档、用户手册等）放在docs/目录下
+9. **任何功能开发，必须包含**：
+   - 数据库表 SQL 脚本（含索引、注释）
+   - 实体类（Entity）+ RO(入参) + VO（出参）
+   - Mapper 接口 + XML/SQL（或 MyBatis-Plus 注解）
+   - Service 接口 + ServiceImpl（含业务逻辑、事务）
+   - Controller（含接口注解、参数校验、返回Result）
+   - 各层依赖注入正确（如 Service 注入 Mapper，Controller 注入 Service）
+   - 数据库表字段 → 实体类字段 → DTO字段 → Mapper SQL → Service 逻辑 → Controller 参数，必须完全一致（名称、类型、非空约束）
+
+# 项目结构文档树
+
+## 1. 项目根目录结构
+
+```
+aiguibin-platform-arch/          # 项目根目录
+├── .trae/                       # Trae IDE相关配置和文档
+│   ├── plan/                    # 项目计划文档
+│   ├── rules/                   # 项目开发规范
+│   └── skills/                  # 技能库和工具集
+├── bin/                         # 脚本工具目录
+│   ├── check_kill_port.sh       # 端口检查和杀死脚本
+│   └── local_debug_restart.sh   # 本地调试重启脚本
+├── docs/                        # 项目文档目录
+│   ├── 01-权限系统模块/         # 权限系统相关文档
+│   ├── 02-审批工作流模块/       # 审批工作流相关文档
+│   ├── 03-数据库与实体模块/     # 数据库设计相关文档
+│   ├── 04-前端组件模块/         # 前端组件相关文档
+│   └── 05-系统架构模块/         # 系统架构相关文档
+├── sql/                         # 数据库脚本目录
+│   ├── aiguibin_platform_arch_data.sql  # 初始化数据脚本
+│   └── aiguibin_platform_arch_init.sql  # 数据库表结构脚本
+├── src/                         # 源代码目录
+│   ├── main/                    # 主代码目录
+│   │   ├── java/                # Java后端代码
+│   │   ├── resources/           # 后端资源文件
+│   │   └── webapp/              # Vue前端代码
+│   └── test/                    # 测试代码目录
+├── .gitignore                   # Git忽略文件配置
+├── Jenkinsfile                  # Jenkins CI/CD配置
+├── README.md                    # 项目说明文档
+├── package-lock.json            # 前端依赖锁定文件
+├── package.json                 # 前端项目配置
+├── pom.xml                      # Maven项目配置
+└── restart.sh                   # 项目重启脚本
+```
+
+## 2. 后端代码结构 (src/main/java)
+
+```
+java/com/aiguibin/platform/arch/  # 后端主包
+├── config/                       # 配置类目录
+│   ├── annotation/               # 自定义注解
+│   │   ├── RequireApprover.java  # 审批人权限注解
+│   │   └── RequirePermission.java # 权限验证注解
+│   ├── aspect/                   # AOP切面
+│   │   └── ApproverPermissionAspect.java # 审批人权限切面
+│   ├── DataBootstrap.java        # 数据初始化引导类
+│   ├── GlobalExceptionHandler.java # 全局异常处理器
+│   ├── MenuBootstrap.java        # 菜单初始化引导类
+│   ├── MyBatisPlusConfig.java    # MyBatis-Plus配置
+│   ├── MyMetaObjectHandler.java  # 元对象处理器
+│   ├── PasswordConfig.java       # 密码配置类
+│   └── WebMvcConfig.java         # Web MVC配置
+├── controller/                   # 控制器层
+│   ├── ApprovalController.java   # 审批控制器
+│   ├── ApprovalFlowController.java # 审批流程控制器
+│   ├── ApprovalHistoryController.java # 审批历史控制器
+│   ├── AuthController.java       # 认证控制器
+│   ├── BusinessTypeController.java # 业务类型控制器
+│   ├── CodeScriptChangeExportController.java # 代码脚本导出控制器
+│   ├── CodeScriptChangeRecordController.java # 代码脚本记录控制器
+│   ├── DatabaseDocController.java # 数据库文档控制器
+│   ├── DbValidationController.java # 数据库验证控制器
+│   ├── DictController.java       # 字典控制器
+│   ├── MenuController.java       # 菜单控制器
+│   └── UserController.java       # 用户控制器
+├── db/                           # 数据库相关功能
+│   ├── connection/               # 数据库连接管理
+│   │   ├── ConnectionPoolManager.java # 连接池管理器
+│   │   ├── DbAccessor.java       # 数据库访问器
+│   │   └── DbConfigParser.java   # 数据库配置解析器
+│   └── validation/               # 数据库验证功能
+│       ├── DocParser.java        # 文档解析器
+│       ├── MetadataFetcher.java  # 元数据获取器
+│       ├── ReportGenerator.java  # 报告生成器
+│       └── StructureComparator.java # 结构比较器
+├── dto/                          # 数据传输对象
+│   ├── ChangePasswordRO.java     # 修改密码请求对象
+│   ├── LoginRO.java              # 登录请求对象
+│   ├── OrgDeptInfoVO.java        # 机构部门信息视图对象
+│   ├── UserCreateRO.java         # 用户创建请求对象
+│   ├── UserOrgDeptVO.java        # 用户机构部门视图对象
+│   └── UserUpdateRO.java         # 用户更新请求对象
+├── entity/                       # 实体类目录（对应数据库表）
+│   ├── ApprovalFlow.java         # 审批流程实体
+│   ├── ApprovalLog.java          # 审批日志实体
+│   ├── ApprovalNode.java         # 审批节点实体
+│   ├── ApprovalTask.java         # 审批任务实体
+│   ├── BusinessType.java         # 业务类型实体
+│   ├── ChangeHistory.java        # 变更历史实体
+│   ├── ChangeRecord.java         # 变更记录实体
+│   ├── DictItem.java             # 字典项实体
+│   ├── DictType.java             # 字典类型实体
+│   ├── Menu.java                 # 菜单实体
+│   ├── OperationLog.java         # 操作日志实体
+│   ├── Organization.java         # 组织实体
+│   ├── Role.java                 # 角色实体
+│   ├── SysApiResource.java       # API资源实体
+│   ├── SysBizPermission.java     # 业务权限实体
+│   ├── SysDataPermission.java    # 数据权限实体
+│   ├── SysDept.java              # 部门实体
+│   ├── SysFieldPermission.java   # 字段权限实体
+│   ├── SysOperationLog.java      # 系统操作日志实体
+│   ├── SysOrg.java               # 系统机构实体
+│   ├── SysPermResource.java      # 权限资源实体
+│   ├── SysPermission.java        # 系统权限实体
+│   ├── SysRoleOrg.java           # 角色机构关联实体
+│   ├── SysRolePermission.java    # 角色权限关联实体
+│   ├── SysTimePermission.java    # 时间权限实体
+│   ├── SysUserDept.java          # 用户部门关联实体
+│   ├── SysUserOrg.java           # 用户机构关联实体
+│   ├── SysUserRole.java          # 用户角色关联实体
+│   └── User.java                 # 用户实体
+├── enums/                        # 枚举类目录
+│   ├── ApprovalAction.java       # 审批动作枚举
+│   ├── ApprovalStateMachine.java # 审批状态机枚举
+│   ├── ApprovalStatus.java       # 审批状态枚举
+│   ├── ApproverType.java         # 审批人类型枚举
+│   ├── NodeType.java             # 节点类型枚举
+│   └── OperationType.java        # 操作类型枚举
+├── excel/                        # Excel处理相关
+│   ├── DatabaseDocGenerator.java # 数据库文档生成器
+│   ├── ExcelDocBuilder.java      # Excel文档构建器
+│   ├── ExcelEntity.java          # Excel实体基类
+│   ├── ExcelExport.java          # Excel导出工具类
+│   └── TableInfo.java            # 表信息类
+├── interceptor/                  # 拦截器目录
+│   └── AuthInterceptor.java      # 认证拦截器
+├── mapper/                       # Mapper接口目录（MyBatis）
+│   ├── ApprovalFlowMapper.java   # 审批流程Mapper
+│   ├── ApprovalLogMapper.java    # 审批日志Mapper
+│   ├── ApprovalNodeMapper.java   # 审批节点Mapper
+│   ├── ApprovalTaskMapper.java   # 审批任务Mapper
+│   ├── BusinessTypeMapper.java   # 业务类型Mapper
+│   ├── ChangeHistoryMapper.java  # 变更历史Mapper
+│   ├── ChangeRecordMapper.java   # 变更记录Mapper
+│   ├── DictItemMapper.java       # 字典项Mapper
+│   ├── DictTypeMapper.java       # 字典类型Mapper
+│   ├── MenuMapper.java           # 菜单Mapper
+│   ├── OperationLogMapper.java   # 操作日志Mapper
+│   ├── SysApiResourceMapper.java # API资源Mapper
+│   ├── SysBizPermissionMapper.java # 业务权限Mapper
+│   ├── SysDataPermissionMapper.java # 数据权限Mapper
+│   ├── SysFieldPermissionMapper.java # 字段权限Mapper
+│   ├── SysOrgMapper.java         # 系统机构Mapper
+│   ├── SysPermResourceMapper.java # 权限资源Mapper
+│   ├── SysPermissionMapper.java  # 系统权限Mapper
+│   ├── SysRoleOrgMapper.java     # 角色机构关联Mapper
+│   ├── SysRolePermissionMapper.java # 角色权限关联Mapper
+│   ├── SysUserDeptMapper.java    # 用户部门关联Mapper
+│   ├── SysUserOrgMapper.java     # 用户机构关联Mapper
+│   ├── SysUserRoleMapper.java    # 用户角色关联Mapper
+│   └── UserMapper.java           # 用户Mapper
+├── model/                        # 模型类目录
+│   └── ApiResponse.java          # API响应模型
+├── service/                      # 服务层
+│   ├── impl/                     # 服务实现类
+│   │   ├── ApprovalFlowServiceImpl.java # 审批流程服务实现
+│   │   ├── ApprovalServiceImpl.java # 审批服务实现
+│   │   ├── AuthServiceImpl.java  # 认证服务实现
+│   │   ├── BusinessTypeServiceImpl.java # 业务类型服务实现
+│   │   ├── DataScopeServiceImpl.java # 数据范围服务实现
+│   │   ├── DatabaseDocServiceImpl.java # 数据库文档服务实现
+│   │   ├── DbConfigServiceImpl.java # 数据库配置服务实现
+│   │   ├── DbValidationServiceImpl.java # 数据库验证服务实现
+│   │   ├── DictItemServiceImpl.java # 字典项服务实现
+│   │   ├── DictTypeServiceImpl.java # 字典类型服务实现
+│   │   ├── NotifyServiceImpl.java # 通知服务实现
+│   │   ├── PermissionCheckServiceImpl.java # 权限检查服务实现
+│   │   ├── PermissionServiceImpl.java # 权限服务实现
+│   │   ├── SysApiResourceServiceImpl.java # API资源服务实现
+│   │   ├── SysDataPermissionServiceImpl.java # 数据权限服务实现
+│   │   ├── SysPermResourceServiceImpl.java # 权限资源服务实现
+│   │   ├── TokenServiceImpl.java # 令牌服务实现
+│   │   ├── UserOrgDeptServiceImpl.java # 用户机构部门服务实现
+│   │   └── UserServiceImpl.java  # 用户服务实现
+│   ├── ApprovalFlowService.java  # 审批流程服务接口
+│   ├── ApprovalService.java      # 审批服务接口
+│   ├── AuthService.java          # 认证服务接口
+│   ├── BusinessTypeService.java  # 业务类型服务接口
+│   ├── ChangeRecordService.java  # 变更记录服务接口
+│   ├── DataScopeService.java     # 数据范围服务接口
+│   ├── DatabaseDocService.java   # 数据库文档服务接口
+│   ├── DbConfigService.java      # 数据库配置服务接口
+│   ├── DbValidationService.java  # 数据库验证服务接口
+│   ├── DictItemService.java      # 字典项服务接口
+│   ├── DictTypeService.java      # 字典类型服务接口
+│   ├── MenuService.java          # 菜单服务接口
+│   ├── NotifyService.java        # 通知服务接口
+│   ├── PermissionCheckService.java # 权限检查服务接口
+│   ├── PermissionService.java    # 权限服务接口
+│   ├── SysApiResourceService.java # API资源服务接口
+│   ├── SysDataPermissionService.java # 数据权限服务接口
+│   ├── SysPermResourceService.java # 权限资源服务接口
+│   ├── TokenService.java         # 令牌服务接口
+│   ├── UserOrgDeptService.java   # 用户机构部门服务接口
+│   └── UserService.java          # 用户服务接口
+├── util/                         # 工具类目录
+│   └── GeneratePasswordHash.java # 密码哈希生成工具
+├── vo/                           # 值对象目录
+│   ├── ColumnStructure.java      # 列结构
+│   ├── ConstraintStructure.java  # 约束结构
+│   ├── DbConfig.java             # 数据库配置
+│   ├── DiffInfo.java             # 差异信息
+│   ├── DiffType.java             # 差异类型
+│   ├── IndexStructure.java       # 索引结构
+│   ├── TableStructure.java       # 表结构
+│   ├── ValidationRequest.java    # 验证请求
+│   └── ValidationResult.java     # 验证结果
+└── SpringbootStarterApplication.java # Spring Boot启动类
+```
+
+## 3. 后端资源目录 (src/main/resources)
+
+```
+resources/                       # 后端资源目录
+├── mapper/                      # MyBatis映射文件目录
+│   ├── CodeScriptChangeHistoryMapper.xml  # 代码脚本变更历史映射
+│   ├── CodeScriptChangeRecordMapper.xml   # 代码脚本变更记录映射
+│   ├── MenuMapper.xml           # 菜单映射
+│   ├── OperationLogMapper.xml   # 操作日志映射
+│   └── UserMapper.xml           # 用户映射
+└── application.yml              # Spring Boot配置文件
+```
+
+## 4. 前端项目结构 (src/main/webapp)
+
+```
+webapp/                          # Vue前端项目目录
+├── node/                        # Node.js本地环境
+├── public/                      # 前端公共资源
+│   ├── favicon.ico              # 网站图标
+│   └── index.html               # 前端入口HTML模板
+├── src/                         # 前端源代码
+│   ├── api/                     # API请求配置
+│   │   └── index.js             # API请求封装
+│   ├── components/              # Vue组件
+│   │   ├── DashboardCards.vue   # 仪表盘卡片组件
+│   │   ├── FormValidator.vue    # 表单验证组件
+│   │   ├── MainLayout.vue       # 主布局组件
+│   │   └── MenuItem.vue         # 菜单项组件
+│   ├── router/                  # 路由配置
+│   │   └── index.js             # 路由定义
+│   ├── services/                # 业务服务
+│   │   └── ApprovalService.js   # 审批服务
+│   ├── store/                   # Vuex状态管理
+│   │   ├── modules/             # 状态模块
+│   │   │   ├── approval.js      # 审批状态
+│   │   │   └── user.js          # 用户状态
+│   │   └── index.js             # 状态管理入口
+│   ├── utils/                   # 工具函数
+│   │   ├── directive.js         # 自定义指令
+│   │   ├── eventBus.js          # 事件总线
+│   │   ├── permissionMixin.js   # 权限混合
+│   │   └── request.js           # 请求工具
+│   ├── views/                   # 视图组件
+│   │   ├── approval/            # 审批相关视图
+│   │   │   └── ApprovalForm.vue # 审批表单
+│   │   ├── work-list/           # 工作列表相关视图
+│   │   │   ├── ApprovalClosedList.vue # 已关闭审批列表
+│   │   │   ├── ApprovalDoneList.vue # 已完成审批列表
+│   │   │   ├── ApprovalProcessDialog.vue # 审批流程对话框
+│   │   │   ├── ApprovalTodoList.vue # 待办审批列表
+│   │   │   └── WorkListTodo.vue # 待办工作列表
+│   │   ├── ChangePassword.vue   # 修改密码视图
+│   │   ├── ChangeRecordDetail.vue # 变更记录详情
+│   │   ├── ChangeRecordForm.vue # 变更记录表单
+│   │   ├── ChangeRecordHistory.vue # 变更记录历史
+│   │   ├── ChangeRecordList.vue # 变更记录列表
+│   │   ├── DevelopmentStandards.vue # 开发标准
+│   │   ├── Login.vue            # 登录视图
+│   │   ├── SystemSettings.vue   # 系统设置
+│   │   └── VersionManagement.vue # 版本管理
+│   ├── App.vue                  # 根组件
+│   └── main.js                  # 前端入口文件
+├── package-lock.json            # 前端依赖锁定文件
+├── package.json                 # 前端项目配置
+└── vue.config.js                # Vue配置文件
+```
+
+## 5. 目录功能说明
+
+| 目录/文件 | 主要功能 | 包含关键文件类型 |
+|-----------|----------|------------------|
+| **根目录** | 项目主目录，包含所有子目录和配置文件 | 构建脚本、配置文件、说明文档 |
+| **.trae/** | Trae IDE相关配置和文档 | 设计方案、开发规范、技能库 |
+| **bin/** | 脚本工具目录 | Shell脚本、批处理文件 |
+| **docs/** | 项目文档目录 | Markdown文档、设计方案 |
+| **sql/** | 数据库脚本目录 | SQL初始化脚本、数据脚本 |
+| **src/main/java/** | 后端Java源代码 | Java类文件（控制器、服务、实体等） |
+| **src/main/resources/** | 后端资源文件 | 配置文件、MyBatis映射文件、静态资源 |
+| **src/main/webapp/** | 前端Vue项目代码 | Vue组件、JavaScript文件、HTML模板 |
+| **config/** | 后端配置类 | 注解、切面、配置类 |
+| **controller/** | 控制器层 | RESTful API控制器 |
+| **dto/** | 数据传输对象 | 请求/响应对象类 |
+| **entity/** | 实体类 | 数据库表对应实体类 |
+| **enums/** | 枚举类 | 业务枚举定义 |
+| **mapper/** | Mapper接口 | MyBatis数据访问接口 |
+| **service/** | 服务层 | 业务逻辑接口和实现 |
+| **util/** | 工具类 | 通用工具函数 |
+| **components/** | Vue组件 | 可复用的Vue组件 |
+| **router/** | 路由配置 | 前端路由定义 |
+| **store/** | 状态管理 | Vuex状态管理配置 |
+| **views/** | 视图组件 | 页面级Vue组件 |
+
+## 6. 技术栈说明
+
+| 分类 | 技术栈 |
+|------|--------|
+| 后端框架 | Spring Boot |
+| 持久层框架 | MyBatis-Plus |
+| 数据库 | MySQL |
+| 前端框架 | Vue.js |
+| 状态管理 | Vuex |
+| 构建工具 | Maven、npm |
+| 开发工具 | Trae IDE |
+
+## 7. 项目架构特点
+
+1. **前后端分离架构**：后端提供RESTful API，前端通过AJAX调用
+2. **分层架构设计**：控制器层→服务层→数据访问层
+3. **权限管理**：基于RBAC（角色-based访问控制）
+4. **审批工作流**：支持复杂的审批流程配置和状态管理
+5. **统一异常处理**：全局异常捕获和统一返回格式
+6. **详细日志记录**：关键业务节点日志记录
+7. **数据字典管理**：支持动态数据字典配置
+
+## 8. 核心业务模块
+
+1. **权限管理模块**：用户、角色、权限、机构、部门管理
+2. **审批工作流模块**：审批流程配置、审批任务处理、审批历史记录
+3. **变更记录模块**：代码脚本变更记录、变更历史管理
+4. **系统管理模块**：系统设置、版本管理、操作日志
+
+## 9. 开发流程规范
+
+1. **代码设计**：先理解业务需求，设计代码结构
+2. **代码编写**：基于设计实现代码，遵循命名规范
+3. **代码审查**：符合规范后合并到主干
+4. **文档生成**：所有计划文档放入`.trae/plan/`，其余文档都放在`docs/`目录
+5. **前端构建**：`npm run build`（生成dist目录）
+6. **后端重启**：Debug模式下重启SpringBoot应用
+
+## 10. 部署说明
+
+1. **后端部署**：打包为jar文件，通过Java命令运行
+2. **前端部署**：构建生成静态资源，部署到Web服务器
+3. **数据库部署**：执行SQL脚本初始化数据库
+4. **环境配置**：通过application.yml配置环境变量
+
+---
+
+**文档版本**：v1.0
+**生成日期**：2026-01-24
+**适用范围**：开发人员、架构师、测试人员

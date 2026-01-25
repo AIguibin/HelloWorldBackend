@@ -75,10 +75,15 @@ public class ChangeRecordService {
 
     @Transactional
     public Long create(ChangeRecord r, String operator, String pagePath, String buttonName, String ipAddress) {
+        // 生成UUID
+        r.setUuid(java.util.UUID.randomUUID().toString().replaceAll("-", ""));
+        // 生成变更记录编码：CHG+年月日+4位序列（这里简化处理，使用UUID的前8位作为序列）
+        String recordCode = "CHG" + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")) + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        r.setRecordCode(recordCode);
         // 版本号：yyyyMMdd-<epochMillis>
         r.setVersion(generateVersion());
         if (r.getCurrentStatus() == null || r.getCurrentStatus().trim().isEmpty()) {
-            r.setCurrentStatus("待审批");
+            r.setCurrentStatus("01"); // 草稿态
         }
         r.setCreatedBy(operator);
         r.setUpdatedBy(operator);

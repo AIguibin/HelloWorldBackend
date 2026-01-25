@@ -5,7 +5,7 @@
       <el-form :model="formData" ref="approvalForm" label-width="120px">
         <!-- 业务类型选择 -->
         <el-form-item label="业务类型" prop="businessType">
-          <el-select v-model="formData.businessType" placeholder="请选择业务类型" @change="handleBusinessTypeChange">
+          <el-select v-model="formData.businessType" placeholder="请选择业务类型" @change="handleBusinessTypeChange" :disabled="isBusinessTypeDisabled">
             <el-option
               v-for="type in businessTypes"
               :key="type.typeCode"
@@ -107,6 +107,7 @@
 import FormValidator from '@/components/FormValidator.vue';
 import ApprovalService from '@/services/ApprovalService';
 import eventBus from '@/utils/eventBus';
+import { getBusinessTypes } from '../../api';
 
 export default {
   name: 'ApprovalForm',
@@ -139,24 +140,63 @@ export default {
       dynamicFields: [],
       fileList: [],
       dialogImageUrl: '',
-      dialogVisible: false
+      dialogVisible: false,
+      // 业务类型是否禁用
+      isBusinessTypeDisabled: false
     }
   },
   mounted() {
     this.loadBusinessTypes()
+    // 读取路由参数，设置默认值
+    this.initFromRouteParams()
   },
   methods: {
     // 加载业务类型
     loadBusinessTypes() {
       // 调用API获取业务类型列表
-      this.$http.get('/api/business-types')
+      getBusinessTypes()
         .then(response => {
-          this.businessTypes = response.data.data
+          this.businessTypes = response || [] // 修复：直接使用response，因为响应拦截器已处理
+          // 业务类型加载完成后，再次初始化路由参数，确保业务类型已加载
+          this.initFromRouteParams()
         })
         .catch(error => {
           this.$message.error('加载业务类型失败')
           console.error('加载业务类型失败:', error)
+          this.businessTypes = []
         })
+    },
+    
+    // 从路由参数初始化表单数据
+    initFromRouteParams() {
+      // 获取路由参数
+      const { businessId, businessType, businessCode } = this.$route.query
+      
+      // 设置业务类型是否禁用：如果有路由参数businessType，则禁用，否则启用
+      this.isBusinessTypeDisabled = !!businessType
+      
+      // 设置表单数据
+      if (businessType) {
+        this.formData.businessType = businessType
+        // 如果业务类型已加载，触发业务类型变化处理
+        if (this.businessTypes.length > 0) {
+          this.handleBusinessTypeChange(businessType)
+        }
+      }
+      
+      if (businessId) {
+        // 根据业务类型设置对应的ID字段
+        if (businessType === 'CHANGE_RECORD') {
+          this.formData.changeRecordId = businessId
+        }
+      }
+      
+      if (businessCode) {
+        // 根据业务类型设置对应的编码字段
+        if (businessType === 'CHANGE_RECORD') {
+          this.formData.changeRecordCode = businessCode
+        }
+      }
     },
 
     // 业务类型变化处理
@@ -351,6 +391,7 @@ export default {
     // 提交表单
     submitForm() {
       // 使用通用表单验证组件进行验证
+      console.log('当前业务类型:', this.currentBusinessType.typeCode);
       const validationResult = this.$refs.validator.validate(this.formData)
       
       if (validationResult.valid) {
@@ -358,7 +399,7 @@ export default {
         ApprovalService.triggerApproval({
           businessId: this.formData.changeRecordId || this.formData.version,
           businessType: this.formData.businessType,
-          userId: this.$store.state.user && this.$store.state.user.id ? this.$store.state.user.id : localStorage.getItem('userNum'),
+          userId: this.$store.state.user.userNum || localStorage.getItem('userNum') || '',
           metadata: {
             title: this.formData.title,
             reason: this.formData.reason,
@@ -372,7 +413,7 @@ export default {
           eventBus.emit(eventBus.events.APPROVAL_TRIGGERED, {
             businessId: this.formData.changeRecordId || this.formData.version,
             businessType: this.formData.businessType,
-            userId: this.$store.state.user && this.$store.state.user.id ? this.$store.state.user.id : localStorage.getItem('userNum'),
+            userId: this.$store.state.user.userNum || localStorage.getItem('userNum') || '',
             metadata: {
               title: this.formData.title,
               reason: this.formData.reason,
@@ -399,7 +440,7 @@ export default {
     // 保存草稿
     saveDraft() {
       // 调用API保存草稿
-      this.$http.post('/api/approval-requests/draft', this.formData)
+      this.$http.post('/api/approval/draft', this.formData)
         .then(response => {
           this.$message.success('保存草稿成功')
         })

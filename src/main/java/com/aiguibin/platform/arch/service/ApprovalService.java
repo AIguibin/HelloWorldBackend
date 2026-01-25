@@ -117,4 +117,19 @@ public interface ApprovalService {
     Page<ApprovalTask> queryTodoTasks(String approverNum, int page, int size);
     Page<ApprovalTask> queryProcessedTasks(String approverNum, int page, int size);
     Page<ApprovalTask> queryCompletedTasks(String userId, int page, int size);
+    
+    // 新接口：支持搜索条件的待办任务查询
+    Page<ApprovalTask> queryTodoTasks(String approverNum, String taskStatus, String businessCode, String businessTitle, String currentNode, String startTime, String endTime, int page, int size);
+    
+    // 新增接口：保存审批草稿
+    Long saveDraft(Object draftData, String operator);
+    
+    // 新增接口：获取审批状态
+    Object getApprovalStatus(Long approvalId);
+    
+    // 新增接口：获取审批任务详情
+    ApprovalTask getTaskDetail(String taskId);
+    
+    // 新增接口：取消审批任务
+    boolean cancelTask(Long taskId, String remark, String userNum);
 }

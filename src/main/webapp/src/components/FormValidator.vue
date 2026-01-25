@@ -118,11 +118,28 @@ export default {
       if (!rules) return [];
 
       const errors = [];
+      // 保存自定义错误消息
+      const customMessages = {};
+      
+      // 获取字段级别的自定义错误消息
+      const fieldLevelMessage = rules.message;
+      
+      // 先收集所有自定义消息
+      for (const [ruleName, param] of Object.entries(rules)) {
+        if (ruleName === 'message') {
+          // 跳过message属性，不将其视为验证规则
+          continue;
+        }
+        // 检查是否为带自定义消息的规则格式：{ pattern: /^\d+$/, message: '请输入有效的数字ID' }
+        if (typeof param === 'object' && param !== null && param.message) {
+          customMessages[ruleName] = param.message;
+        }
+      }
       
       // 遍历所有验证规则
       for (const [ruleName, param] of Object.entries(rules)) {
-        // 跳过false值的规则
-        if (param === false) continue;
+        // 跳过message属性和false值的规则
+        if (ruleName === 'message' || param === false) continue;
         
         // 获取验证函数
         let validator;
@@ -135,10 +152,21 @@ export default {
           continue;
         }
         
+        // 处理带自定义消息的规则格式
+        let ruleParam = param;
+        if (typeof param === 'object' && param !== null && param[ruleName]) {
+          ruleParam = param[ruleName];
+        } else if (typeof param === 'object' && param !== null && !param.message) {
+          // 对于非pattern类型的对象规则，直接使用param
+          ruleParam = param;
+        }
+        
         // 执行验证
-        const result = validator(value, param);
+        const result = validator(value, ruleParam);
         if (result !== true) {
-          errors.push(result);
+          // 优先使用字段级别的自定义消息，然后是规则级别的自定义消息，最后是默认消息
+          const errorMessage = fieldLevelMessage || customMessages[ruleName] || result;
+          errors.push(errorMessage);
         }
       }
       

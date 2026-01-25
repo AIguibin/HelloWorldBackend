@@ -27,23 +27,12 @@ export default {
           }
         });
       case 'RELEASE':
-        // 发版审批
-        return request.post('/api/approval/process/start', {
+      default:
+        // 统一调用审批触发接口
+        return request.post('/api/approval/trigger', {
           businessId,
           businessType,
           userNum: userId
-        }, {
-          headers: {
-            'X-Button-Name': '启动审批流程'
-          }
-        });
-      default:
-        // 通用审批请求
-        return request.post('/api/approval-requests', {
-          businessId,
-          businessType,
-          userId,
-          metadata
         }, {
           headers: {
             'X-Button-Name': '提交审批'

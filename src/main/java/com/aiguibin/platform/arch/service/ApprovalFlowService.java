@@ -2,6 +2,7 @@ package com.aiguibin.platform.arch.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.aiguibin.platform.arch.entity.ApprovalFlow;
+import com.aiguibin.platform.arch.entity.ApprovalNode;
 
 import java.util.List;
 
@@ -59,4 +60,11 @@ public interface ApprovalFlowService {
      * @return 是否成功
      */
     boolean deleteApprovalFlow(String flowId);
+    
+    /**
+     * 获取流程节点
+     * @param flowId 流程ID
+     * @return 节点列表
+     */
+    List<ApprovalNode> getApprovalNodes(String flowId);
 }

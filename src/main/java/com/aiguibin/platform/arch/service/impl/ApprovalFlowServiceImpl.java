@@ -3,7 +3,9 @@ package com.aiguibin.platform.arch.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.aiguibin.platform.arch.entity.ApprovalFlow;
+import com.aiguibin.platform.arch.entity.ApprovalNode;
 import com.aiguibin.platform.arch.mapper.ApprovalFlowMapper;
+import com.aiguibin.platform.arch.mapper.ApprovalNodeMapper;
 import com.aiguibin.platform.arch.service.ApprovalFlowService;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,9 @@ public class ApprovalFlowServiceImpl implements ApprovalFlowService {
 
     @Resource
     private ApprovalFlowMapper approvalFlowMapper;
+    
+    @Resource
+    private ApprovalNodeMapper approvalNodeMapper;
 
     @Override
     public List<ApprovalFlow> getAllApprovalFlows() {
@@ -123,5 +128,15 @@ public class ApprovalFlowServiceImpl implements ApprovalFlowService {
         // 逻辑删除
         approvalFlow.setIsDeleted(1);
         return approvalFlowMapper.updateById(approvalFlow) > 0;
+    }
+    
+    @Override
+    public List<ApprovalNode> getApprovalNodes(String flowId) {
+        LambdaQueryWrapper<ApprovalNode> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ApprovalNode::getFlowId, flowId)
+                .eq(ApprovalNode::getIsActive, 1)
+                .eq(ApprovalNode::getIsDeleted, 0)
+                .orderByAsc(ApprovalNode::getNodeOrder);
+        return approvalNodeMapper.selectList(queryWrapper);
     }
 }

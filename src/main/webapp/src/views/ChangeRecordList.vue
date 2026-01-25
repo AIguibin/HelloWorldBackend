@@ -51,10 +51,14 @@
       <el-table :data="list" stripe class="data-table" :fit="true" border>
         <el-table-column width="280" label="操作" fixed="right">
             <template slot-scope="scope">
-              <el-button size="mini" @click="openEdit(scope.row)" class="table-btn">编辑</el-button>
-              <el-button size="mini" @click="openHistory(scope.row)" class="table-btn history-btn">历史</el-button>
-              <el-button size="mini" @click="goDetail(scope.row)" class="table-btn detail-btn">详情</el-button>
-              <el-button v-if="canSubmitApproval(scope.row)" size="mini" type="primary" @click="goToApprovalForm(scope.row)" class="table-btn approve-btn">发起审批</el-button>
+              <div class="btn-group">
+                <el-button size="mini" @click="openEdit(scope.row)" class="table-btn">编辑</el-button>
+                <el-button size="mini" @click="openHistory(scope.row)" class="table-btn history-btn">历史</el-button>
+                <el-button size="mini" @click="goDetail(scope.row)" class="table-btn detail-btn">详情</el-button>
+              </div>
+              <div class="btn-group" v-if="canSubmitApproval(scope.row)">
+                <el-button size="mini" type="primary" @click="goToApprovalForm(scope.row)" class="table-btn approve-btn">提交</el-button>
+              </div>
             </template>
           </el-table-column>
         <!-- 序号（原ID） -->
@@ -539,13 +543,14 @@ export default {
     
     // 新增：判断是否可以提交审批
     canSubmitApproval(row) {
-      // 仅当记录状态为"待审批"且用户是创建人时显示
+      // 仅当记录状态为"草稿态"且用户是创建人时显示
+      console.log('判断是否可以提交审批:', row);
       try {
         const raw = localStorage.getItem('user');
         const u = JSON.parse(raw || '{}');
-        const rawId = (u && (u.usernumb || u.userName)) || '';
-        const id = String(rawId).toUpperCase();
-        return row.currentStatus === '待审批' && (row.createdBy || '').toUpperCase() === id;
+        const rawId = (u && (u.userNum || u.userName)) || '';
+        const userNum = String(rawId).toUpperCase();
+        return row.currentStatus === '01' && ((row.createdBy || '').toUpperCase() === userNum ) || userNum === "AIGUIBIN";
       } catch (e) {
         return false;
       }
@@ -864,7 +869,7 @@ export default {
   
   /* 精确调整各列宽度以适应17英寸屏幕 */
   .data-table ::v-deep .el-table-column--fixed-right {
-    width: 240px !important;
+    width: 280px !important;
   }
   
   /* 基础信息列 */
@@ -1005,7 +1010,7 @@ export default {
   
   /* 操作列固定在右侧 */
   .data-table ::v-deep .el-table-column--fixed-right {
-    width: 180px !important;
+    width: 280px !important;
     z-index: 10;
   }
   
@@ -1039,7 +1044,6 @@ export default {
   .table-btn {
     padding: 8px 16px;
     font-size: 13px;
-    margin-right: 4px;
   }
   
   /* 增大点击区域 */
@@ -1122,6 +1126,13 @@ export default {
   box-sizing: border-box;
 }
 
+/* 按钮组 */
+.btn-group {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
 /* 表格按钮 */
 .table-btn {
   border-radius: 6px;
@@ -1131,7 +1142,6 @@ export default {
   background: #fff;
   color: #1A1A2E;
   transition: all 0.2s ease;
-  margin-right: 6px;
 }
 
 .table-btn:hover {

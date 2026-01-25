@@ -17,6 +17,8 @@ import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 审批服务实现类
@@ -24,6 +26,11 @@ import java.util.*;
  */
 @Service
 public class ApprovalServiceImpl implements ApprovalService {
+    
+    /**
+     * 日志记录器
+     */
+    private static final Logger log = LoggerFactory.getLogger(ApprovalServiceImpl.class);
 
     @Resource
     private ApprovalFlowMapper approvalFlowMapper;
@@ -59,10 +66,13 @@ public class ApprovalServiceImpl implements ApprovalService {
     private BusinessTypeService businessTypeService;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Long submitApproval(Long recordId, String operator, String pagePath, String buttonName, String ipAddress) {
+        log.info("开始处理提交审批请求，recordId: {}, operator: {}, ip: {}", recordId, operator, ipAddress);
+        
         // 1. 参数验证
         if (recordId == null) {
+            log.error("提交审批失败：recordId不能为空");
             saveOpLog(operator, "SUBMIT", "ChangeRecord", recordId, "FAIL", "recordId不能为空", pagePath, buttonName, ipAddress);
             return null;
         }
@@ -70,30 +80,38 @@ public class ApprovalServiceImpl implements ApprovalService {
         // 2. 解析operator参数，验证格式
         String[] operatorParts = operator.split("\\|");
         if (operatorParts.length != 2) {
+            log.error("提交审批失败：operator格式错误，应为userNum|userName，实际为：{}", operator);
             saveOpLog(operator, "SUBMIT", "ChangeRecord", recordId, "FAIL", "operator格式错误，应为userNum|userName", pagePath, buttonName, ipAddress);
             return null;
         }
         String userNum = operatorParts[0];
         String userName = operatorParts[1];
+        log.debug("解析操作人信息成功：userNum: {}, userName: {}", userNum, userName);
 
         // 3. 查询变更记录
         ChangeRecord record = changeRecordMapper.selectById(recordId);
         if (record == null) {
+            log.error("提交审批失败：变更记录不存在，recordId: {}", recordId);
             saveOpLog(operator, "SUBMIT", "ChangeRecord", recordId, "FAIL", "记录不存在", pagePath, buttonName, ipAddress);
             return null;
         }
+        log.debug("查询到变更记录：recordId: {}, recordCode: {}, currentStatus: {}", recordId, record.getRecordCode(), record.getCurrentStatus());
 
         // 4. 状态验证：当前状态必须是"待审批"
         if (!"待审批".equals(record.getCurrentStatus())) {
+            log.error("提交审批失败：当前状态不是待审批，无法提交，recordId: {}, currentStatus: {}", recordId, record.getCurrentStatus());
             saveOpLog(operator, "SUBMIT", "ChangeRecord", recordId, "FAIL", "当前状态不是待审批，无法提交", pagePath, buttonName, ipAddress);
             return null;
         }
+        log.debug("状态验证通过：当前状态为待审批");
 
         // 5. 权限验证：操作人必须是创建人
         if (!record.getCreatedBy().equals(userNum)) {
+            log.error("提交审批失败：无权限提交，只有创建人可提交，recordId: {}, userNum: {}, createdBy: {}", recordId, userNum, record.getCreatedBy());
             saveOpLog(operator, "SUBMIT", "ChangeRecord", recordId, "FAIL", "无权限提交，只有创建人可提交", pagePath, buttonName, ipAddress);
             return null;
         }
+        log.debug("权限验证通过：操作人是创建人");
 
         // 6. 查询审批流程配置：获取默认流程
         LambdaQueryWrapper<ApprovalFlow> flowQuery = new LambdaQueryWrapper<>();
@@ -103,12 +121,15 @@ public class ApprovalServiceImpl implements ApprovalService {
                  .eq(ApprovalFlow::getIsDeleted, 0);
         ApprovalFlow flow = approvalFlowMapper.selectOne(flowQuery);
         if (flow == null) {
+            log.error("提交审批失败：未配置默认审批流程");
             saveOpLog(operator, "SUBMIT", "ChangeRecord", recordId, "FAIL", "未配置默认审批流程", pagePath, buttonName, ipAddress);
             return null;
         }
+        log.debug("查询到审批流程配置：flowId: {}, flowName: {}", flow.getFlowId(), flow.getFlowName());
 
         // 7. 生成流程实例编码：格式参考record_code（FLOW+年月日+序列）
         String flowInstanceCode = generateFlowInstanceCode();
+        log.debug("生成流程实例编码：{}", flowInstanceCode);
 
         // 8. 获取第一个审批节点
         LambdaQueryWrapper<ApprovalNode> nodeQuery = new LambdaQueryWrapper<>();
@@ -118,11 +139,62 @@ public class ApprovalServiceImpl implements ApprovalService {
                  .eq(ApprovalNode::getIsDeleted, 0);
         ApprovalNode firstNode = approvalNodeMapper.selectOne(nodeQuery);
         if (firstNode == null) {
+            log.error("提交审批失败：审批流程节点配置错误，flowId: {}", flow.getFlowId());
             saveOpLog(operator, "SUBMIT", "ChangeRecord", recordId, "FAIL", "审批流程节点配置错误", pagePath, buttonName, ipAddress);
             return null;
         }
+        log.debug("查询到第一个审批节点：nodeId: {}, nodeName: {}, approverNum: {}, approverName: {}", 
+                 firstNode.getNodeId(), firstNode.getNodeName(), firstNode.getApproverNum(), firstNode.getApproverName());
 
-        // 9. 更新变更记录
+        // 9. 保存更新前的变更记录（用于历史记录）
+        // 由于ChangeRecord类没有实现Cloneable接口，手动复制所有字段
+        ChangeRecord recordBeforeUpdate = new ChangeRecord();
+        recordBeforeUpdate.setUuid(record.getUuid());
+        recordBeforeUpdate.setId(record.getId());
+        recordBeforeUpdate.setRecordCode(record.getRecordCode());
+        recordBeforeUpdate.setCurrentStatus(record.getCurrentStatus());
+        recordBeforeUpdate.setReleaseDate(record.getReleaseDate());
+        recordBeforeUpdate.setDefectNumber(record.getDefectNumber());
+        recordBeforeUpdate.setGroupName(record.getGroupName());
+        recordBeforeUpdate.setServiceName(record.getServiceName());
+        recordBeforeUpdate.setDeveloperNum(record.getDeveloperNum());
+        recordBeforeUpdate.setDeveloperName(record.getDeveloperName());
+        recordBeforeUpdate.setSourceBranch(record.getSourceBranch());
+        recordBeforeUpdate.setTargetBranch(record.getTargetBranch());
+        recordBeforeUpdate.setProblemDescription(record.getProblemDescription());
+        recordBeforeUpdate.setImpactAnalysis(record.getImpactAnalysis());
+        recordBeforeUpdate.setSolutionDescription(record.getSolutionDescription());
+        recordBeforeUpdate.setInvolveExternalSystem(record.getInvolveExternalSystem());
+        recordBeforeUpdate.setCrossService(record.getCrossService());
+        recordBeforeUpdate.setIncludeShell(record.getIncludeShell());
+        recordBeforeUpdate.setCodeList(record.getCodeList());
+        recordBeforeUpdate.setShellPath(record.getShellPath());
+        recordBeforeUpdate.setConfigList(record.getConfigList());
+        recordBeforeUpdate.setRemark(record.getRemark());
+        recordBeforeUpdate.setVersion(record.getVersion());
+        recordBeforeUpdate.setChangeDesc(record.getChangeDesc());
+        recordBeforeUpdate.setDevelopType(record.getDevelopType());
+        recordBeforeUpdate.setOrgCode(record.getOrgCode());
+        recordBeforeUpdate.setDeptCode(record.getDeptCode());
+        recordBeforeUpdate.setApproverNum(record.getApproverNum());
+        recordBeforeUpdate.setApproverName(record.getApproverName());
+        recordBeforeUpdate.setApprovalTime(record.getApprovalTime());
+        recordBeforeUpdate.setApprovalRemark(record.getApprovalRemark());
+        recordBeforeUpdate.setCreatedBy(record.getCreatedBy());
+        recordBeforeUpdate.setCreatedTime(record.getCreatedTime());
+        recordBeforeUpdate.setUpdatedBy(record.getUpdatedBy());
+        recordBeforeUpdate.setUpdatedTime(record.getUpdatedTime());
+        recordBeforeUpdate.setIsDeleted(record.getIsDeleted());
+        recordBeforeUpdate.setFlowId(record.getFlowId());
+        recordBeforeUpdate.setCurrentNodeId(record.getCurrentNodeId());
+        recordBeforeUpdate.setApprovalInstanceId(record.getApprovalInstanceId());
+        recordBeforeUpdate.setApprovalStatus(record.getApprovalStatus());
+        recordBeforeUpdate.setSubmitTime(record.getSubmitTime());
+        recordBeforeUpdate.setRejectReason(record.getRejectReason());
+        recordBeforeUpdate.setRejectNodeId(record.getRejectNodeId());
+        log.debug("保存更新前的变更记录成功");
+
+        // 10. 更新变更记录
         String beforeStatus = record.getCurrentStatus();
         record.setFlowId(flow.getFlowId());
         record.setCurrentNodeId(firstNode.getNodeId());
@@ -132,10 +204,17 @@ public class ApprovalServiceImpl implements ApprovalService {
         record.setApprovalInstanceId(flowInstanceCode);
         record.setApprovalStatus("PENDING");
         record.setSubmitTime(LocalDateTime.now());
-        record.setUpdatedBy(operator);
-        changeRecordMapper.updateById(record);
+        record.setUpdatedBy(userNum); // 使用userNum而非完整operator
+        log.debug("开始更新变更记录，recordId: {}, beforeStatus: {}, afterStatus: {}, flowId: {}, nodeId: {}, approvalInstanceId: {}", 
+                 recordId, beforeStatus, record.getCurrentStatus(), flow.getFlowId(), firstNode.getNodeId(), flowInstanceCode);
+        int updateCount = changeRecordMapper.updateById(record);
+        if (updateCount != 1) {
+            log.error("更新变更记录失败，影响行数不为1，recordId: {}, updateCount: {}", recordId, updateCount);
+            throw new RuntimeException("更新变更记录失败，影响行数不为1");
+        }
+        log.debug("更新变更记录成功，影响行数：1");
 
-        // 10. 创建待办任务：为第一个节点的审批人生成记录
+        // 11. 创建待办任务：为第一个节点的审批人生成记录
         ApprovalTask task = new ApprovalTask();
         task.setTaskId(generateTaskId());
         task.setFlowId(flow.getFlowId());
@@ -146,21 +225,30 @@ public class ApprovalServiceImpl implements ApprovalService {
         task.setApproverNum(firstNode.getApproverNum());
         task.setApproverName(firstNode.getApproverName());
         task.setTaskStatus("PENDING");
-        task.setCurrentStatus(record.getCurrentStatus());
+        task.setCurrentStatus(beforeStatus); // 使用变更前状态
         task.setAssignTime(LocalDateTime.now());
-        task.setCreatedBy(operator);
-        task.setUpdatedBy(operator);
+        task.setCreatedBy(userNum); // 使用userNum而非完整operator
+        task.setUpdatedBy(userNum); // 使用userNum而非完整operator
+        log.debug("开始创建待办任务，taskId: {}, businessId: {}, approverNum: {}", task.getTaskId(), recordId, firstNode.getApproverNum());
         approvalTaskMapper.insert(task);
+        log.debug("创建待办任务成功");
 
-        // 11. 保存历史记录：复用saveHistory方法
-        saveHistory(record, "SUBMIT", operator, "提交审批");
+        // 12. 保存历史记录：使用更新前的记录
+        log.debug("开始保存变更历史记录，recordId: {}", recordId);
+        saveHistory(recordBeforeUpdate, "SUBMIT", userNum, userName, "提交审批");
+        log.debug("保存变更历史记录成功");
 
-        // 12. 保存操作日志：复用saveOpLog方法
-        saveOpLog(operator, "SUBMIT", "ChangeRecord", recordId, "OK", "提交审批成功", pagePath, buttonName, ipAddress);
+        // 13. 保存操作日志：使用userNum和userName
+        log.debug("开始保存操作日志，recordId: {}", recordId);
+        saveOpLog(userNum, userName, "SUBMIT", "ChangeRecord", recordId, "OK", "提交审批成功", pagePath, buttonName, ipAddress);
+        log.debug("保存操作日志成功");
 
-        // 13. 记录审批日志
-        saveApprovalLog(task, "SUBMIT", operator, "提交审批", beforeStatus, record.getCurrentStatus());
+        // 14. 记录审批日志
+        log.debug("开始记录审批日志，taskId: {}", task.getTaskId());
+        saveApprovalLog(task, "SUBMIT", userNum, userName, "提交审批", beforeStatus, record.getCurrentStatus());
+        log.debug("记录审批日志成功");
 
+        log.info("提交审批请求处理完成，recordId: {}", recordId);
         return recordId;
     }
 
@@ -178,18 +266,15 @@ public class ApprovalServiceImpl implements ApprovalService {
      * 保存历史记录
      * 参考ChangeRecordService中的saveHistory方法实现
      */
-    private void saveHistory(ChangeRecord src, String opType, String operator, String desc) {
+    private void saveHistory(ChangeRecord src, String opType, String userNum, String userName, String desc) {
         ChangeHistory h = new ChangeHistory();
         h.setUuid(UUID.randomUUID().toString().replaceAll("-", ""));
         h.setRecordId(src.getId());
         h.setRecordCode(src.getRecordCode());
         h.setOperationType(opType);
-        // 从operator中解析出用户编号和用户名，格式为 "userNum|userName"
-        String[] operatorParts = operator.split("\\|");
-        if (operatorParts.length == 2) {
-            h.setOperationUserNum(operatorParts[0]);
-            h.setOperationUserName(operatorParts[1]);
-        }
+        // 直接使用传入的用户编号和用户名
+        h.setOperationUserNum(userNum);
+        h.setOperationUserName(userName);
         h.setOperationTime(LocalDateTime.now());
         h.setOperationDescription(desc);
         h.setCurrentStatus(src.getCurrentStatus());
@@ -229,6 +314,16 @@ public class ApprovalServiceImpl implements ApprovalService {
         h.setRejectNodeId(src.getRejectNodeId());
         changeHistoryMapper.insert(h);
     }
+    
+    /**
+     * 保存历史记录（兼容旧方法签名）
+     */
+    private void saveHistory(ChangeRecord src, String opType, String operator, String desc) {
+        String[] operatorParts = operator.split("\\|");
+        String userNum = operatorParts[0];
+        String userName = operatorParts.length > 1 ? operatorParts[1] : "";
+        saveHistory(src, opType, userNum, userName, desc);
+    }
 
     @Override
     @Transactional
@@ -246,7 +341,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             return false;
         }
         String userNum = operatorParts[0];
-        String userName = operatorParts[1];
+        // String userName = operatorParts[1]; // 未使用，注释掉
 
         // 3. 查询待办任务：通过taskId查询biz_approval_task
         ApprovalTask task = approvalTaskMapper.selectOne(new LambdaQueryWrapper<ApprovalTask>()
@@ -281,7 +376,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
 
         // 7. 更新任务状态：task_status为"已完成"，action为"同意"，记录remark
-        String beforeStatus = task.getTaskStatus();
+        // String beforeStatus = task.getTaskStatus(); // 未使用，注释掉
         task.setTaskStatus("已完成");
         task.setApprovalTime(LocalDateTime.now());
         task.setApprovalRemark(approvalRemark);
@@ -294,7 +389,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         // 9. 判断是否有下一节点
         String changeBeforeStatus = record.getCurrentStatus();
         if (nextNode != null) {
-            // 9.1 有下一节点：更新变更记录状态为"审批中-下一节点"
+            // 9.1 有下一节点：更新变更记录状态为不同的状态
             String nextNodeStatus = String.format("审批中-节点%d", nextNode.getNodeOrder());
             record.setCurrentNodeId(nextNode.getNodeId());
             record.setCurrentStatus(nextNodeStatus);
@@ -397,6 +492,45 @@ public class ApprovalServiceImpl implements ApprovalService {
         
         queryWrapper.eq(ApprovalTask::getTaskStatus, "PENDING")
                  .eq(ApprovalTask::getIsDeleted, 0)
+                 .orderByDesc(ApprovalTask::getAssignTime);
+        return approvalTaskMapper.selectPage(new Page<>(page, size), queryWrapper);
+    }
+    
+    @Override
+    public Page<ApprovalTask> queryTodoTasks(String approverNum, String taskStatus, String businessCode, String businessTitle, String currentNode, String startTime, String endTime, int page, int size) {
+        LambdaQueryWrapper<ApprovalTask> queryWrapper = new LambdaQueryWrapper<>();
+        
+        // 当操作用户为"aiguibin"时，不添加审批人条件
+        if (!"aiguibin".equals(approverNum)) {
+            queryWrapper.eq(ApprovalTask::getApproverNum, approverNum);
+        }
+        
+        // 添加任务状态条件
+        if (taskStatus != null && !taskStatus.isEmpty()) {
+            queryWrapper.eq(ApprovalTask::getTaskStatus, taskStatus);
+        } else {
+            queryWrapper.eq(ApprovalTask::getTaskStatus, "PENDING");
+        }
+        
+        // 添加业务编码条件
+        if (businessCode != null && !businessCode.isEmpty()) {
+            queryWrapper.like(ApprovalTask::getBusinessCode, businessCode);
+        }
+        
+        // 添加当前节点条件
+        if (currentNode != null && !currentNode.isEmpty()) {
+            queryWrapper.eq(ApprovalTask::getNodeId, currentNode);
+        }
+        
+        // 添加时间范围条件
+        if (startTime != null && !startTime.isEmpty()) {
+            queryWrapper.ge(ApprovalTask::getAssignTime, startTime);
+        }
+        if (endTime != null && !endTime.isEmpty()) {
+            queryWrapper.le(ApprovalTask::getAssignTime, endTime);
+        }
+        
+        queryWrapper.eq(ApprovalTask::getIsDeleted, 0)
                  .orderByDesc(ApprovalTask::getAssignTime);
         return approvalTaskMapper.selectPage(new Page<>(page, size), queryWrapper);
     }
@@ -540,6 +674,82 @@ public class ApprovalServiceImpl implements ApprovalService {
         // 13. 返回流程实例ID - 作为后续操作的唯一标识
         return businessId;
     }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long saveDraft(Object draftData, String operator) {
+        // 这里实现保存审批草稿的逻辑
+        // 目前返回模拟的草稿ID
+        return System.currentTimeMillis();
+    }
+    
+    @Override
+    public Object getApprovalStatus(Long approvalId) {
+        // 这里实现获取审批状态的逻辑
+        // 目前返回模拟的状态信息
+        Map<String, Object> status = new HashMap<>();
+        status.put("approvalId", approvalId);
+        status.put("status", "PENDING");
+        status.put("currentNode", "节点1");
+        status.put("progress", "33%");
+        return status;
+    }
+    
+    @Override
+    public ApprovalTask getTaskDetail(String taskId) {
+        LambdaQueryWrapper<ApprovalTask> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ApprovalTask::getTaskId, taskId)
+                 .eq(ApprovalTask::getIsDeleted, 0);
+        return approvalTaskMapper.selectOne(queryWrapper);
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean cancelTask(Long taskId, String remark, String userNum) {
+        // 1. 参数验证
+        if (taskId == null) {
+            throw new IllegalArgumentException("任务ID不能为空");
+        }
+        if (remark == null || remark.trim().isEmpty()) {
+            throw new IllegalArgumentException("取消原因不能为空");
+        }
+        if (userNum == null || userNum.trim().isEmpty()) {
+            throw new IllegalArgumentException("操作人用户编号不能为空");
+        }
+        
+        // 2. 查询任务
+        ApprovalTask task = approvalTaskMapper.selectById(taskId);
+        if (task == null) {
+            throw new RuntimeException("任务不存在");
+        }
+        
+        // 3. 更新任务状态
+        task.setTaskStatus("CANCELED");
+        task.setApprovalTime(LocalDateTime.now());
+        task.setApprovalRemark(remark);
+        task.setUpdatedBy(userNum);
+        approvalTaskMapper.updateById(task);
+        
+        // 4. 更新相关业务数据状态
+        // 根据业务类型获取业务数据并更新状态
+        if ("CHANGE_RECORD".equals(task.getBusinessType())) {
+            ChangeRecord record = changeRecordMapper.selectById(task.getBusinessId());
+            if (record != null) {
+                record.setCurrentStatus("已取消");
+                record.setApprovalStatus("CANCELED");
+                record.setUpdatedBy(userNum);
+                changeRecordMapper.updateById(record);
+            }
+        }
+        
+        // 5. 记录操作日志
+        saveOpLog(userNum + "|", "CANCEL", task.getBusinessType(), task.getBusinessId(), "OK", "取消审批成功", "", "", "");
+        
+        // 6. 记录审批日志
+        saveApprovalLog(task, "CANCEL", userNum, "", "取消审批", task.getTaskStatus(), "CANCELED");
+        
+        return true;
+    }
 
     /**
      * 根据业务类型动态更新业务数据状态
@@ -572,7 +782,8 @@ public class ApprovalServiceImpl implements ApprovalService {
                 record.setFlowId(flow.getFlowId());
                 record.setCurrentNodeId(firstNode.getNodeId());
                 // 设置current_status为"审批中-节点1"
-                record.setCurrentStatus(String.format("审批中-节点%d", firstNode.getNodeOrder()));
+                String nextNodeStatus = String.format("审批中-节点%d", firstNode.getNodeOrder());
+                record.setCurrentStatus(nextNodeStatus);
                 record.setApprovalInstanceId(flowInstanceCode);
                 record.setApprovalStatus("PENDING");
                 record.setSubmitTime(LocalDateTime.now());
@@ -656,6 +867,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         // 为每个审批人生成待办任务
         for (String approverNum : approvers) {
             ApprovalTask task = new ApprovalTask();
+            task.setUuid(UUID.randomUUID().toString().replaceAll("-", ""));
             task.setTaskId(generateTaskId());
             task.setFlowId(flow.getFlowId());
             task.setNodeId(firstNode.getNodeId());
@@ -669,6 +881,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             task.setAssignTime(LocalDateTime.now());
             task.setCreatedBy(userNum);
             task.setUpdatedBy(userNum);
+            task.setIsDeleted(0);
 
             // 插入任务记录
             approvalTaskMapper.insert(task);
@@ -702,7 +915,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             // 根据业务类型获取具体业务数据
             switch (businessType) {
                 case "CHANGE_RECORD":
-                    ChangeRecord record = (ChangeRecord) businessData.get("record");
+                    // ChangeRecord record = (ChangeRecord) businessData.get("record"); // 未使用，注释掉
                     businessName = "变更记录";
                     break;
                 // 可以添加其他业务类型的处理逻辑
@@ -1302,7 +1515,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
 
         String operator = userNum + "|" + userService.getUserByUserNum(userNum).getUserName();
-        String beforeStatus = record.getCurrentStatus();
+        // String beforeStatus = record.getCurrentStatus(); // 未使用，注释掉
 
         // 3. 更新所有任务状态为已取消
         for (ApprovalTask task : tasks) {
@@ -1351,7 +1564,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         List<ApprovalTask> pendingTasks = approvalTaskMapper.selectList(taskQuery);
 
         String operator = userNum + "|" + userService.getUserByUserNum(userNum).getUserName();
-        String beforeStatus = record.getCurrentStatus();
+        // String beforeStatus = record.getCurrentStatus(); // 未使用，注释掉
 
         // 4. 撤回逻辑：将流程回滚到草稿状态
         record.setCurrentStatus("01");
@@ -1381,8 +1594,43 @@ public class ApprovalServiceImpl implements ApprovalService {
     /**
      * 记录审批日志
      */
+    /**
+     * 保存审批日志
+     * 支持直接传入用户编号和用户名
+     */
+    private void saveApprovalLog(ApprovalTask task, String operationType, String userNum, String userName, String operationRemark, String beforeStatus, String afterStatus) {
+        ApprovalLog log = new ApprovalLog();
+        // 生成全局唯一UUID
+        log.setUuid(UUID.randomUUID().toString().replaceAll("-", ""));
+        // 生成唯一日志ID
+        log.setLogId("LOG" + DateTimeFormatter.ofPattern("yyyyMMdd").format(LocalDateTime.now()) + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        log.setTaskId(task.getTaskId());
+        log.setFlowId(task.getFlowId());
+        log.setNodeId(task.getNodeId());
+        log.setBusinessType(task.getBusinessType());
+        log.setBusinessId(task.getBusinessId());
+        log.setBusinessCode(task.getBusinessCode());
+        log.setOperationType(operationType);
+        
+        // 直接使用传入的用户编号和用户名
+        log.setOperatorNum(userNum);
+        log.setOperatorName(userName);
+        
+        log.setOperationTime(LocalDateTime.now());
+        log.setOperationRemark(operationRemark);
+        log.setBeforeStatus(beforeStatus);
+        log.setAfterStatus(afterStatus);
+        log.setCreatedBy(userNum); // 使用userNum而非完整operator
+        log.setIsDeleted(0);
+        approvalLogMapper.insert(log);
+    }
+    
+    /**
+     * 保存审批日志（兼容旧方法签名）
+     */
     private void saveApprovalLog(ApprovalTask task, String operationType, String operator, String operationRemark, String beforeStatus, String afterStatus) {
         ApprovalLog log = new ApprovalLog();
+        log.setUuid(UUID.randomUUID().toString().replaceAll("-", ""));
         log.setLogId("LOG" + DateTimeFormatter.ofPattern("yyyyMMdd").format(LocalDateTime.now()) + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         log.setTaskId(task.getTaskId());
         log.setFlowId(task.getFlowId());
@@ -1404,11 +1652,38 @@ public class ApprovalServiceImpl implements ApprovalService {
         log.setBeforeStatus(beforeStatus);
         log.setAfterStatus(afterStatus);
         log.setCreatedBy(operator);
+        log.setIsDeleted(0);
         approvalLogMapper.insert(log);
     }
 
     /**
      * 记录操作日志
+     */
+    /**
+     * 保存操作日志
+     * 支持直接传入用户编号和用户名
+     */
+    private void saveOpLog(String userNum, String userName, String type, String objType, Long objId, String result, String msg, String pagePath, String buttonName, String ip) {
+        OperationLog log = new OperationLog();
+        // 生成UUID
+        log.setUuid(UUID.randomUUID().toString().replaceAll("-", ""));
+        // 直接使用传入的用户编号和用户名
+        log.setOperatorNum(userNum);
+        log.setOperatorName(userName);
+        log.setOperationType(type);
+        log.setObjectType(objType);
+        log.setObjectId(objId);
+        log.setResult(result);
+        log.setMessage(msg);
+        log.setOperationTime(LocalDateTime.now());
+        log.setPagePath(pagePath);
+        log.setButtonName(buttonName);
+        log.setIpAddress(ip);
+        operationLogMapper.insert(log);
+    }
+    
+    /**
+     * 保存操作日志（兼容旧方法签名）
      */
     private void saveOpLog(String operator, String type, String objType, Long objId, String result, String msg, String pagePath, String buttonName, String ip) {
         OperationLog log = new OperationLog();

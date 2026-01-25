@@ -2,6 +2,18 @@
  * 审批模块
  * 管理审批相关的状态
  */
+import {
+  getApprovalHistory as getApprovalHistoryAPI,
+  getApprovalTodoTasks,
+  getApprovalProcessedTasks,
+  getApprovalCompletedTasks,
+  submitApproval,
+  startApprovalProcess,
+  approveTask as approveTaskAPI,
+  rejectTask as rejectTaskAPI,
+  transferTask as transferTaskAPI
+} from '@/api';
+
 export default {
   /**
    * 模块名称空间
@@ -191,42 +203,15 @@ export default {
      * @param {string|number} approvalId - 审批ID
      */
     getApprovalHistory({ commit }, approvalId) {
-      // 这里应该调用API获取审批历史记录
-      // 模拟获取审批历史记录
-      commit('setApprovalHistory', [
-        {
-          id: '1',
-          taskId: 'TASK001',
-          flowId: 'FLOW001',
-          nodeId: 'NODE001',
-          businessType: 'CHANGE_RECORD',
-          businessId: '123',
-          businessCode: 'CR001',
-          operationType: 'SUBMIT',
-          operatorNum: 'user001',
-          operatorName: '张三',
-          operationTime: '2024-01-01T12:00:00Z',
-          operationRemark: '提交审批',
-          beforeStatus: 'DRAFT',
-          afterStatus: 'PENDING'
-        },
-        {
-          id: '2',
-          taskId: 'TASK001',
-          flowId: 'FLOW001',
-          nodeId: 'NODE001',
-          businessType: 'CHANGE_RECORD',
-          businessId: '123',
-          businessCode: 'CR001',
-          operationType: 'APPROVE',
-          operatorNum: 'user002',
-          operatorName: '李四',
-          operationTime: '2024-01-02T10:00:00Z',
-          operationRemark: '同意审批',
-          beforeStatus: 'PENDING',
-          afterStatus: 'APPROVED'
-        }
-      ]);
+      return getApprovalHistoryAPI(approvalId)
+        .then(response => {
+          commit('setApprovalHistory', response.data.records || []);
+        })
+        .catch(error => {
+          console.error('获取审批历史记录失败:', error);
+          commit('setApprovalHistory', []);
+          throw error;
+        });
     },
     
     /**
@@ -235,26 +220,15 @@ export default {
      * @param {string} assigneeNum - 审批人用户编号
      */
     getTodoTasks({ commit }, assigneeNum) {
-      // 这里应该调用API获取待办任务
-      // 模拟获取待办任务
-      commit('setTodoTasks', [
-        {
-          id: '1',
-          taskId: 'TASK003',
-          flowId: 'FLOW001',
-          nodeId: 'NODE001',
-          businessType: 'CHANGE_RECORD',
-          businessId: '456',
-          businessCode: 'CR002',
-          approverNum: assigneeNum,
-          approverName: '管理员',
-          taskStatus: 'PENDING',
-          currentStatus: '审批中-节点1',
-          assignTime: '2024-01-03T09:00:00Z',
-          title: '变更记录审批',
-          reason: '系统升级变更'
-        }
-      ]);
+      return getApprovalTodoTasks(assigneeNum)
+        .then(response => {
+          commit('setTodoTasks', response.data.records || []);
+        })
+        .catch(error => {
+          console.error('获取待办任务失败:', error);
+          commit('setTodoTasks', []);
+          throw error;
+        });
     },
     
     /**
@@ -263,28 +237,15 @@ export default {
      * @param {string} operatorNum - 操作人用户编号
      */
     getDoneTasks({ commit }, operatorNum) {
-      // 这里应该调用API获取已办任务
-      // 模拟获取已办任务
-      commit('setDoneTasks', [
-        {
-          id: '2',
-          taskId: 'TASK001',
-          flowId: 'FLOW001',
-          nodeId: 'NODE001',
-          businessType: 'CHANGE_RECORD',
-          businessId: '123',
-          businessCode: 'CR001',
-          approverNum: operatorNum,
-          approverName: '管理员',
-          taskStatus: 'APPROVED',
-          currentStatus: '已通过',
-          assignTime: '2024-01-01T12:00:00Z',
-          approvalTime: '2024-01-02T10:00:00Z',
-          approvalRemark: '同意审批',
-          title: '变更记录审批',
-          reason: '系统升级变更'
-        }
-      ]);
+      return getApprovalProcessedTasks(operatorNum)
+        .then(response => {
+          commit('setDoneTasks', response.data.records || []);
+        })
+        .catch(error => {
+          console.error('获取已办任务失败:', error);
+          commit('setDoneTasks', []);
+          throw error;
+        });
     },
     
     /**
@@ -293,28 +254,15 @@ export default {
      * @param {string} operatorNum - 操作人用户编号
      */
     getClosedTasks({ commit }, operatorNum) {
-      // 这里应该调用API获取已结任务
-      // 模拟获取已结任务
-      commit('setClosedTasks', [
-        {
-          id: '3',
-          taskId: 'TASK002',
-          flowId: 'FLOW001',
-          nodeId: 'NODE001',
-          businessType: 'CHANGE_RECORD',
-          businessId: '789',
-          businessCode: 'CR003',
-          approverNum: operatorNum,
-          approverName: '管理员',
-          taskStatus: 'REJECTED',
-          currentStatus: '已拒绝',
-          assignTime: '2024-01-04T14:00:00Z',
-          approvalTime: '2024-01-05T16:00:00Z',
-          approvalRemark: '拒绝审批',
-          title: '变更记录审批',
-          reason: '系统降级变更'
-        }
-      ]);
+      return getApprovalCompletedTasks(operatorNum)
+        .then(response => {
+          commit('setClosedTasks', response.data.records || []);
+        })
+        .catch(error => {
+          console.error('获取已结任务失败:', error);
+          commit('setClosedTasks', []);
+          throw error;
+        });
     },
     
     /**
@@ -323,16 +271,22 @@ export default {
      * @param {Object} payload - 审批参数
      */
     triggerApproval({ commit }, payload) {
-      // 这里应该调用API触发审批
-      // 模拟触发审批成功
-      commit('setCurrentApproval', {
-        id: '123',
-        businessId: payload.businessId,
-        businessType: payload.businessType,
-        status: 'PENDING',
-        createTime: new Date().toISOString(),
-        ...payload.metadata
-      });
+      return startApprovalProcess(payload.businessId, payload.businessType, payload.userNum)
+        .then(response => {
+          commit('setCurrentApproval', {
+            id: response.data, // API返回流程实例ID
+            businessId: payload.businessId,
+            businessType: payload.businessType,
+            status: 'PENDING',
+            createTime: new Date().toISOString(),
+            ...payload.metadata
+          });
+          return response;
+        })
+        .catch(error => {
+          console.error('触发审批失败:', error);
+          throw error;
+        });
     },
     
     /**
@@ -341,30 +295,37 @@ export default {
      * @param {Object} payload - 审批参数
      */
     approve({ commit }, payload) {
-      // 这里应该调用API同意审批
-      // 模拟同意审批成功
-      commit('updateTaskStatus', {
-        taskId: payload.taskId,
-        status: 'APPROVED'
-      });
-      
-      // 添加审批历史记录
-      commit('addApprovalHistory', {
-        id: Date.now().toString(),
-        taskId: payload.taskId,
-        flowId: payload.flowId,
-        nodeId: payload.nodeId,
-        businessType: payload.businessType,
-        businessId: payload.businessId,
-        businessCode: payload.businessCode,
-        operationType: 'APPROVE',
-        operatorNum: payload.operatorNum,
-        operatorName: payload.operatorName,
-        operationTime: new Date().toISOString(),
-        operationRemark: payload.remark,
-        beforeStatus: 'PENDING',
-        afterStatus: 'APPROVED'
-      });
+      return approveTaskAPI(payload.taskId, payload.remark)
+        .then(response => {
+          commit('updateTaskStatus', {
+            taskId: payload.taskId,
+            status: 'APPROVED'
+          });
+          
+          // 添加审批历史记录
+          commit('addApprovalHistory', {
+            id: Date.now().toString(),
+            taskId: payload.taskId,
+            flowId: payload.flowId,
+            nodeId: payload.nodeId,
+            businessType: payload.businessType,
+            businessId: payload.businessId,
+            businessCode: payload.businessCode,
+            operationType: 'APPROVE',
+            operatorNum: payload.operatorNum,
+            operatorName: payload.operatorName,
+            operationTime: new Date().toISOString(),
+            operationRemark: payload.remark,
+            beforeStatus: 'PENDING',
+            afterStatus: 'APPROVED'
+          });
+          
+          return response;
+        })
+        .catch(error => {
+          console.error('同意审批失败:', error);
+          throw error;
+        });
     },
     
     /**
@@ -373,30 +334,37 @@ export default {
      * @param {Object} payload - 审批参数
      */
     reject({ commit }, payload) {
-      // 这里应该调用API拒绝审批
-      // 模拟拒绝审批成功
-      commit('updateTaskStatus', {
-        taskId: payload.taskId,
-        status: 'REJECTED'
-      });
-      
-      // 添加审批历史记录
-      commit('addApprovalHistory', {
-        id: Date.now().toString(),
-        taskId: payload.taskId,
-        flowId: payload.flowId,
-        nodeId: payload.nodeId,
-        businessType: payload.businessType,
-        businessId: payload.businessId,
-        businessCode: payload.businessCode,
-        operationType: 'REJECT',
-        operatorNum: payload.operatorNum,
-        operatorName: payload.operatorName,
-        operationTime: new Date().toISOString(),
-        operationRemark: payload.remark,
-        beforeStatus: 'PENDING',
-        afterStatus: 'REJECTED'
-      });
+      return rejectTaskAPI(payload.taskId, payload.remark)
+        .then(response => {
+          commit('updateTaskStatus', {
+            taskId: payload.taskId,
+            status: 'REJECTED'
+          });
+          
+          // 添加审批历史记录
+          commit('addApprovalHistory', {
+            id: Date.now().toString(),
+            taskId: payload.taskId,
+            flowId: payload.flowId,
+            nodeId: payload.nodeId,
+            businessType: payload.businessType,
+            businessId: payload.businessId,
+            businessCode: payload.businessCode,
+            operationType: 'REJECT',
+            operatorNum: payload.operatorNum,
+            operatorName: payload.operatorName,
+            operationTime: new Date().toISOString(),
+            operationRemark: payload.remark,
+            beforeStatus: 'PENDING',
+            afterStatus: 'REJECTED'
+          });
+          
+          return response;
+        })
+        .catch(error => {
+          console.error('拒绝审批失败:', error);
+          throw error;
+        });
     },
     
     /**
@@ -405,30 +373,37 @@ export default {
      * @param {Object} payload - 审批参数
      */
     transfer({ commit }, payload) {
-      // 这里应该调用API转办审批
-      // 模拟转办审批成功
-      commit('updateTaskStatus', {
-        taskId: payload.taskId,
-        status: 'TRANSFERRED'
-      });
-      
-      // 添加审批历史记录
-      commit('addApprovalHistory', {
-        id: Date.now().toString(),
-        taskId: payload.taskId,
-        flowId: payload.flowId,
-        nodeId: payload.nodeId,
-        businessType: payload.businessType,
-        businessId: payload.businessId,
-        businessCode: payload.businessCode,
-        operationType: 'TRANSFER',
-        operatorNum: payload.operatorNum,
-        operatorName: payload.operatorName,
-        operationTime: new Date().toISOString(),
-        operationRemark: payload.remark,
-        beforeStatus: 'PENDING',
-        afterStatus: 'TRANSFERRED'
-      });
+      return transferTaskAPI(payload.taskId, payload.nextAssigneeNum, payload.remark)
+        .then(response => {
+          commit('updateTaskStatus', {
+            taskId: payload.taskId,
+            status: 'TRANSFERRED'
+          });
+          
+          // 添加审批历史记录
+          commit('addApprovalHistory', {
+            id: Date.now().toString(),
+            taskId: payload.taskId,
+            flowId: payload.flowId,
+            nodeId: payload.nodeId,
+            businessType: payload.businessType,
+            businessId: payload.businessId,
+            businessCode: payload.businessCode,
+            operationType: 'TRANSFER',
+            operatorNum: payload.operatorNum,
+            operatorName: payload.operatorName,
+            operationTime: new Date().toISOString(),
+            operationRemark: payload.remark,
+            beforeStatus: 'PENDING',
+            afterStatus: 'TRANSFERRED'
+          });
+          
+          return response;
+        })
+        .catch(error => {
+          console.error('转办审批失败:', error);
+          throw error;
+        });
     },
     
     /**
@@ -437,7 +412,11 @@ export default {
      * @param {Object} payload - 审批参数
      */
     cancel({ commit }, payload) {
-      // 这里应该调用API取消审批
+      // 注意：当前API服务中没有直接的取消审批API，需要根据实际情况调整
+      // 这里假设使用transferTaskAPI的类似方式实现
+      // 实际实现时需要替换为正确的API调用
+      console.warn('取消审批API尚未实现，当前为模拟实现');
+      
       // 模拟取消审批成功
       commit('updateTaskStatus', {
         taskId: payload.taskId,
@@ -461,6 +440,9 @@ export default {
         beforeStatus: 'PENDING',
         afterStatus: 'CANCELED'
       });
+      
+      // 返回Promise以保持API一致性
+      return Promise.resolve({ success: true });
     }
   },
   
