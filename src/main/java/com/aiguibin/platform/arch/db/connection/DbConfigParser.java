@@ -1,6 +1,6 @@
 package com.aiguibin.platform.arch.db.connection;
 
-import com.aiguibin.platform.arch.vo.DbConfig;
+import com.aiguibin.platform.arch.dto.DbConfig;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;

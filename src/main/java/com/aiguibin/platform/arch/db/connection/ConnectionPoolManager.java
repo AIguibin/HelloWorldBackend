@@ -1,6 +1,6 @@
 package com.aiguibin.platform.arch.db.connection;
 
-import com.aiguibin.platform.arch.vo.DbConfig;
+import com.aiguibin.platform.arch.dto.DbConfig;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;

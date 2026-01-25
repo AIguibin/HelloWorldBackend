@@ -1,8 +1,8 @@
 package com.aiguibin.platform.arch.controller;
 
 import com.aiguibin.platform.arch.service.DbValidationService;
-import com.aiguibin.platform.arch.vo.ValidationRequest;
-import com.aiguibin.platform.arch.vo.ValidationResult;
+import com.aiguibin.platform.arch.dto.ValidationRequest;
+import com.aiguibin.platform.arch.dto.ValidationResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

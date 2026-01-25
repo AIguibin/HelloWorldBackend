@@ -1,8 +1,8 @@
 package com.aiguibin.platform.arch.excel;
 
-import com.aiguibin.platform.arch.vo.ColumnStructure;
-import com.aiguibin.platform.arch.vo.IndexStructure;
-import com.aiguibin.platform.arch.vo.TableStructure;
+import com.aiguibin.platform.arch.dto.ColumnStructure;
+import com.aiguibin.platform.arch.dto.IndexStructure;
+import com.aiguibin.platform.arch.dto.TableStructure;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;

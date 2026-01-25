@@ -1,7 +1,7 @@
 package com.aiguibin.platform.arch.db.validation;
 
-import com.aiguibin.platform.arch.vo.DiffInfo;
-import com.aiguibin.platform.arch.vo.ValidationResult;
+import com.aiguibin.platform.arch.dto.DiffInfo;
+import com.aiguibin.platform.arch.dto.ValidationResult;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 

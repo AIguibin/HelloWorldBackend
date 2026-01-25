@@ -1,4 +1,4 @@
-package com.aiguibin.platform.arch.vo;
+package com.aiguibin.platform.arch.dto;
 
 public enum DiffType {
     TABLE_MISSING,        // 表缺失

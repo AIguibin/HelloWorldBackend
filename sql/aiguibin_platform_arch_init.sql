@@ -1,5 +1,5 @@
 -- ----------------------------
--- Chat2DB export data , export time: 2026-01-11 20:29:08
+-- Chat2DB export data , export time: 2026-01-25 20:42:18
 -- ----------------------------
 SET FOREIGN_KEY_CHECKS=0;
 -- ----------------------------
@@ -165,7 +165,7 @@ CREATE TABLE `biz_business_type` (
   UNIQUE KEY `uk_main_table_name` (`main_table_name`),
   KEY `idx_is_active` (`is_active`),
   KEY `idx_is_deleted` (`is_deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='业务类型注册表';
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='业务类型注册表';
 
 -- ----------------------------
 -- Table structure for table biz_change_history
@@ -230,7 +230,7 @@ CREATE TABLE `biz_change_history` (
   KEY `idx_approval_task_id` (`approval_task_id`),
   KEY `idx_approval_log_id` (`approval_log_id`),
   KEY `idx_approval_operation_type` (`approval_operation_type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='变更历史表';
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='变更历史表';
 
 -- ----------------------------
 -- Table structure for table biz_change_record
@@ -297,7 +297,81 @@ CREATE TABLE `biz_change_record` (
   KEY `idx_approval_instance_id` (`approval_instance_id`),
   KEY `idx_approval_status` (`approval_status`),
   KEY `idx_submit_time` (`submit_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='变更记录表';
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='变更记录表';
+
+-- ----------------------------
+-- Table structure for table biz_ddct_item
+-- ----------------------------
+DROP TABLE IF EXISTS `biz_ddct_item`;
+CREATE TABLE `biz_ddct_item` (
+  `ID` varchar(64) NOT NULL COMMENT '主键id',
+  `DCT_SEQ` int DEFAULT NULL COMMENT '字典排序',
+  `DCT_GRP` varchar(32) DEFAULT NULL COMMENT '字典组',
+  `HNDNG_ISTU_NO` varchar(8) DEFAULT NULL COMMENT '经办机构编号',
+  `STCD` varchar(1) DEFAULT NULL COMMENT '状态代码（无效0；有效1；未生效2）',
+  `DCT_KEY` varchar(100) DEFAULT NULL COMMENT '字典键',
+  `HNDNG_USER_NO` varchar(20) DEFAULT NULL COMMENT '经办用户编号',
+  `STM_ID` varchar(32) DEFAULT NULL COMMENT '系统id',
+  `DCT_VAL_NM` varchar(450) DEFAULT NULL COMMENT '字典值名称',
+  `DCT_TP_NM` varchar(450) DEFAULT NULL COMMENT '字典类型名称',
+  `CRT_TMSTMP` varchar(26) DEFAULT NULL COMMENT '创建时间戳',
+  `BLNG_MDL_CD` varchar(2) DEFAULT NULL COMMENT '所属模块代码',
+  `DCT_VAL` varchar(500) DEFAULT NULL COMMENT '字典值',
+  `DCT_TP` varchar(100) DEFAULT NULL COMMENT '字典类型',
+  `DCT_DSC` varchar(300) DEFAULT NULL COMMENT '字典中文描述',
+  `UDT_TMSTMP` varchar(26) DEFAULT NULL COMMENT '更新时间戳',
+  `AHR_SCOP` varchar(1) DEFAULT NULL COMMENT '权限范围',
+  `CREATE_USER` varchar(30) DEFAULT NULL COMMENT '创建人编号',
+  `CREATE_INST` varchar(30) DEFAULT NULL COMMENT '创建机构通用唯一标识符',
+  `UPDATE_TIME` datetime DEFAULT NULL COMMENT '更新时间',
+  `UPDATE_USER` varchar(30) DEFAULT NULL COMMENT '更新人编号',
+  `UPDATE_INST` varchar(30) DEFAULT NULL COMMENT '更新机构通用唯一标识符',
+  `HDL_TIME` datetime DEFAULT NULL COMMENT '经办时间',
+  `HDL_USER` varchar(30) DEFAULT NULL COMMENT '经办人编号',
+  `HDL_INST` varchar(30) DEFAULT NULL COMMENT '经办机构通用唯一标识符',
+  `EXPD_ID` varchar(32) DEFAULT NULL COMMENT '扩展编号',
+  `DEL_IND` varchar(1) DEFAULT NULL COMMENT '删除标志',
+  `VERSION` int DEFAULT NULL COMMENT '版本号',
+  `TENANT_ID` varchar(32) DEFAULT NULL COMMENT '租户通用唯一标识符',
+  `DISTRIBUTE_KEY` varchar(64) DEFAULT NULL COMMENT '分片键值',
+  `AGNC_USER` varchar(30) DEFAULT NULL COMMENT '代理人编号',
+  PRIMARY KEY (`ID`),
+  KEY `idx_dct_key` (`DCT_KEY`),
+  KEY `idx_dct_tp` (`DCT_TP`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='业务数据字典';
+
+-- ----------------------------
+-- Table structure for table biz_ddct_type
+-- ----------------------------
+DROP TABLE IF EXISTS `biz_ddct_type`;
+CREATE TABLE `biz_ddct_type` (
+  `ID` varchar(64) NOT NULL COMMENT '主键id',
+  `UDT_TMSTMP` varchar(26) DEFAULT NULL COMMENT '更新时间戳',
+  `DCT_TPDS` varchar(32) DEFAULT NULL COMMENT '字典类型描述',
+  `HNDNG_ISTU_NO` varchar(8) DEFAULT NULL COMMENT '经办机构编号',
+  `DCT_TP_NM` varchar(450) DEFAULT NULL COMMENT '字典类型名称',
+  `DCT_TP_PCD` varchar(100) DEFAULT NULL COMMENT '父级字典类型',
+  `CRT_TMSTMP` varchar(26) DEFAULT NULL COMMENT '创建时间戳',
+  `DCT_TP` varchar(100) DEFAULT NULL COMMENT '字典类型',
+  `HNDNG_USER_NO` varchar(20) DEFAULT NULL COMMENT '经办用户编号',
+  `STM_ID` varchar(32) DEFAULT NULL COMMENT '系统id',
+  `CREATE_TIME` datetime DEFAULT NULL COMMENT '创建时间',
+  `CREATE_USER` varchar(30) DEFAULT NULL COMMENT '创建人编号',
+  `CREATE_INST` varchar(30) DEFAULT NULL COMMENT '创建机构通用唯一标识符',
+  `UPDATE_USER` varchar(30) DEFAULT NULL COMMENT '更新人编号',
+  `UPDATE_INST` varchar(30) DEFAULT NULL COMMENT '更新机构通用唯一标识符',
+  `UPDATE_TIME` datetime DEFAULT NULL COMMENT '更新时间',
+  `HDL_TIME` datetime DEFAULT NULL COMMENT '经办时间',
+  `HDL_USER` varchar(30) DEFAULT NULL COMMENT '经办人编号',
+  `HDL_INST` varchar(30) DEFAULT NULL COMMENT '经办机构通用唯一标识符',
+  `EXPD_ID` varchar(32) DEFAULT NULL COMMENT '扩展编号',
+  `DEL_IND` varchar(1) DEFAULT NULL COMMENT '删除标志',
+  `VERSION` int DEFAULT NULL COMMENT '版本号',
+  `TENANT_ID` varchar(32) DEFAULT NULL COMMENT '租户通用唯一标识符',
+  `DISTRIBUTE_KEY` varchar(64) DEFAULT NULL COMMENT '分片键值',
+  `AGNC_USER` varchar(30) DEFAULT NULL COMMENT '代理人编号',
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='业务数据字典类型';
 
 -- ----------------------------
 -- Table structure for table sys_api_resource
@@ -583,7 +657,7 @@ CREATE TABLE `sys_operation_log` (
   KEY `idx_object_code` (`object_code`),
   KEY `idx_operation_type` (`operation_type`),
   KEY `idx_result` (`result`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统操作日志表';
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统操作日志表';
 
 -- ----------------------------
 -- Table structure for table sys_org

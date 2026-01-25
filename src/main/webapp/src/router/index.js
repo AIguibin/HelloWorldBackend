@@ -12,7 +12,9 @@ import VersionManagement from '../views/VersionManagement.vue';
 import DevelopmentStandards from '../views/DevelopmentStandards.vue';
 // 导入审批相关组件
 import WorkListTodo from '../views/work-list/WorkListTodo.vue';
-import ApprovalForm from '../views/approval/ApprovalForm.vue';
+import ApprovalForm from '../views/work-list/ApprovalForm.vue';
+// 导入字典变更相关组件
+import DictChangeApply from '../views/dict-change/DictChangeApply.vue';
 
 // 忽略重复导航错误（Vue Router 3 在重复 push/replace 时会抛 NavigationDuplicated）
 const originalPush = Router.prototype.push;
@@ -44,7 +46,8 @@ const componentMap = {
   'views/DevelopmentStandards': DevelopmentStandards,
   'views/SystemSettings': SystemSettings,
   'views/work-list/WorkListTodo': WorkListTodo,
-  'views/approval/ApprovalForm': ApprovalForm
+  'views/work-list/ApprovalForm': ApprovalForm,
+  'work-apply/dict-change/index': DictChangeApply
 };
 
 // 将菜单转换为路由

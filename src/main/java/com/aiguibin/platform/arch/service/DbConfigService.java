@@ -1,6 +1,6 @@
 package com.aiguibin.platform.arch.service;
 
-import com.aiguibin.platform.arch.vo.DbConfig;
+import com.aiguibin.platform.arch.dto.DbConfig;
 
 import java.util.List;
 

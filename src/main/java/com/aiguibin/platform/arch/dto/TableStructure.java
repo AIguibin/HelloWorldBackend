@@ -1,4 +1,4 @@
-package com.aiguibin.platform.arch.vo;
+package com.aiguibin.platform.arch.dto;
 
 import lombok.Data;
 import java.util.List;

@@ -1,7 +1,7 @@
 package com.aiguibin.platform.arch.service;
 
-import com.aiguibin.platform.arch.vo.ValidationRequest;
-import com.aiguibin.platform.arch.vo.ValidationResult;
+import com.aiguibin.platform.arch.dto.ValidationRequest;
+import com.aiguibin.platform.arch.dto.ValidationResult;
 
 import java.util.List;
 

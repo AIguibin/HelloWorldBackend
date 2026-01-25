@@ -7,11 +7,11 @@ import com.aiguibin.platform.arch.db.validation.StructureComparator;
 import com.aiguibin.platform.arch.db.validation.ReportGenerator;
 import com.aiguibin.platform.arch.service.DbValidationService;
 import com.aiguibin.platform.arch.service.DbConfigService;
-import com.aiguibin.platform.arch.vo.DbConfig;
-import com.aiguibin.platform.arch.vo.DiffInfo;
-import com.aiguibin.platform.arch.vo.TableStructure;
-import com.aiguibin.platform.arch.vo.ValidationRequest;
-import com.aiguibin.platform.arch.vo.ValidationResult;
+import com.aiguibin.platform.arch.dto.DbConfig;
+import com.aiguibin.platform.arch.dto.DiffInfo;
+import com.aiguibin.platform.arch.dto.TableStructure;
+import com.aiguibin.platform.arch.dto.ValidationRequest;
+import com.aiguibin.platform.arch.dto.ValidationResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

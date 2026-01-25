@@ -3,7 +3,7 @@ package com.aiguibin.platform.arch.service.impl;
 import com.aiguibin.platform.arch.db.connection.DbConfigParser;
 import com.aiguibin.platform.arch.db.connection.ConnectionPoolManager;
 import com.aiguibin.platform.arch.service.DbConfigService;
-import com.aiguibin.platform.arch.vo.DbConfig;
+import com.aiguibin.platform.arch.dto.DbConfig;
 import org.springframework.stereotype.Service;
 
 import java.io.File;

@@ -1,9 +1,9 @@
 package com.aiguibin.platform.arch.db.validation;
 
-import com.aiguibin.platform.arch.vo.ColumnStructure;
-import com.aiguibin.platform.arch.vo.DiffInfo;
-import com.aiguibin.platform.arch.vo.IndexStructure;
-import com.aiguibin.platform.arch.vo.TableStructure;
+import com.aiguibin.platform.arch.dto.ColumnStructure;
+import com.aiguibin.platform.arch.dto.DiffInfo;
+import com.aiguibin.platform.arch.dto.IndexStructure;
+import com.aiguibin.platform.arch.dto.TableStructure;
 
 import java.util.ArrayList;
 import java.util.HashMap;
