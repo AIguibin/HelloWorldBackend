@@ -1,6 +1,6 @@
 package com.aiguibin.platform.arch.excel;
 
-import com.aiguibin.platform.arch.vo.DbConfig;
+import com.aiguibin.platform.arch.dto.DbConfig;
 import com.aiguibin.platform.arch.service.DbConfigService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
