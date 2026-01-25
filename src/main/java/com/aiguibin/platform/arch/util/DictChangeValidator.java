@@ -1,5 +1,6 @@
 package com.aiguibin.platform.arch.util;
 
+import org.springframework.stereotype.Component;
 import com.aiguibin.platform.arch.dto.DictChangeApplyDTO;
 import com.aiguibin.platform.arch.dto.DictItemChangeDTO;
 import com.aiguibin.platform.arch.dto.DictItemDataDTO;
@@ -9,6 +10,7 @@ import com.aiguibin.platform.arch.enums.ChangeType;
 /**
  * 字典变更验证器
  */
+@Component
 public class DictChangeValidator {
     
     /**

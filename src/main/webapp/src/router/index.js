@@ -47,12 +47,14 @@ const componentMap = {
   'views/SystemSettings': SystemSettings,
   'views/work-list/WorkListTodo': WorkListTodo,
   'views/work-list/ApprovalForm': ApprovalForm,
-  'work-apply/dict-change/index': DictChangeApply
+  'views/dict-change/DictChangeApply': DictChangeApply
 };
+
+
 
 // 将菜单转换为路由
 function menuToRoute(menu) {
-  if (menu.menuType !== 2 || !menu.path) {
+  if (menu.menuType !== 'P' || !menu.path) {
     return null;
   }
 
@@ -63,7 +65,7 @@ function menuToRoute(menu) {
     meta: {
       title: menu.menuName,
       icon: menu.icon,
-      perms: menu.perms
+      perms: menu.resourceKey
     }
   };
 
@@ -81,9 +83,16 @@ function generateRoutes(menus) {
   for (const menu of menus) {
     const route = menuToRoute(menu);
     if (route && route.component) {
+      // 处理子菜单
+      if (menu.children && menu.children.length > 0) {
+        const childRoutes = generateRoutes(menu.children);
+        if (childRoutes.length > 0) {
+          route.children = childRoutes;
+        }
+      }
       routes.push(route);
-    }
-    if (menu.children && menu.children.length > 0) {
+    } else if (menu.menuType === 'M' && menu.children && menu.children.length > 0) {
+      // 处理菜单目录，递归处理子菜单
       routes.push(...generateRoutes(menu.children));
     }
   }
@@ -91,7 +100,7 @@ function generateRoutes(menus) {
 }
 /**
  * 路由配置
- * 不在数据库中配置的路由需要在这里注册
+ * 基础路由配置，动态路由将通过API获取后添加
  * @type {Router}
  */
 const router = new Router({
@@ -114,62 +123,6 @@ const router = new Router({
           name: 'Dashboard',
           component: DashboardCards,
           meta: { title: '首页' }
-        },
-        {
-          path: '/version-management',
-          name: 'VersionManagement',
-          component: VersionManagement,
-          meta: { title: '版本管理方案' }
-        },
-        {
-          path: '/development-standards',
-          name: 'DevelopmentStandards',
-          component: DevelopmentStandards,
-          meta: { title: '日常开发规范' }
-        },
-        {
-          path: '/system-settings',
-          name: 'SystemSettings',
-          component: SystemSettings,
-          meta: { title: '系统设置' }
-        },
-        {
-          path: '/change-password',
-          name: 'ChangePassword',
-          component: ChangePassword,
-          meta: { title: '修改密码' }
-        },
-        {
-          path: '/change-records',
-          name: 'ChangeRecordList',
-          component: ChangeRecordList,
-          meta: { title: '变更登记管理' }
-        },
-        {
-          path: '/change-records/:id',
-          name: 'ChangeRecordDetail',
-          component: ChangeRecordDetail,
-          meta: { title: '变更记录详情' }
-        },
-        {
-          path: '/change-records/:id/history',
-          name: 'ChangeRecordHistory',
-          component: ChangeRecordHistory,
-          meta: { title: '变更记录历史' }
-        },
-        // 待办事项页面（包含待办、已办、已结三个tab）
-        {
-          path: '/work-list/todo',
-          name: 'WorkListTodo',
-          component: WorkListTodo,
-          meta: { title: '待办事项' }
-        },
-        // 审批申请表单页面
-        {
-          path: '/approval-form',
-          name: 'ApprovalForm',
-          component: ApprovalForm,
-          meta: { title: '审批申请表单' }
         }
       ]
     }
@@ -191,7 +144,48 @@ export function addDynamicRoutes(menus) {
   }
 }
 
-router.beforeEach((to, from, next) => {
+// 初始化动态路由
+export async function initDynamicRoutes() {
+  try {
+    // 从本地存储读取菜单数据
+    const cachedMenus = localStorage.getItem('menuPermissions');
+    if (cachedMenus) {
+      try {
+        const menus = JSON.parse(cachedMenus);
+        if (menus && menus.length > 0) {
+          addDynamicRoutes(menus);
+          return true;
+        }
+      } catch (parseError) {
+        console.error('解析本地存储菜单数据失败:', parseError);
+      }
+    }
+    return false;
+  } catch (error) {
+    console.error('初始化动态路由失败:', error);
+    return false;
+  }
+}
+
+// 重新加载动态路由（用于权限变更时）
+export async function reloadDynamicRoutes() {
+  // 清除现有的动态路由
+  const mainLayoutRoute = router.options.routes.find(r => r.path === '/');
+  if (mainLayoutRoute && mainLayoutRoute.children) {
+    // 只保留基础路由（登录和首页）
+    mainLayoutRoute.children = mainLayoutRoute.children.filter(route => 
+      route.path === '/dashboard'
+    );
+  }
+  
+  // 重新加载路由
+  return await initDynamicRoutes();
+}
+
+// 标记路由是否已初始化
+let routesInitialized = false;
+
+router.beforeEach(async (to, from, next) => {
   const token = localStorage.getItem('token');
   
   // 登录页面直接放行
@@ -216,7 +210,30 @@ router.beforeEach((to, from, next) => {
     return;
   }
 
-  next();
+  // 初始化动态路由
+  if (!routesInitialized) {
+    try {
+      await initDynamicRoutes();
+      routesInitialized = true;
+      // 重新导航到当前路由
+      next({ ...to, replace: true });
+    } catch (error) {
+      console.error('初始化路由失败:', error);
+      next('/dashboard');
+    }
+  } else {
+    // 权限验证
+    const route = router.options.routes.find(r => r.path === '/');
+    if (route && route.children) {
+      const targetRoute = route.children.find(r => r.path === to.path);
+      if (targetRoute && targetRoute.meta && targetRoute.meta.perms) {
+        // 这里可以添加具体的权限验证逻辑
+        // 例如：检查用户是否有targetRoute.meta.perms对应的权限
+        // 如果没有权限，可以重定向到无权限页面或首页
+      }
+    }
+    next();
+  }
 });
 
 export default router;

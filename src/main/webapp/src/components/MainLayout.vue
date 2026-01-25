@@ -227,11 +227,27 @@ export default {
     // 加载菜单数据
     async loadMenus() {
       try {
+        // 优先从本地存储获取菜单数据
+        const cachedMenus = localStorage.getItem('menuPermissions');
+        if (cachedMenus) {
+          try {
+            const menus = JSON.parse(cachedMenus);
+            // 适配API响应格式
+            this.topMenuList = menus || [];
+            return;
+          } catch (parseError) {
+            console.error('解析本地存储菜单数据失败:', parseError);
+          }
+        }
+
+        // 如果本地存储中没有数据，调用API获取
         const response = await getUserMenus();
 
         if (response) {
           // 适配API响应格式
           this.topMenuList = response || [];
+          // 将菜单数据存储到本地存储
+          localStorage.setItem('menuPermissions', JSON.stringify(response));
         } else {
           console.error('加载菜单失败: API返回空响应');
           this.topMenuList = [];

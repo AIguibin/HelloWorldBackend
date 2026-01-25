@@ -1,5 +1,6 @@
 package com.aiguibin.platform.arch.util;
 
+import org.springframework.stereotype.Component;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -7,6 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * 变更单号生成器
  */
+@Component
 public class ChangeNoGenerator {
     
     /**
