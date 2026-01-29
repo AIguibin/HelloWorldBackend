@@ -37,10 +37,12 @@ public class DictChangeApproveServiceImpl implements DictChangeApproveService {
 
         // 3. 更新审批状态
         String approveStatus = dto.getApproveResult() ? ApproveStatus.APPROVED.name() : ApproveStatus.REJECTED.name();
+        String currentUser = getCurrentUser();
         changeMapper.updateApproveStatus(
                 changeId,
                 approveStatus,
-                getCurrentUser(),
+                currentUser,
+                currentUser,
                 DateUtil.now(),
                 dto.getApproveRemark()
         );
@@ -67,10 +69,12 @@ public class DictChangeApproveServiceImpl implements DictChangeApproveService {
         }
 
         // 3. 更新审批状态为待审批
+        String currentUser = getCurrentUser();
         changeMapper.updateApproveStatus(
                 changeId,
                 ApproveStatus.PENDING.name(),
-                getCurrentUser(),
+                currentUser,
+                currentUser,
                 DateUtil.now(),
                 "撤回审批"
         );

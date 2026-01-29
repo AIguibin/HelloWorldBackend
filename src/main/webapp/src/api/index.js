@@ -40,15 +40,21 @@ export const getApprovalCompletedTasks = (operatorNum, params) => request.get('/
 export const getBusinessTypes = () => request.get('/business-types');
 
 // 变更管理 API
-export const applyChange = (data) => request.post('/api/dict/change/apply', data);
-export const saveDraft = (data) => request.post('/api/dict/change/draft', data);
-export const approveChange = (changeId, data) => request.post(`/api/dict/change/approve/${changeId}`, data);
-export const revokeApprove = (changeId) => request.post(`/api/dict/change/revoke/${changeId}`);
-export const executeChange = (changeId) => request.post(`/api/dict/change/execute/${changeId}`);
-export const cancelExecute = (changeId) => request.post(`/api/dict/change/cancel/${changeId}`);
-export const getChangeDetail = (changeId) => request.get(`/api/dict/change/detail/${changeId}`);
-export const queryChanges = (params) => request.get('/api/dict/change/list', { params });
-export const getPendingApprove = () => request.get('/api/dict/change/pending/approve');
-export const getPendingExecute = () => request.get('/api/dict/change/pending/execute');
-export const importDictItems = (formData) => request.post('/api/dict/change/items/import', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-export const exportChanges = (params) => request.get('/api/dict/change/export', { params, responseType: 'blob' });
+export const applyChange = (data) => request.post('/dict/change/apply', data);
+export const saveDraft = (data) => request.post('/dict/change/draft', data);
+export const approveChange = (changeId, data) => request.post(`/dict/change/approve/${changeId}`, data);
+export const revokeApprove = (changeId) => request.post(`/dict/change/revoke/${changeId}`);
+export const executeChange = (changeId) => request.post(`/dict/change/execute/${changeId}`);
+export const cancelExecute = (changeId) => request.post(`/dict/change/cancel/${changeId}`);
+export const getChangeDetail = (changeId) => request.get(`/dict/change/detail/${changeId}`);
+export const queryChanges = (params) => request.get('/dict/change/list', { params });
+export const getPendingApprove = () => request.get('/dict/change/pending/approve');
+export const getPendingExecute = () => request.get('/dict/change/pending/execute');
+export const importDictItems = (formData) => request.post('/dict/change/items/import', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const exportChanges = (params) => request.get('/dict/change/export', { params, responseType: 'blob' });
+
+// 外部链接网络管理 API
+export * from './netLinks';
+
+// 数据字典变更 API
+export * from './dictChange';

@@ -4,6 +4,12 @@
       <template slot="header">
         <div class="card-header">
           <span>字典变更记录</span>
+          <div class="header-buttons">
+            <el-button type="primary" @click="handleAdd">+ 新增变更申请</el-button>
+            <el-button @click="toggleAdvancedSearch">
+              {{ showAdvancedSearch ? '收起' : '高级查询' }}
+            </el-button>
+          </div>
         </div>
       </template>
       
@@ -40,7 +46,9 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="6">
+          
+          <!-- 高级查询条件 -->
+          <el-col :span="6" v-if="showAdvancedSearch">
             <el-form-item label="执行状态">
               <el-select v-model="queryForm.executeStatus" placeholder="请选择执行状态">
                 <el-option label="待执行" value="PENDING"></el-option>
@@ -50,12 +58,12 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="6">
+          <el-col :span="6" v-if="showAdvancedSearch">
             <el-form-item label="申请人">
               <el-input v-model="queryForm.applyUser" placeholder="请输入申请人"></el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="6">
+          <el-col :span="6" v-if="showAdvancedSearch">
             <el-form-item label="申请时间">
               <el-date-picker
                 v-model="queryForm.applyTimeRange"
@@ -67,6 +75,7 @@
               ></el-date-picker>
             </el-form-item>
           </el-col>
+          
           <el-col :span="6" class="query-buttons">
             <el-form-item>
               <el-button type="primary" @click="handleQuery">查询</el-button>
@@ -113,6 +122,17 @@
           </template>
         </el-table-column>
         <el-table-column prop="changeReason" label="变更原因"></el-table-column>
+        <el-table-column label="操作" width="150" fixed="right">
+          <template slot-scope="scope">
+            <el-button type="primary" size="small" @click="handleViewDetail(scope.row)">
+              查看详情
+            </el-button>
+            <el-button type="success" size="small" @click="handleEdit(scope.row)" 
+                      v-if="scope.row.approveStatus === 'DRAFT'">
+              修改
+            </el-button>
+          </template>
+        </el-table-column>
       </el-table>
       
       <!-- 分页 -->
@@ -228,6 +248,8 @@
 </template>
 
 <script>
+import { queryChanges, getChangeDetail } from '@/api'
+
 export default {
   name: 'DictChangeRecord',
   data() {
@@ -249,7 +271,8 @@ export default {
       },
       detailDialogVisible: false,
       currentRecord: null,
-      currentRecordDetail: null
+      currentRecordDetail: null,
+      showAdvancedSearch: false
     }
   },
   mounted() {
@@ -274,7 +297,7 @@ export default {
         params.endApplyTime = this.queryForm.applyTimeRange[1]
       }
       
-      this.$axios.get('/api/dict/change/list', { params })
+      queryChanges(params)
         .then(response => {
           this.recordList = response.data.records
           this.pagination.total = response.data.total
@@ -312,12 +335,22 @@ export default {
       this.handleQuery()
     },
     
-    // 点击行
-    handleRowClick(row) {
+    // 新增变更申请
+    handleAdd() {
+      this.$router.push('/dict-change/apply')
+    },
+    
+    // 切换高级查询
+    toggleAdvancedSearch() {
+      this.showAdvancedSearch = !this.showAdvancedSearch
+    },
+    
+    // 查看详情
+    handleViewDetail(row) {
       this.currentRecord = row
       
       // 加载变更详情
-      this.$axios.get(`/api/dict/change/detail/${row.uuid}`)
+      getChangeDetail(row.uuid)
         .then(response => {
           this.currentRecordDetail = response.data
           this.detailDialogVisible = true
@@ -325,6 +358,16 @@ export default {
         .catch(error => {
           this.$message.error('加载详情失败: ' + error.message)
         })
+    },
+    
+    // 修改变更申请
+    handleEdit(row) {
+      this.$router.push(`/dict-change/apply?changeId=${row.uuid}`)
+    },
+    
+    // 点击行
+    handleRowClick(row) {
+      this.handleViewDetail(row)
     },
     
     // 获取变更类型标签类型
@@ -436,6 +479,11 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 10px;
 }
 
 .query-form {

@@ -21,18 +21,19 @@ public interface DictItemChangeMapper extends BaseMapper<DictItemChange> {
      */
     @Insert("<script>" +
             "INSERT INTO biz_ddct_item_change " +
-            "(id, change_id, change_operation, old_dct_seq, new_dct_seq, " +
-            "old_dct_grp, new_dct_grp, old_dct_key, new_dct_key, " +
-            "old_dct_val_nm, new_dct_val_nm, old_dct_val, new_dct_val, " +
-            "old_dct_dsc, new_dct_dsc, old_stcd, new_stcd, " +
-            "execute_status, item_order, create_time, update_time, is_deleted) VALUES " +
+            "(uuid, change_id, change_no, item_order, dict_id, change_operation, " +
+            "old_dct_seq, new_dct_seq, old_dct_grp, new_dct_grp, " +
+            "old_dct_key, new_dct_key, old_dct_val_nm, new_dct_val_nm, " +
+            "old_dct_tp_nm, new_dct_tp_nm, old_dct_val, new_dct_val, " +
+            "old_dct_tp, new_dct_tp, old_dct_dsc, new_dct_dsc, old_stcd, new_stcd, " +
+            "execute_status, execute_result, created_by, created_time, updated_by, updated_time, is_deleted) VALUES " +
             "<foreach collection='list' item='item' separator=','>" +
-            "(#{item.id}, #{item.changeId}, #{item.changeOperation}, " +
+            "(#{item.uuid}, #{item.changeId}, #{item.changeNo}, #{item.itemOrder}, #{item.dictId}, #{item.changeOperation}, " +
             "#{item.oldDctSeq}, #{item.newDctSeq}, #{item.oldDctGrp}, #{item.newDctGrp}, " +
             "#{item.oldDctKey}, #{item.newDctKey}, #{item.oldDctValNm}, #{item.newDctValNm}, " +
-            "#{item.oldDctVal}, #{item.newDctVal}, #{item.oldDctDsc}, #{item.newDctDsc}, " +
-            "#{item.oldStcd}, #{item.newStcd}, #{item.executeStatus}, #{item.itemOrder}, " +
-            "NOW(), NOW(), 0)" +
+            "#{item.oldDctTpNm}, #{item.newDctTpNm}, #{item.oldDctVal}, #{item.newDctVal}, " +
+            "#{item.oldDctTp}, #{item.newDctTp}, #{item.oldDctDsc}, #{item.newDctDsc}, #{item.oldStcd}, #{item.newStcd}, " +
+            "#{item.executeStatus}, #{item.executeResult}, #{item.createdBy}, NOW(), #{item.updatedBy}, NOW(), 0)" +
             "</foreach>" +
             "</script>")
     int batchInsert(@Param("list") List<DictItemChange> items);
@@ -54,8 +55,8 @@ public interface DictItemChangeMapper extends BaseMapper<DictItemChange> {
             "UPDATE biz_ddct_item_change SET " +
             "execute_status = #{item.executeStatus}, " +
             "execute_result = #{item.executeResult}, " +
-            "update_time = NOW() " +
-            "WHERE id = #{item.id}" +
+            "updated_time = NOW() " +
+            "WHERE uuid = #{item.uuid}" +
             "</foreach>" +
             "</script>")
     int batchUpdateExecuteStatus(@Param("list") List<DictItemChange> items);

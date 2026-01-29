@@ -1,14 +1,20 @@
 package com.aiguibin.platform.arch.service.impl;
 
 import com.aiguibin.platform.arch.dto.ChangeQueryDTO;
+import com.aiguibin.platform.arch.entity.DictItem;
 import com.aiguibin.platform.arch.entity.DictItemChange;
+import com.aiguibin.platform.arch.entity.DictType;
 import com.aiguibin.platform.arch.entity.DictTypeChange;
 import com.aiguibin.platform.arch.mapper.DictItemChangeMapper;
 import com.aiguibin.platform.arch.mapper.DictTypeChangeMapper;
 import com.aiguibin.platform.arch.service.DictChangeQueryService;
+import com.aiguibin.platform.arch.service.DictItemService;
+import com.aiguibin.platform.arch.service.DictTypeService;
 import com.aiguibin.platform.arch.dto.ChangeDetailVO;
 import com.aiguibin.platform.arch.dto.DictChangeVO;
 import com.aiguibin.platform.arch.dto.DictTypeChangeVO;
+import com.aiguibin.platform.arch.dto.DictTypeDetailVO;
+import com.aiguibin.platform.arch.dto.DictTypeVO;
 import com.aiguibin.platform.arch.dto.PageResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -31,6 +37,12 @@ public class DictChangeQueryServiceImpl implements DictChangeQueryService {
 
     @Autowired
     private DictItemChangeMapper itemChangeMapper;
+
+    @Autowired
+    private DictTypeService dictTypeService;
+
+    @Autowired
+    private DictItemService dictItemService;
 
     @Override
     public PageResult<DictChangeVO> queryChanges(ChangeQueryDTO queryDTO) {
@@ -115,6 +127,58 @@ public class DictChangeQueryServiceImpl implements DictChangeQueryService {
     public void exportChanges(ChangeQueryDTO queryDTO, HttpServletResponse response) {
         // TODO: 实现导出逻辑
         log.info("导出变更记录");
+    }
+
+    @Override
+    public List<DictTypeVO> getDictTypes() {
+        // 获取所有启用的字典类型
+        List<DictType> dictTypes = dictTypeService.listEnabled();
+        
+        // 转换为VO
+        List<DictTypeVO> vos = new ArrayList<>();
+        for (DictType dictType : dictTypes) {
+            DictTypeVO vo = new DictTypeVO();
+            vo.setUuid(String.valueOf(dictType.getId()));
+            vo.setDctTp(dictType.getDictTypeCode());
+            vo.setDctTpNm(dictType.getDictTypeName());
+            vos.add(vo);
+        }
+        
+        return vos;
+    }
+
+    @Override
+    public DictTypeDetailVO loadDictType(String dictTypeId) {
+        // 根据ID获取字典类型
+        DictType dictType = dictTypeService.getById(Long.valueOf(dictTypeId));
+        if (dictType == null) {
+            throw new RuntimeException("字典类型不存在");
+        }
+        
+        // 构建详情VO
+        DictTypeDetailVO detailVO = new DictTypeDetailVO();
+        detailVO.setUuid(String.valueOf(dictType.getId()));
+        detailVO.setDctTp(dictType.getDictTypeCode());
+        detailVO.setDctTpNm(dictType.getDictTypeName());
+        detailVO.setDctTpDesc(dictType.getDescription());
+        
+        // 加载字典项列表
+        List<DictItem> dictItems = dictItemService.listByType(dictType.getDictTypeCode());
+        List<DictTypeDetailVO.DictItemVO> itemVOs = new ArrayList<>();
+        
+        for (DictItem dictItem : dictItems) {
+            DictTypeDetailVO.DictItemVO itemVO = new DictTypeDetailVO.DictItemVO();
+            itemVO.setUuid(String.valueOf(dictItem.getId()));
+            itemVO.setDctSeq(dictItem.getSortOrder());
+            itemVO.setDctKey(dictItem.getDictValue());
+            itemVO.setDctVal(dictItem.getDictLabel());
+            itemVO.setStatus(dictItem.getStatus() == 1 ? "启用" : "禁用");
+            itemVOs.add(itemVO);
+        }
+        
+        detailVO.setDictItems(itemVOs);
+        
+        return detailVO;
     }
 
     private DictChangeVO convertToVO(DictTypeChange change) {

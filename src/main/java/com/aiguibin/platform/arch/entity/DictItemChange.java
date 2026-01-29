@@ -14,51 +14,106 @@ import java.util.Date;
 @TableName("biz_ddct_item_change")
 public class DictItemChange {
     
-    @TableId(type = IdType.ASSIGN_ID)
-    private String id;
+    /**
+     * 业务主键（表字段：uuid）
+     */
+    @TableId(value = "uuid", type = IdType.INPUT)
+    private String uuid;
     
+    /**
+     * 自增序号（表字段：id）
+     */
+    @TableField("id")
+    private Long id;
+    
+    @TableField("change_id")
     private String changeId;
     
+    @TableField("change_no")
+    private String changeNo;
+    
+    @TableField("dict_id")
+    private String dictId;
+    
+    @TableField("change_operation")
     private String changeOperation;
     
+    @TableField("old_dct_seq")
     private Integer oldDctSeq;
     
+    @TableField("new_dct_seq")
     private Integer newDctSeq;
     
+    @TableField("old_dct_grp")
     private String oldDctGrp;
     
+    @TableField("new_dct_grp")
     private String newDctGrp;
     
+    @TableField("old_dct_key")
     private String oldDctKey;
     
+    @TableField("new_dct_key")
     private String newDctKey;
     
+    @TableField("old_dct_val_nm")
     private String oldDctValNm;
     
+    @TableField("new_dct_val_nm")
     private String newDctValNm;
     
+    @TableField("old_dct_tp_nm")
+    private String oldDctTpNm;
+    
+    @TableField("new_dct_tp_nm")
+    private String newDctTpNm;
+    
+    @TableField("old_dct_val")
     private String oldDctVal;
     
+    @TableField("new_dct_val")
     private String newDctVal;
     
+    @TableField("old_dct_tp")
+    private String oldDctTp;
+    
+    @TableField("new_dct_tp")
+    private String newDctTp;
+    
+    @TableField("old_dct_dsc")
     private String oldDctDsc;
     
+    @TableField("new_dct_dsc")
     private String newDctDsc;
     
+    @TableField("old_stcd")
     private String oldStcd;
     
+    @TableField("new_stcd")
     private String newStcd;
     
+    @TableField("execute_status")
     private String executeStatus;
     
+    @TableField("execute_result")
     private String executeResult;
     
+    @TableField("item_order")
     private Integer itemOrder;
     
-    private Date createTime;
+    @TableField("created_by")
+    private String createdBy;
     
-    private Date updateTime;
+    @TableField("created_time")
+    private Date createdTime;
     
+    @TableField("updated_by")
+    private String updatedBy;
+    
+    @TableField("updated_time")
+    private Date updatedTime;
+    
+    @TableField("is_deleted")
     private Integer isDeleted;
     
     @TableField(exist = false)

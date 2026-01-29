@@ -47,10 +47,12 @@ public class DictChangeExecuteServiceImpl implements DictChangeExecuteService {
         }
 
         // 3. 更新执行状态为执行中
+        String currentUser = getCurrentUser();
         changeMapper.updateExecuteStatus(
                 changeId,
                 ExecuteStatus.EXECUTING.name(),
-                getCurrentUser(),
+                currentUser,
+                currentUser,
                 DateUtil.now(),
                 "开始执行"
         );
@@ -67,7 +69,8 @@ public class DictChangeExecuteServiceImpl implements DictChangeExecuteService {
             changeMapper.updateExecuteStatus(
                     changeId,
                     ExecuteStatus.SUCCESS.name(),
-                    getCurrentUser(),
+                    currentUser,
+                    currentUser,
                     DateUtil.now(),
                     "执行成功"
             );
@@ -80,7 +83,8 @@ public class DictChangeExecuteServiceImpl implements DictChangeExecuteService {
             changeMapper.updateExecuteStatus(
                     changeId,
                     ExecuteStatus.FAILED.name(),
-                    getCurrentUser(),
+                    currentUser,
+                    currentUser,
                     DateUtil.now(),
                     "执行失败: " + e.getMessage()
             );
@@ -114,10 +118,12 @@ public class DictChangeExecuteServiceImpl implements DictChangeExecuteService {
         }
 
         // 3. 更新执行状态为取消
+        String currentUser = getCurrentUser();
         changeMapper.updateExecuteStatus(
                 changeId,
                 "CANCELED",
-                getCurrentUser(),
+                currentUser,
+                currentUser,
                 DateUtil.now(),
                 "取消执行"
         );

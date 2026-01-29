@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.Insert;
 
 import java.util.List;
 
@@ -52,13 +53,15 @@ public interface DictTypeChangeMapper extends BaseMapper<DictTypeChange> {
      */
     @Update("UPDATE biz_ddct_type_change SET " +
             "approve_status = #{approveStatus}, " +
-            "approve_user = #{approveUser}, " +
+            "approver_num = #{approverNum}, " +
+            "approver_name = #{approverName}, " +
             "approve_time = #{approveTime}, " +
             "approve_remark = #{approveRemark}, " +
-            "update_time = NOW() " +
-            "WHERE id = #{id}")
-    int updateApproveStatus(@Param("id") String id, @Param("approveStatus") String approveStatus, 
-                           @Param("approveUser") String approveUser, @Param("approveTime") String approveTime, 
+            "updated_time = NOW() " +
+            "WHERE uuid = #{uuid}")
+    int updateApproveStatus(@Param("uuid") String uuid, @Param("approveStatus") String approveStatus, 
+                           @Param("approverNum") String approverNum, @Param("approverName") String approverName,
+                           @Param("approveTime") String approveTime, 
                            @Param("approveRemark") String approveRemark);
 
     /**
@@ -66,24 +69,22 @@ public interface DictTypeChangeMapper extends BaseMapper<DictTypeChange> {
      */
     @Update("UPDATE biz_ddct_type_change SET " +
             "execute_status = #{executeStatus}, " +
-            "execute_user = #{executeUser}, " +
+            "execute_user_num = #{executeUserNum}, " +
+            "execute_user_name = #{executeUserName}, " +
             "execute_time = #{executeTime}, " +
             "execute_result = #{executeResult}, " +
-            "update_time = NOW() " +
-            "WHERE id = #{id}")
-    int updateExecuteStatus(@Param("id") String id, @Param("executeStatus") String executeStatus, 
-                           @Param("executeUser") String executeUser, @Param("executeTime") String executeTime, 
+            "updated_time = NOW() " +
+            "WHERE uuid = #{uuid}")
+    int updateExecuteStatus(@Param("uuid") String uuid, @Param("executeStatus") String executeStatus, 
+                           @Param("executeUserNum") String executeUserNum, @Param("executeUserName") String executeUserName,
+                           @Param("executeTime") String executeTime, 
                            @Param("executeResult") String executeResult);
 
     /**
-     * 更新变更统计信息
+     * 更新更新时间（表结构无 item_add_count/item_mod_count/item_del_count）
      */
     @Update("UPDATE biz_ddct_type_change SET " +
-            "item_add_count = #{itemAddCount}, " +
-            "item_mod_count = #{itemModCount}, " +
-            "item_del_count = #{itemDelCount}, " +
-            "update_time = NOW() " +
-            "WHERE id = #{id}")
-    int updateChangeStatistics(@Param("id") String id, @Param("itemAddCount") Integer itemAddCount, 
-                              @Param("itemModCount") Integer itemModCount, @Param("itemDelCount") Integer itemDelCount);
+            "updated_time = NOW() " +
+            "WHERE uuid = #{uuid}")
+    int touchUpdatedTime(@Param("uuid") String uuid);
 }

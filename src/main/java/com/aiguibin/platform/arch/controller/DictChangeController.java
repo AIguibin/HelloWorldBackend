@@ -18,7 +18,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * 变更管理控制器
@@ -53,6 +57,41 @@ public class DictChangeController {
     @PostMapping("/draft")
     @ApiOperation("保存草稿")
     public Result<DictTypeChangeVO> saveDraft(@Valid @RequestBody DictChangeApplyDTO dto) {
+        // #region agent log
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            String logEntry = mapper.writeValueAsString(new java.util.HashMap<String, Object>() {{
+                put("id", "log_" + System.currentTimeMillis() + "_" + java.util.UUID.randomUUID().toString().substring(0, 8));
+                put("timestamp", System.currentTimeMillis());
+                put("location", "DictChangeController.java:55");
+                put("message", "保存草稿请求入口");
+                put("data", new java.util.HashMap<String, Object>() {{
+                    put("changeType", dto.getChangeType() != null ? dto.getChangeType().toString() : null);
+                    put("itemChangesCount", dto.getItemChanges() != null ? dto.getItemChanges().size() : 0);
+                    if (dto.getItemChanges() != null && !dto.getItemChanges().isEmpty()) {
+                        java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
+                        for (int i = 0; i < dto.getItemChanges().size(); i++) {
+                            com.aiguibin.platform.arch.dto.DictItemChangeDTO item = dto.getItemChanges().get(i);
+                            java.util.Map<String, Object> itemData = new java.util.HashMap<>();
+                            itemData.put("index", i);
+                            itemData.put("changeOperation", item.getChangeOperation());
+                            if (item.getNewData() != null) {
+                                itemData.put("newData_dctSeq", item.getNewData().getDctSeq());
+                                itemData.put("newData_dctKey", item.getNewData().getDctKey());
+                            }
+                            items.add(itemData);
+                        }
+                        put("itemChanges", items);
+                    }
+                }});
+                put("sessionId", "debug-session");
+                put("runId", "run1");
+                put("hypothesisId", "A");
+            }});
+            Files.write(Paths.get("e:\\WorkSpace\\HelloWorldBackend\\aiguibin-platform-arch\\.cursor\\debug.log"), 
+                (logEntry + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (Exception e) {}
+        // #endregion
         log.info("保存草稿: {}", dto);
         DictTypeChangeVO result = applyService.saveDraft(dto);
         return Result.success("保存成功", result);
@@ -139,5 +178,21 @@ public class DictChangeController {
     public void exportChanges(ChangeQueryDTO queryDTO, HttpServletResponse response) {
         log.info("导出变更记录: {}", queryDTO);
         queryService.exportChanges(queryDTO, response);
+    }
+
+    @GetMapping("/dict-types")
+    @ApiOperation("获取字典类型列表")
+    public Result<List<DictTypeVO>> getDictTypes() {
+        log.info("获取字典类型列表");
+        List<DictTypeVO> dictTypes = queryService.getDictTypes();
+        return Result.success(dictTypes);
+    }
+
+    @GetMapping("/load-dict-type/{dictTypeId}")
+    @ApiOperation("加载字典类型详情")
+    public Result<DictTypeDetailVO> loadDictType(@PathVariable String dictTypeId) {
+        log.info("加载字典类型详情: dictTypeId={}", dictTypeId);
+        DictTypeDetailVO dictTypeDetail = queryService.loadDictType(dictTypeId);
+        return Result.success(dictTypeDetail);
     }
 }

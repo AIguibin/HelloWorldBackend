@@ -3,6 +3,8 @@ package com.aiguibin.platform.arch.service;
 import com.aiguibin.platform.arch.dto.ChangeQueryDTO;
 import com.aiguibin.platform.arch.dto.ChangeDetailVO;
 import com.aiguibin.platform.arch.dto.DictChangeVO;
+import com.aiguibin.platform.arch.dto.DictTypeDetailVO;
+import com.aiguibin.platform.arch.dto.DictTypeVO;
 import com.aiguibin.platform.arch.dto.PageResult;
 
 import javax.servlet.http.HttpServletResponse;
@@ -37,4 +39,14 @@ public interface DictChangeQueryService {
      * 导出变更记录
      */
     void exportChanges(ChangeQueryDTO queryDTO, HttpServletResponse response);
+
+    /**
+     * 获取字典类型列表
+     */
+    List<DictTypeVO> getDictTypes();
+
+    /**
+     * 加载字典类型详情
+     */
+    DictTypeDetailVO loadDictType(String dictTypeId);
 }
