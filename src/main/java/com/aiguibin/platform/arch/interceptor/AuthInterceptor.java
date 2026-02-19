@@ -1,7 +1,7 @@
 package com.aiguibin.platform.arch.interceptor;
 
-import com.aiguibin.platform.arch.entity.User;
-import com.aiguibin.platform.arch.mapper.UserMapper;
+import com.aiguibin.platform.arch.entity.SysUser;
+import com.aiguibin.platform.arch.mapper.SysUserMapper;
 import com.aiguibin.platform.arch.service.AuthService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,7 @@ public class AuthInterceptor implements HandlerInterceptor {
     @Autowired
     private AuthService authService;
     @Autowired
-    private UserMapper userMapper;
+    private SysUserMapper sysUserMapper;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -40,19 +40,19 @@ public class AuthInterceptor implements HandlerInterceptor {
         // 从请求头获取用户编号和用户姓名（可能包含非 ASCII，解码后再校验）
 
         // 查询服务端用户信息，确保存在且有效
-        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(User::getUserNum, userNum);
-        User user = userMapper.selectOne(wrapper);
-        if (user == null || user.getUserNum() == null || user.getUserNum().isEmpty() || user.getUserName() == null || user.getUserName().isEmpty()) {
+        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysUser::getUserNum, userNum);
+        SysUser sysUser = sysUserMapper.selectOne(wrapper);
+        if (sysUser == null || sysUser.getUserNum() == null || sysUser.getUserNum().isEmpty() || sysUser.getUserName() == null || sysUser.getUserName().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少用户编号或用户姓名");
         }
         String reqUsernumb = decodeHeader(request.getHeader("X-User-Numb"));
         String reqUsername = decodeHeader(request.getHeader("X-User-Name"));
         // 若请求头提供了用户编号/姓名，则进行一致性校验
-        if (reqUsernumb != null && !reqUsernumb.isEmpty() && !user.getUserNum().equals(reqUsernumb)) {
+        if (reqUsernumb != null && !reqUsernumb.isEmpty() && !sysUser.getUserNum().equals(reqUsernumb)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "用户编号不一致");
         }
-        if (reqUsername != null && !reqUsername.isEmpty() && !user.getUserName().equals(reqUsername)) {
+        if (reqUsername != null && !reqUsername.isEmpty() && !sysUser.getUserName().equals(reqUsername)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "用户姓名不一致");
         }
 
@@ -66,7 +66,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             // 编辑权限限制：暂时保留原有逻辑，后续将替换为基于新权限字段的访问控制
             String uri = request.getRequestURI();
             if (uri.startsWith("/api/change-records")) {
-                String un = user.getUserNum();
+                String un = sysUser.getUserNum();
                 if (!("admin".equalsIgnoreCase(un) || "BG001".equalsIgnoreCase(un) || "BG002".equalsIgnoreCase(un))) {
                       // throw new ResponseStatusException(HttpStatus.FORBIDDEN, "编辑权限限制：仅admin、BG001、BG002可编辑");
                 }
@@ -74,7 +74,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
 
         // 将操作人设置为 "userNum|userName" 格式，便于审计追溯
-        request.setAttribute("operator", user.getUserNum() + "|" + user.getUserName());
+        request.setAttribute("operator", sysUser.getUserNum() + "|" + sysUser.getUserName());
         return true;
     }
 

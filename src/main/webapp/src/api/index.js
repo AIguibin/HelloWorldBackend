@@ -52,9 +52,3 @@ export const getPendingApprove = () => request.get('/dict/change/pending/approve
 export const getPendingExecute = () => request.get('/dict/change/pending/execute');
 export const importDictItems = (formData) => request.post('/dict/change/items/import', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const exportChanges = (params) => request.get('/dict/change/export', { params, responseType: 'blob' });
-
-// 外部链接网络管理 API
-export * from './netLinks';
-
-// 数据字典变更 API
-export * from './dictChange';

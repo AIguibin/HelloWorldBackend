@@ -6,8 +6,8 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 
 // 导入模块
-import user from './modules/user';
-import approval from './modules/approval';
+// import user from './modules/user';
+// import approval from './modules/approval';
 
 // 使用Vuex
 Vue.use(Vuex);
@@ -111,10 +111,7 @@ const store = new Vuex.Store({
   /**
    * 模块
    */
-  modules: {
-    user,
-    approval
-  }
+  modules: {}
 });
 
 export default store;

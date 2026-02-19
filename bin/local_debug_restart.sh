@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # ============================================
-# 本地调试重启脚本 - aiguibin-platform
+# 本地调试重启脚本 - aiguibin-platform-arch
 # 版本: 1.0
 # 作者: 自动生成
 # ============================================
 
 # 配置参数
-PROJECT_NAME="aiguibin-platform"
+PROJECT_NAME="aiguibin-platform-arch"
 JAR_NAME="aiguibin-platform-arch.jar"
 PORT=8080  # 修改为您的应用端口
 MAVEN_SETTINGS="D:\Maven\settings-aiguibin.xml"

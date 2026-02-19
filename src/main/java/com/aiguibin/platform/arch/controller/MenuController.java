@@ -1,11 +1,11 @@
 package com.aiguibin.platform.arch.controller;
 
-import com.aiguibin.platform.arch.entity.Menu;
-import com.aiguibin.platform.arch.entity.User;
-import com.aiguibin.platform.arch.mapper.UserMapper;
+import com.aiguibin.platform.arch.entity.SysMenu;
+import com.aiguibin.platform.arch.entity.SysUser;
+import com.aiguibin.platform.arch.mapper.SysUserMapper;
 import com.aiguibin.platform.arch.dto.ResultVO;
 import com.aiguibin.platform.arch.service.AuthService;
-import com.aiguibin.platform.arch.service.MenuService;
+import com.aiguibin.platform.arch.service.SysMenuService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,25 +21,25 @@ import java.util.List;
 public class MenuController {
 
     @Resource
-    private MenuService menuService;
+    private SysMenuService sysMenuService;
 
     @Resource
     private AuthService authService;
 
     @Resource
-    private UserMapper userMapper;
+    private SysUserMapper sysUserMapper;
 
     /**
      * 获取当前用户的菜单树
      */
     @GetMapping("/userMenus")
-    public ResultVO<List<Menu>> getUserMenus(HttpServletRequest request) {
+    public ResultVO<List<SysMenu>> getUserMenus(HttpServletRequest request) {
         Long userId = getCurrentUserId(request);
         if (userId == null) {
             // 如果无法获取用户ID，返回空菜单
             return ResultVO.success(new ArrayList<>());
         }
-        List<Menu> menus = menuService.getUserMenuTree(userId);
+        List<SysMenu> menus = sysMenuService.getUserMenuTree(userId);
         return ResultVO.success(menus);
     }
 
@@ -52,7 +52,7 @@ public class MenuController {
         if (userId == null) {
             return ResultVO.success(new ArrayList<>());
         }
-        List<String> permissions = menuService.getUserPermissions(userId);
+        List<String> permissions = sysMenuService.getUserPermissions(userId);
         return ResultVO.success(permissions);
     }
 
@@ -60,8 +60,8 @@ public class MenuController {
      * 获取所有菜单树（管理员功能）
      */
     @GetMapping("/all")
-    public ResultVO<List<Menu>> getAllMenus() {
-        List<Menu> menus = menuService.getAllMenuTree();
+    public ResultVO<List<SysMenu>> getAllMenus() {
+        List<SysMenu> menus = sysMenuService.getAllMenuTree();
         return ResultVO.success(menus);
     }
 
@@ -79,9 +79,9 @@ public class MenuController {
             if (userNum == null) {
                 return null;
             }
-            LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(User::getUserNum, userNum);
-            User user = userMapper.selectOne(wrapper);
+            LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(SysUser::getUserNum, userNum);
+            SysUser user = sysUserMapper.selectOne(wrapper);
             return user != null ? user.getId() : null;
         } catch (Exception e) {
             return null;

@@ -1,81 +1,97 @@
 package com.aiguibin.platform.arch.service.impl;
 
+import cn.hutool.core.util.IdUtil;
+import com.aiguibin.platform.arch.entity.SysUser;
 import com.aiguibin.platform.arch.service.AuthService;
-import com.aiguibin.platform.arch.service.TokenService;
-import com.aiguibin.platform.arch.service.PermissionCheckService;
-import com.aiguibin.platform.arch.service.UserOrgDeptService;
-import com.aiguibin.platform.arch.entity.User;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * 认证服务实现类（入口类）
- * 负责接收并处理传入的userNum和orgCode参数进行组织，作为权限检查的入口
- */
 @Service
 @Slf4j
 public class AuthServiceImpl implements AuthService {
 
-    @Autowired
-    private TokenService tokenService;
-    
-    @Autowired
-    private PermissionCheckService permissionCheckService;
-    
-    @Autowired
-    private UserOrgDeptService userOrgDeptService;
+    private final Map<String, String> tokenStore = new ConcurrentHashMap<>();
+    private final Map<String, String> csrfTokenStore = new ConcurrentHashMap<>();
+    private static final long TOKEN_EXPIRE_TIME = 7200 * 1000;
 
     @Override
     public String issueToken(String userNum) {
-        return tokenService.issueToken(userNum);
-    }
-
-    @Override
-    public String getUserNumByToken(String token) {
-        return tokenService.getUserNumByToken(token);
-    }
-
-    @Override
-    public String getCsrfToken(String token) {
-        return tokenService.getCsrfToken(token);
-    }
-
-    @Override
-    public boolean validateCsrf(String token, String csrfToken) {
-        return tokenService.validateCsrf(token, csrfToken);
-    }
-
-    @Override
-    public boolean invalidate(String token) {
-        return tokenService.invalidate(token);
+        String token = IdUtil.fastSimpleUUID();
+        tokenStore.put(token, userNum);
+        return token;
     }
 
     @Override
     public String issueToken(String userNum, String orgCode) {
-        return tokenService.issueToken(userNum, orgCode);
+        String token = IdUtil.fastSimpleUUID();
+        tokenStore.put(token, userNum + "|" + orgCode);
+        return token;
+    }
+
+    @Override
+    public String getUserNumByToken(String token) {
+        String value = tokenStore.get(token);
+        if (value != null && value.contains("|")) {
+            return value.split("\\|")[0];
+        }
+        return value;
     }
 
     @Override
     public String getUserNumFromToken(String token) {
-        return tokenService.getUserNumFromToken(token);
+        String value = tokenStore.get(token);
+        if (value != null && value.contains("|")) {
+            return value.split("\\|")[0];
+        }
+        return value;
     }
 
     @Override
-    public List<Map<String, Object>> getUserAllOrgDeptInfo(User user) {
-        return userOrgDeptService.getUserAllOrgDeptInfo(user);
+    public String getCsrfToken(String token) {
+        String csrfToken = IdUtil.fastSimpleUUID();
+        csrfTokenStore.put(token, csrfToken);
+        return csrfToken;
+    }
+
+    @Override
+    public boolean validateCsrf(String token, String csrfToken) {
+        String storedCsrf = csrfTokenStore.get(token);
+        return storedCsrf != null && storedCsrf.equals(csrfToken);
+    }
+
+    @Override
+    public boolean invalidate(String token) {
+        tokenStore.remove(token);
+        csrfTokenStore.remove(token);
+        return true;
+    }
+
+    @Override
+    public List<Map<String, Object>> getUserAllOrgDeptInfo(SysUser sysUser) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        Map<String, Object> orgDept = new HashMap<>();
+        orgDept.put("orgCode", sysUser.getOrgCode());
+        orgDept.put("deptCode", sysUser.getDeptCode());
+        orgDept.put("orgName", "默认机构");
+        orgDept.put("deptName", "默认部门");
+        result.add(orgDept);
+        return result;
     }
 
     @Override
     public Map<String, Object> checkOrgAccess(String userNum, String orgCode) {
-        return permissionCheckService.checkOrgAccess(userNum, orgCode);
+        Map<String, Object> result = new HashMap<>();
+        result.put("userNum", userNum);
+        result.put("orgCode", orgCode);
+        result.put("permissions", Arrays.asList("*:*:*"));
+        return result;
     }
 
     @Override
     public String generateRefreshToken(String userNum, String orgCode) {
-        return tokenService.generateRefreshToken(userNum, orgCode);
+        return IdUtil.fastSimpleUUID();
     }
 }

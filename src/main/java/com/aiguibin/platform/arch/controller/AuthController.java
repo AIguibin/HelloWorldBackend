@@ -1,10 +1,10 @@
 package com.aiguibin.platform.arch.controller;
 
 import com.aiguibin.platform.arch.dto.LoginRO;
-import com.aiguibin.platform.arch.entity.User;
+import com.aiguibin.platform.arch.entity.SysUser;
 import com.aiguibin.platform.arch.dto.ResultVO;
 import com.aiguibin.platform.arch.service.AuthService;
-import com.aiguibin.platform.arch.service.UserService;
+import com.aiguibin.platform.arch.service.SysUserService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,7 +24,7 @@ import java.util.Map;
 public class AuthController {
 
     @Resource
-    private UserService userService;
+    private SysUserService sysUserService;
     @Resource
     private AuthService authService;
 
@@ -35,26 +35,26 @@ public class AuthController {
 
     @PostMapping("/auth/login")
     public ResultVO<?> login(@RequestBody @Validated LoginRO req) {
-        User user = userService.getUserByUserNum(req.getUserNum());
-        if (user == null) {
+        SysUser sysUser = sysUserService.getByUserNum(req.getUserNum());
+        if (sysUser == null) {
             return ResultVO.error("账号不存在");
         }
-        if (!userService.matchesPassword(req.getPassword(), user.getPassword())) {
+        if (!sysUserService.matchesPassword(req.getPassword(), sysUser.getPassword())) {
             return ResultVO.error("密码错误");
         }
         // 生成临时token，用于后续机构选择
-        String tempToken = authService.issueToken(user.getUserNum());
+        String tempToken = authService.issueToken(sysUser.getUserNum());
 
 
                 // 构建响应数据
         Map<String, Object> responseData = new HashMap<>();
 
         // 1. 构建用户信息
-        responseData.put("userNum", user.getUserNum());
-        responseData.put("userName", user.getUserName());
-        responseData.put("avatar", user.getAvatar());
-        responseData.put("email", user.getEmail());
-        responseData.put("phone", user.getPhone());
+        responseData.put("userNum", sysUser.getUserNum());
+        responseData.put("userName", sysUser.getUserName());
+        responseData.put("avatar", sysUser.getAvatar());
+        responseData.put("email", sysUser.getEmail());
+        responseData.put("phone", sysUser.getPhone());
 
         
         // 2. 构建token信息
@@ -62,7 +62,7 @@ public class AuthController {
         // 5分钟过期
         responseData.put("expiresIn", 300); 
         // 获取用户机构部门信息
-        List<Map<String, Object>> userAllOrgDeptList = authService.getUserAllOrgDeptInfo(user);
+        List<Map<String, Object>> userAllOrgDeptList = authService.getUserAllOrgDeptInfo(sysUser);
         // 3.构建部门新信息
         responseData.put("userAllOrgDeptList", userAllOrgDeptList);
 
@@ -98,8 +98,8 @@ public class AuthController {
         }
 
         // 获取用户信息
-        User user = userService.getUserByUserNum(userNum);
-        if (user == null) {
+        SysUser sysUser = sysUserService.getByUserNum(userNum);    
+        if (sysUser == null) {
             return ResultVO.error("用户不存在");
         }
 
@@ -111,6 +111,11 @@ public class AuthController {
         // 获取CSRF Token
         String csrfToken = authService.getCsrfToken(accessToken);
         // 构建会话信息
+        result.put("userNum", sysUser.getUserNum());
+        result.put("userName", sysUser.getUserName());
+        result.put("avatar", sysUser.getAvatar());
+        result.put("email", sysUser.getEmail());
+        result.put("phone", sysUser.getPhone());
         result.put("accessToken", accessToken);
         result.put("tokenType", "Bearer");
         result.put("csrfToken", csrfToken);
