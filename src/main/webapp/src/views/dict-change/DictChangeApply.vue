@@ -265,8 +265,8 @@ export default {
   methods: {
     // 加载字典类型列表
     loadDictTypes() {
-      getDictTypes().then(response => {
-        this.dictTypeList = response.data
+      getDictTypes().then(data => {
+        this.dictTypeList = data
       }).catch(error => {
         this.$message.error('加载字典类型失败: ' + error.message)
       })
@@ -274,18 +274,17 @@ export default {
     
     // 加载变更详情
     loadChangeDetail(changeId) {
-      getChangeDetail(changeId).then(response => {
-        const detail = response.data
+      getChangeDetail(changeId).then(data => {
         // 填充表单数据
-        this.form.changeType = detail.changeType
-        this.form.dctTpId = detail.dctTpId
-        this.form.oldDctTp = detail.oldDctTp
-        this.form.oldDctTpNm = detail.oldDctTpNm
-        this.form.newDctTp = detail.newDctTp
-        this.form.newDctTpNm = detail.newDctTpNm
-        this.form.changeReason = detail.changeReason
-        this.form.changeImpact = detail.changeImpact
-        this.form.itemChanges = detail.itemChanges
+        this.form.changeType = data.changeType
+        this.form.dctTpId = data.dctTpId
+        this.form.oldDctTp = data.oldDctTp
+        this.form.oldDctTpNm = data.oldDctTpNm
+        this.form.newDctTp = data.newDctTp
+        this.form.newDctTpNm = data.newDctTpNm
+        this.form.changeReason = data.changeReason
+        this.form.changeImpact = data.changeImpact
+        this.form.itemChanges = data.itemChanges
       }).catch(error => {
         this.$message.error('加载变更详情失败: ' + error.message)
       })
@@ -294,9 +293,9 @@ export default {
     // 字典类型变化时加载数据
     handleDictTypeChange(dictTypeId) {
       if (dictTypeId) {
-        loadDictType(dictTypeId).then(response => {
-          this.loadedDictType = response.data.dictType
-          this.loadedDictItems = response.data.dictItems
+        loadDictType(dictTypeId).then(data => {
+          this.loadedDictType = data.dictType
+          this.loadedDictItems = data.dictItems
           // 自动填充表单数据
           this.fillFormData()
         }).catch(error => {
@@ -492,7 +491,6 @@ export default {
 }
 
 .card-container {
-  max-width: 1000px;
   margin: 0 auto;
 }
 

@@ -2,7 +2,7 @@ package com.aiguibin.platform.arch.controller;
 
 import com.aiguibin.platform.arch.entity.DictItem;
 import com.aiguibin.platform.arch.entity.DictType;
-import com.aiguibin.platform.arch.model.ApiResponse;
+import com.aiguibin.platform.arch.dto.ResultVO;
 import com.aiguibin.platform.arch.service.DictItemService;
 import com.aiguibin.platform.arch.service.DictTypeService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -40,60 +40,60 @@ public class DictController {
      * 分页查询字典类型
      */
     @GetMapping("/types")
-    public ApiResponse<Page<DictType>> listTypes(@RequestParam(defaultValue = "1") int page,
+    public ResultVO<Page<DictType>> listTypes(@RequestParam(defaultValue = "1") int page,
                                                 @RequestParam(defaultValue = "10") int size,
                                                 @RequestParam(required = false) String dictTypeCode,
                                                 @RequestParam(required = false) String dictTypeName) {
         Page<DictType> pageData = dictTypeService.page(page, size, dictTypeCode, dictTypeName);
-        return ApiResponse.success(pageData);
+        return ResultVO.success(pageData);
     }
     
     /**
      * 查询所有启用的字典类型
      */
     @GetMapping("/types/enabled")
-    public ApiResponse<List<DictType>> listEnabledTypes() {
+    public ResultVO<List<DictType>> listEnabledTypes() {
         List<DictType> types = dictTypeService.listEnabled();
-        return ApiResponse.success(types);
+        return ResultVO.success(types);
     }
     
     /**
      * 根据ID查询字典类型
      */
     @GetMapping("/types/{id}")
-    public ApiResponse<DictType> getTypeById(@PathVariable Long id) {
+    public ResultVO<DictType> getTypeById(@PathVariable Long id) {
         DictType type = dictTypeService.getById(id);
-        return ApiResponse.success(type);
+        return ResultVO.success(type);
     }
     
     /**
      * 创建字典类型
      */
     @PostMapping("/types")
-    public ApiResponse<Long> createType(@RequestBody @Validated DictType dictType, HttpServletRequest request) {
+    public ResultVO<Long> createType(@RequestBody @Validated DictType dictType, HttpServletRequest request) {
         String operator = (String) request.getAttribute("operator");
         Long id = dictTypeService.create(dictType, operator);
-        return ApiResponse.success(id);
+        return ResultVO.success(id);
     }
     
     /**
      * 更新字典类型
      */
     @PutMapping("/types/{id}")
-    public ApiResponse<Boolean> updateType(@PathVariable Long id, @RequestBody @Validated DictType dictType, HttpServletRequest request) {
+    public ResultVO<Boolean> updateType(@PathVariable Long id, @RequestBody @Validated DictType dictType, HttpServletRequest request) {
         String operator = (String) request.getAttribute("operator");
         boolean ok = dictTypeService.update(id, dictType, operator);
-        return ApiResponse.success(ok);
+        return ResultVO.success(ok);
     }
     
     /**
      * 删除字典类型
      */
     @DeleteMapping("/types/{id}")
-    public ApiResponse<Boolean> deleteType(@PathVariable Long id, HttpServletRequest request) {
+    public ResultVO<Boolean> deleteType(@PathVariable Long id, HttpServletRequest request) {
         String operator = (String) request.getAttribute("operator");
         boolean ok = dictTypeService.delete(id, operator);
-        return ApiResponse.success(ok);
+        return ResultVO.success(ok);
     }
     
     // ==================== 字典码值 ====================
@@ -102,70 +102,70 @@ public class DictController {
      * 分页查询字典码值
      */
     @GetMapping("/items")
-    public ApiResponse<Page<DictItem>> listItems(@RequestParam(defaultValue = "1") int page,
+    public ResultVO<Page<DictItem>> listItems(@RequestParam(defaultValue = "1") int page,
                                                 @RequestParam(defaultValue = "10") int size,
                                                 @RequestParam(required = false) String dictTypeCode,
                                                 @RequestParam(required = false) String dictValue,
                                                 @RequestParam(required = false) String dictLabel,
                                                 @RequestParam(required = false) String groupCode) {
         Page<DictItem> pageData = dictItemService.page(page, size, dictTypeCode, dictValue, dictLabel, groupCode);
-        return ApiResponse.success(pageData);
+        return ResultVO.success(pageData);
     }
     
     /**
      * 根据字典类型编码查询字典码值
      */
     @GetMapping("/items/type/{dictTypeCode}")
-    public ApiResponse<List<DictItem>> listItemsByType(@PathVariable String dictTypeCode) {
+    public ResultVO<List<DictItem>> listItemsByType(@PathVariable String dictTypeCode) {
         List<DictItem> items = dictItemService.listByType(dictTypeCode);
-        return ApiResponse.success(items);
+        return ResultVO.success(items);
     }
     
     /**
      * 根据字典类型编码和分组编码查询字典码值
      */
     @GetMapping("/items/type/{dictTypeCode}/group/{groupCode}")
-    public ApiResponse<List<DictItem>> listItemsByTypeAndGroup(@PathVariable String dictTypeCode, @PathVariable(required = false) String groupCode) {
+    public ResultVO<List<DictItem>> listItemsByTypeAndGroup(@PathVariable String dictTypeCode, @PathVariable(required = false) String groupCode) {
         List<DictItem> items = dictItemService.listByTypeAndGroup(dictTypeCode, groupCode);
-        return ApiResponse.success(items);
+        return ResultVO.success(items);
     }
     
     /**
      * 根据ID查询字典码值
      */
     @GetMapping("/items/{id}")
-    public ApiResponse<DictItem> getItemById(@PathVariable Long id) {
+    public ResultVO<DictItem> getItemById(@PathVariable Long id) {
         DictItem item = dictItemService.getById(id);
-        return ApiResponse.success(item);
+        return ResultVO.success(item);
     }
     
     /**
      * 创建字典码值
      */
     @PostMapping("/items")
-    public ApiResponse<Long> createItem(@RequestBody @Validated DictItem dictItem, HttpServletRequest request) {
+    public ResultVO<Long> createItem(@RequestBody @Validated DictItem dictItem, HttpServletRequest request) {
         String operator = (String) request.getAttribute("operator");
         Long id = dictItemService.create(dictItem, operator);
-        return ApiResponse.success(id);
+        return ResultVO.success(id);
     }
     
     /**
      * 更新字典码值
      */
     @PutMapping("/items/{id}")
-    public ApiResponse<Boolean> updateItem(@PathVariable Long id, @RequestBody @Validated DictItem dictItem, HttpServletRequest request) {
+    public ResultVO<Boolean> updateItem(@PathVariable Long id, @RequestBody @Validated DictItem dictItem, HttpServletRequest request) {
         String operator = (String) request.getAttribute("operator");
         boolean ok = dictItemService.update(id, dictItem, operator);
-        return ApiResponse.success(ok);
+        return ResultVO.success(ok);
     }
     
     /**
      * 删除字典码值
      */
     @DeleteMapping("/items/{id}")
-    public ApiResponse<Boolean> deleteItem(@PathVariable Long id, HttpServletRequest request) {
+    public ResultVO<Boolean> deleteItem(@PathVariable Long id, HttpServletRequest request) {
         String operator = (String) request.getAttribute("operator");
         boolean ok = dictItemService.delete(id, operator);
-        return ApiResponse.success(ok);
+        return ResultVO.success(ok);
     }
 }

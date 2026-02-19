@@ -1,6 +1,7 @@
 package com.aiguibin.platform.arch.service.impl;
 
 import com.aiguibin.platform.arch.dto.ChangeQueryDTO;
+import com.aiguibin.platform.arch.dto.PageResultVO;
 import com.aiguibin.platform.arch.entity.DictItem;
 import com.aiguibin.platform.arch.entity.DictItemChange;
 import com.aiguibin.platform.arch.entity.DictType;
@@ -15,7 +16,6 @@ import com.aiguibin.platform.arch.dto.DictChangeVO;
 import com.aiguibin.platform.arch.dto.DictTypeChangeVO;
 import com.aiguibin.platform.arch.dto.DictTypeDetailVO;
 import com.aiguibin.platform.arch.dto.DictTypeVO;
-import com.aiguibin.platform.arch.dto.PageResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +45,7 @@ public class DictChangeQueryServiceImpl implements DictChangeQueryService {
     private DictItemService dictItemService;
 
     @Override
-    public PageResult<DictChangeVO> queryChanges(ChangeQueryDTO queryDTO) {
+    public PageResultVO<DictChangeVO> queryChanges(ChangeQueryDTO queryDTO) {
         // 1. 计算分页参数
         int offset = (queryDTO.getPage() - 1) * queryDTO.getSize();
 
@@ -61,9 +61,7 @@ public class DictChangeQueryServiceImpl implements DictChangeQueryService {
         }
 
         // 4. 构建分页结果
-        PageResult<DictChangeVO> result = new PageResult<>();
-        result.setRecords(vos);
-        result.setTotal(total);
+        PageResultVO<DictChangeVO> result = new PageResultVO<>(queryDTO.getPage(), queryDTO.getSize(), total, vos);
 
         return result;
     }

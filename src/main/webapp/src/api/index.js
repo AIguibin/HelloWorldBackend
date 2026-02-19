@@ -7,7 +7,7 @@ export const checkLogin = (data) => request.post('/auth/check', data);
 export const changePassword = (data) => request.post('/users/change-password', data);
 
 // 菜单权限 API
-export const getUserMenus = () => request.get('/menus/user');
+export const getUserMenus = () => request.get('/menus/userMenus');
 export const getUserPermissions = () => request.get('/menus/permissions');
 
 // 代码脚本变更登记 API

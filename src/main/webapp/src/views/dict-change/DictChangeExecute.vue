@@ -89,8 +89,8 @@ export default {
     // 加载待执行列表
     loadPendingList() {
       getPendingExecute()
-        .then(response => {
-          this.pendingList = response.data
+        .then(data => {
+          this.pendingList = data
         })
         .catch(error => {
           this.$message.error('加载失败: ' + error.message)
@@ -111,8 +111,8 @@ export default {
       }).then(() => {
         // 执行API
         executeChange(row.id)
-          .then(response => {
-            this.executeResult = response.data
+          .then(data => {
+            this.executeResult = data
             this.resultDialogVisible = true
             this.loadPendingList()
           })

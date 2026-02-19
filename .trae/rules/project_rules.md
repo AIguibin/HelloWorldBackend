@@ -66,7 +66,7 @@
 
 ## ☕ 4. 后端开发规范 (Java / Spring Boot)
 
-- **分层标准**: 严格遵守 `Controller -> Service -> Mapper/Repository` 架构。
+- **分层标准**: 严格遵守 `Controller -> Service -> Impl -> Mapper/Repository` 架构。
   
 - **DTO 隔离**: 严禁将数据库 Entity 直接暴露给前端。必须手动或使用 MapStruct/BeanUtils 转换为 `VO` 或 `RO`。
   

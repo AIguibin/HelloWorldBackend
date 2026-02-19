@@ -5,7 +5,7 @@ import com.aiguibin.platform.arch.dto.ChangeDetailVO;
 import com.aiguibin.platform.arch.dto.DictChangeVO;
 import com.aiguibin.platform.arch.dto.DictTypeDetailVO;
 import com.aiguibin.platform.arch.dto.DictTypeVO;
-import com.aiguibin.platform.arch.dto.PageResult;
+import com.aiguibin.platform.arch.dto.PageResultVO;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -18,7 +18,7 @@ public interface DictChangeQueryService {
     /**
      * 查询变更记录
      */
-    PageResult<DictChangeVO> queryChanges(ChangeQueryDTO queryDTO);
+    PageResultVO<DictChangeVO> queryChanges(ChangeQueryDTO queryDTO);
 
     /**
      * 获取变更详情

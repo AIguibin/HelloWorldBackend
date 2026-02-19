@@ -1,7 +1,7 @@
 package com.aiguibin.platform.arch.controller;
 
 import com.aiguibin.platform.arch.entity.BusinessType;
-import com.aiguibin.platform.arch.model.ApiResponse;
+import com.aiguibin.platform.arch.dto.ResultVO;
 import com.aiguibin.platform.arch.service.BusinessTypeService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,22 +24,22 @@ public class BusinessTypeController {
 
     /**
      * 查询所有业务类型
-     * @return ApiResponse<List<BusinessType>> 业务类型列表
+     * @return ResultVO<List<BusinessType>> 业务类型列表
      */
     @GetMapping
-    public ApiResponse<List<BusinessType>> getAllBusinessTypes() {
+    public ResultVO<List<BusinessType>> getAllBusinessTypes() {
         List<BusinessType> businessTypes = businessTypeService.getAllBusinessTypes();
-        return ApiResponse.success(businessTypes);
+        return ResultVO.success(businessTypes);
     }
 
     /**
      * 根据业务类型编码查询业务类型
      * @param code 业务类型编码
-     * @return ApiResponse<BusinessType> 业务类型对象
+     * @return ResultVO<BusinessType> 业务类型对象
      */
     @GetMapping("/{code}")
-    public ApiResponse<BusinessType> getBusinessTypeByCode(@PathVariable String code) {
+    public ResultVO<BusinessType> getBusinessTypeByCode(@PathVariable String code) {
         BusinessType businessType = businessTypeService.getBusinessTypeByCode(code);
-        return businessType != null ? ApiResponse.success(businessType) : ApiResponse.error("业务类型不存在");
+        return businessType != null ? ResultVO.success(businessType) : ResultVO.error("业务类型不存在");
     }
 }

@@ -45,8 +45,8 @@ import approvalApi from '@/api/approval';
 ```javascript
 getApprovalHistory({ commit }, approvalId) {
   return approvalApi.getApprovalHistory(approvalId)
-    .then(response => {
-      commit('setApprovalHistory', response.data || []);
+    .then(data => {
+      commit('setApprovalHistory', data || []);
     })
     .catch(error => {
       console.error('获取审批历史记录失败:', error);
@@ -60,8 +60,8 @@ getApprovalHistory({ commit }, approvalId) {
 ```javascript
 getTodoTasks({ commit }, assigneeNum) {
   return approvalApi.getTodoTasks(assigneeNum)
-    .then(response => {
-      commit('setTodoTasks', response.data || []);
+    .then(data => {
+      commit('setTodoTasks', data || []);
     })
     .catch(error => {
       console.error('获取待办任务失败:', error);
@@ -75,8 +75,8 @@ getTodoTasks({ commit }, assigneeNum) {
 ```javascript
 getDoneTasks({ commit }, operatorNum) {
   return approvalApi.getDoneTasks(operatorNum)
-    .then(response => {
-      commit('setDoneTasks', response.data || []);
+    .then(data => {
+      commit('setDoneTasks', data || []);
     })
     .catch(error => {
       console.error('获取已办任务失败:', error);
@@ -90,8 +90,8 @@ getDoneTasks({ commit }, operatorNum) {
 ```javascript
 getClosedTasks({ commit }, operatorNum) {
   return approvalApi.getClosedTasks(operatorNum)
-    .then(response => {
-      commit('setClosedTasks', response.data || []);
+    .then(data => {
+      commit('setClosedTasks', data || []);
     })
     .catch(error => {
       console.error('获取已结任务失败:', error);
@@ -105,8 +105,8 @@ getClosedTasks({ commit }, operatorNum) {
 ```javascript
 triggerApproval({ commit }, payload) {
   return approvalApi.triggerApproval(payload)
-    .then(response => {
-      commit('setCurrentApproval', response.data);
+    .then(data => {
+      commit('setCurrentApproval', data);
     })
     .catch(error => {
       console.error('触发审批失败:', error);

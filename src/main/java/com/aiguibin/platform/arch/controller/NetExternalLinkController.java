@@ -1,7 +1,7 @@
 package com.aiguibin.platform.arch.controller;
 
 import com.aiguibin.platform.arch.entity.NetExternalLink;
-import com.aiguibin.platform.arch.model.ApiResponse;
+import com.aiguibin.platform.arch.dto.ResultVO;
 import com.aiguibin.platform.arch.service.NetExternalLinkService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.validation.annotation.Validated;
@@ -24,7 +24,7 @@ public class NetExternalLinkController {
      * 分页查询链路列表
      */
     @GetMapping
-    public ApiResponse<Page<NetExternalLink>> list(
+    public ResultVO<Page<NetExternalLink>> list(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String sourceEnv,
@@ -34,33 +34,33 @@ public class NetExternalLinkController {
             @RequestParam(required = false) String keyword) {
         Page<NetExternalLink> pageData = netExternalLinkService.page(
             page, size, sourceEnv, targetEnv, status, protocol, keyword);
-        return ApiResponse.success(pageData);
+        return ResultVO.success(pageData);
     }
     
     /**
      * 根据ID查询链路详情
      */
     @GetMapping("/{id}")
-    public ApiResponse<NetExternalLink> getById(@PathVariable Long id) {
+    public ResultVO<NetExternalLink> getById(@PathVariable Long id) {
         NetExternalLink link = netExternalLinkService.getById(id);
         if (link == null) {
-            return ApiResponse.error("链路不存在或已删除");
+            return ResultVO.error("链路不存在或已删除");
         }
-        return ApiResponse.success(link);
+        return ResultVO.success(link);
     }
     
     /**
      * 创建链路
      */
     @PostMapping
-    public ApiResponse<Long> create(@RequestBody @Validated NetExternalLink link, 
+    public ResultVO<Long> create(@RequestBody @Validated NetExternalLink link, 
                                     HttpServletRequest request) {
         String operator = getOperatorFromRequest(request);
         try {
             Long id = netExternalLinkService.create(link, operator);
-            return ApiResponse.success(id);
+            return ResultVO.success(id);
         } catch (Exception e) {
-            return ApiResponse.error(e.getMessage());
+            return ResultVO.error(e.getMessage());
         }
     }
     
@@ -68,15 +68,15 @@ public class NetExternalLinkController {
      * 更新链路
      */
     @PutMapping("/{id}")
-    public ApiResponse<Boolean> update(@PathVariable Long id, 
+    public ResultVO<Boolean> update(@PathVariable Long id, 
                                        @RequestBody @Validated NetExternalLink link,
                                        HttpServletRequest request) {
         String operator = getOperatorFromRequest(request);
         try {
             boolean ok = netExternalLinkService.update(id, link, operator);
-            return ApiResponse.success(ok);
+            return ResultVO.success(ok);
         } catch (Exception e) {
-            return ApiResponse.error(e.getMessage());
+            return ResultVO.error(e.getMessage());
         }
     }
     
@@ -84,13 +84,13 @@ public class NetExternalLinkController {
      * 删除链路（逻辑删除）
      */
     @DeleteMapping("/{id}")
-    public ApiResponse<Boolean> delete(@PathVariable Long id, HttpServletRequest request) {
+    public ResultVO<Boolean> delete(@PathVariable Long id, HttpServletRequest request) {
         String operator = getOperatorFromRequest(request);
         try {
             boolean ok = netExternalLinkService.delete(id, operator);
-            return ApiResponse.success(ok);
+            return ResultVO.success(ok);
         } catch (Exception e) {
-            return ApiResponse.error(e.getMessage());
+            return ResultVO.error(e.getMessage());
         }
     }
     

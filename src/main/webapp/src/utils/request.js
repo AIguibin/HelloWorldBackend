@@ -49,13 +49,13 @@ service.interceptors.response.use(
     if (res.headers['content-type'] === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
       return res;
     } else {
-      const data = res.data || {};
+      const response = res.data || {};
       // 修改响应拦截器，同时支持code=0和code=200作为成功状态码
-      if (data.code !== 0 && data.code !== 200) {
-        Message.error(data.message || '请求失败');
-        return Promise.reject(new Error(data.message || 'error'));
+      if (response.code !== 0 && response.code !== 200) {
+        Message.error(response.message || '请求失败');
+        return Promise.reject(new Error(response.message || 'error'));
       }
-      return data.data;
+      return response.data;
     }
   },
   err => {

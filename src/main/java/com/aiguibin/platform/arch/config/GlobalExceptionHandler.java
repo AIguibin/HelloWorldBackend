@@ -1,6 +1,6 @@
 package com.aiguibin.platform.arch.config;
 
-import com.aiguibin.platform.arch.model.ApiResponse;
+import com.aiguibin.platform.arch.dto.ResultVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -16,7 +16,7 @@ public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ApiResponse<?> handleValidation(MethodArgumentNotValidException e) {
+    public ResultVO<?> handleValidation(MethodArgumentNotValidException e) {
         // #region agent log
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -45,12 +45,12 @@ public class GlobalExceptionHandler {
         // #endregion
         logger.error("程序异常:", e);
         String msg = e.getBindingResult().getFieldError() != null ? e.getBindingResult().getFieldError().getDefaultMessage() : "参数校验失败";
-        return ApiResponse.error(msg);
+        return ResultVO.error(msg);
     }
 
     @ExceptionHandler(Exception.class)
-    public ApiResponse<?> handleAny(Exception e) {
+    public ResultVO<?> handleAny(Exception e) {
         logger.error("程序异常:", e);
-        return ApiResponse.error(e.getMessage());
+        return ResultVO.error(e.getMessage());
     }
 }

@@ -174,8 +174,8 @@ export default {
     // 加载待审批列表
     loadPendingList() {
       getPendingApprove()
-        .then(response => {
-          this.pendingList = response.data
+        .then(data => {
+          this.pendingList = data
         })
         .catch(error => {
           this.$message.error('加载失败: ' + error.message)
@@ -195,8 +195,8 @@ export default {
       
       // 加载变更详情
       getChangeDetail(row.id)
-        .then(response => {
-          this.currentChangeDetail = response.data
+        .then(data => {
+          this.currentChangeDetail = data
           this.approveDialogVisible = true
         })
         .catch(error => {
@@ -285,7 +285,6 @@ export default {
 }
 
 .card-container {
-  max-width: 1200px;
   margin: 0 auto;
 }
 

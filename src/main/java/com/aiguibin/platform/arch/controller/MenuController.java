@@ -3,7 +3,7 @@ package com.aiguibin.platform.arch.controller;
 import com.aiguibin.platform.arch.entity.Menu;
 import com.aiguibin.platform.arch.entity.User;
 import com.aiguibin.platform.arch.mapper.UserMapper;
-import com.aiguibin.platform.arch.model.ApiResponse;
+import com.aiguibin.platform.arch.dto.ResultVO;
 import com.aiguibin.platform.arch.service.AuthService;
 import com.aiguibin.platform.arch.service.MenuService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -32,37 +32,37 @@ public class MenuController {
     /**
      * 获取当前用户的菜单树
      */
-    @GetMapping("/user")
-    public ApiResponse<List<Menu>> getUserMenus(HttpServletRequest request) {
+    @GetMapping("/userMenus")
+    public ResultVO<List<Menu>> getUserMenus(HttpServletRequest request) {
         Long userId = getCurrentUserId(request);
         if (userId == null) {
             // 如果无法获取用户ID，返回空菜单
-            return ApiResponse.success(new ArrayList<>());
+            return ResultVO.success(new ArrayList<>());
         }
         List<Menu> menus = menuService.getUserMenuTree(userId);
-        return ApiResponse.success(menus);
+        return ResultVO.success(menus);
     }
 
     /**
      * 获取当前用户的权限列表
      */
     @GetMapping("/permissions")
-    public ApiResponse<List<String>> getUserPermissions(HttpServletRequest request) {
+    public ResultVO<List<String>> getUserPermissions(HttpServletRequest request) {
         Long userId = getCurrentUserId(request);
         if (userId == null) {
-            return ApiResponse.success(new ArrayList<>());
+            return ResultVO.success(new ArrayList<>());
         }
         List<String> permissions = menuService.getUserPermissions(userId);
-        return ApiResponse.success(permissions);
+        return ResultVO.success(permissions);
     }
 
     /**
      * 获取所有菜单树（管理员功能）
      */
     @GetMapping("/all")
-    public ApiResponse<List<Menu>> getAllMenus() {
+    public ResultVO<List<Menu>> getAllMenus() {
         List<Menu> menus = menuService.getAllMenuTree();
-        return ApiResponse.success(menus);
+        return ResultVO.success(menus);
     }
 
     /**
@@ -88,4 +88,3 @@ public class MenuController {
         }
     }
 }
-

@@ -2,7 +2,7 @@ package com.aiguibin.platform.arch.controller;
 
 import com.aiguibin.platform.arch.dto.LoginRO;
 import com.aiguibin.platform.arch.entity.User;
-import com.aiguibin.platform.arch.model.ApiResponse;
+import com.aiguibin.platform.arch.dto.ResultVO;
 import com.aiguibin.platform.arch.service.AuthService;
 import com.aiguibin.platform.arch.service.UserService;
 
@@ -29,18 +29,18 @@ public class AuthController {
     private AuthService authService;
 
     @GetMapping("/health")
-    public ApiResponse<String> health() {
-        return ApiResponse.success("OK");
+    public ResultVO<String> health() {
+        return ResultVO.success("OK");
     }
 
     @PostMapping("/auth/login")
-    public ApiResponse<?> login(@RequestBody @Validated LoginRO req) {
+    public ResultVO<?> login(@RequestBody @Validated LoginRO req) {
         User user = userService.getUserByUserNum(req.getUserNum());
         if (user == null) {
-            return ApiResponse.error("账号不存在");
+            return ResultVO.error("账号不存在");
         }
         if (!userService.matchesPassword(req.getPassword(), user.getPassword())) {
-            return ApiResponse.error("密码错误");
+            return ResultVO.error("密码错误");
         }
         // 生成临时token，用于后续机构选择
         String tempToken = authService.issueToken(user.getUserNum());
@@ -66,7 +66,7 @@ public class AuthController {
         // 3.构建部门新信息
         responseData.put("userAllOrgDeptList", userAllOrgDeptList);
 
-        return ApiResponse.success("登录成功，请选择机构", responseData);
+        return ResultVO.success("登录成功，请选择机构", responseData);
     }
 
     /**
@@ -77,30 +77,30 @@ public class AuthController {
      * @return 完整的登录信息，包括用户、机构、权限等
      */
     @PostMapping("/auth/check")
-    public ApiResponse<?> checkLogin(@RequestBody Map<String, String> requestBody) {
+    public ResultVO<?> checkLogin(@RequestBody Map<String, String> requestBody) {
         String tempToken = requestBody.get("tempToken");
         String selectedOrgCode = requestBody.get("selectedOrgCode");
 
         // 验证临时token
         if (tempToken == null || tempToken.isEmpty()) {
-            return ApiResponse.error("临时token不能为空");
+            return ResultVO.error("临时token不能为空");
         }
 
         // 验证机构编码
         if (selectedOrgCode == null || selectedOrgCode.isEmpty()) {
-            return ApiResponse.error("机构编码不能为空");
+            return ResultVO.error("机构编码不能为空");
         }
 
         // 从临时token中获取用户信息
         String userNum = authService.getUserNumFromToken(tempToken);
         if (userNum == null) {
-            return ApiResponse.error("临时token无效");
+            return ResultVO.error("临时token无效");
         }
 
         // 获取用户信息
         User user = userService.getUserByUserNum(userNum);
         if (user == null) {
-            return ApiResponse.error("用户不存在");
+            return ResultVO.error("用户不存在");
         }
 
         // 获取用户在该机构下的权限信息
@@ -126,6 +126,6 @@ public class AuthController {
                 selectedOrgCode);
         result.put("sessionId", sessionId);
 
-        return ApiResponse.success(result);
+        return ResultVO.success(result);
     }
 }
