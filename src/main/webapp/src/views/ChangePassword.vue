@@ -143,59 +143,62 @@ export default {
 <style scoped>
 .change-password-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8eaf6 100%);
+  background: var(--gradient-bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
+  padding: var(--spacing-xl) var(--spacing-md);
+  animation: fadeIn var(--transition-base) ease-out;
 }
 
 .form-container {
   width: 100%;
-  max-width: 500px;
+  max-width: 520px;
 }
 
 .form-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: var(--spacing-xl);
 }
 
 .form-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1a1a2e;
-  margin-bottom: 12px;
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: var(--spacing-sm);
 }
 
 .form-title i {
-  font-size: 32px;
-  color: #7B68EE;
+  font-size: var(--text-3xl);
+  color: var(--color-primary);
 }
 
 .form-subtitle {
-  font-size: 15px;
-  color: #6b7280;
+  font-size: var(--text-base);
+  color: var(--text-secondary);
   margin: 0;
-  line-height: 1.6;
+  line-height: var(--line-height-relaxed);
 }
 
 .form-card {
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(123, 104, 238, 0.12);
-  border: 1px solid rgba(123, 104, 238, 0.1);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+  animation: fadeInUp var(--transition-base) ease-out 0.2s both;
 }
 
 .form-card ::v-deep .el-card__header {
-  border-bottom: 2px solid rgba(123, 104, 238, 0.1);
-  padding: 24px;
+  border-bottom: 1px solid var(--border-light);
+  padding: var(--spacing-lg);
 }
 
 .form-card ::v-deep .el-card__body {
-  padding: 32px 24px;
+  padding: var(--spacing-xl) var(--spacing-lg);
 }
 
 .password-form {
@@ -203,97 +206,119 @@ export default {
 }
 
 .password-form ::v-deep .el-form-item__label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #4a5568;
-  padding-right: 16px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding-right: var(--spacing-md);
 }
 
 .password-form ::v-deep .el-input__inner {
-  border-radius: 8px;
-  border: 1px solid #e4e7eb;
-  transition: all 0.3s ease;
-  font-size: 14px;
-  padding: 12px 16px;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--border-light);
+  transition: all var(--transition-base);
+  font-size: var(--text-base);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--bg-card);
 }
 
 .password-form ::v-deep .el-input__inner:focus {
-  border-color: #7B68EE;
-  box-shadow: 0 0 0 4px rgba(123, 104, 238, 0.2);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15), var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .password-form ::v-deep .el-input__prefix {
-  left: 12px;
-  color: #7B68EE;
+  left: var(--spacing-sm);
+  color: var(--color-primary);
 }
 
 .form-actions {
   display: flex;
-  gap: 12px;
+  gap: var(--spacing-md);
   justify-content: center;
-  margin-top: 8px;
+  margin-top: var(--spacing-md);
 }
 
 .cancel-btn {
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 14px;
-  transition: all 0.3s ease;
-  border: 1px solid #d1d5db;
-  color: #606266;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: var(--text-base);
+  transition: all var(--transition-base);
+  border: 2px solid var(--border-light);
+  color: var(--text-secondary);
+  background: var(--bg-card);
 }
 
 .cancel-btn:hover {
-  background: #f0f0f0;
-  border-color: #b3d8ff;
-  color: #409EFF;
+  background: var(--bg-hover);
+  border-color: var(--color-primary-light);
+  color: var(--color-primary);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .submit-btn {
-  padding: 12px 32px;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 14px;
-  transition: all 0.3s ease;
-  background: linear-gradient(135deg, #7B68EE 0%, #9370DB 100%);
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: var(--text-base);
+  transition: all var(--transition-base);
+  background: var(--gradient-primary);
   border: none;
-  color: #fff;
+  color: var(--text-white);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.submit-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left var(--transition-slow);
 }
 
 .submit-btn:hover {
-  background: linear-gradient(135deg, #9370DB 0%, #BA55D3 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(123, 104, 238, 0.35);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-xl);
+}
+
+.submit-btn:hover::before {
+  left: 100%;
 }
 
 .submit-btn:active {
-  transform: translateY(0);
+  transform: translateY(-1px);
 }
 
 .security-tips {
-  margin-top: 32px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
-  padding: 24px;
-  border: 1px solid rgba(123, 104, 238, 0.1);
+  margin-top: var(--spacing-xl);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-md);
+  animation: fadeInUp var(--transition-base) ease-out 0.4s both;
 }
 
 .tips-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a1a2e;
-  margin-bottom: 16px;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--spacing-sm);
 }
 
 .tips-title i {
-  color: #7B68EE;
-  font-size: 18px;
+  color: var(--color-primary);
+  font-size: var(--text-xl);
 }
 
 .tips-list {
@@ -305,23 +330,28 @@ export default {
 .tip-item {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 10px 0;
-  color: #4a5568;
-  font-size: 14px;
-  line-height: 1.6;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--line-height-relaxed);
+  transition: all var(--transition-fast);
+}
+
+.tip-item:hover {
+  transform: translateX(4px);
 }
 
 .tip-item i {
-  color: #67c23a;
-  font-size: 16px;
+  color: var(--color-success);
+  font-size: var(--text-lg);
   flex-shrink: 0;
   margin-top: 2px;
 }
 
 @media screen and (max-width: 768px) {
   .change-password-page {
-    padding: 20px 16px;
+    padding: var(--spacing-lg) var(--spacing-md);
   }
 
   .form-container {
@@ -329,15 +359,15 @@ export default {
   }
 
   .form-header {
-    margin-bottom: 24px;
+    margin-bottom: var(--spacing-lg);
   }
 
   .form-title {
-    font-size: 24px;
+    font-size: var(--text-2xl);
   }
 
   .form-card ::v-deep .el-card__body {
-    padding: 24px 16px;
+    padding: var(--spacing-lg) var(--spacing-md);
   }
 
   .form-actions {
@@ -350,21 +380,21 @@ export default {
   }
 
   .security-tips {
-    padding: 20px 16px;
+    padding: var(--spacing-lg) var(--spacing-md);
   }
 }
 
 @media screen and (max-width: 480px) {
   .form-title {
-    font-size: 20px;
+    font-size: var(--text-xl);
   }
 
   .form-subtitle {
-    font-size: 14px;
+    font-size: var(--text-sm);
   }
 
   .password-form ::v-deep .el-form-item__label {
-    font-size: 13px;
+    font-size: var(--text-sm);
   }
 }
 </style>

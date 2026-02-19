@@ -5,6 +5,11 @@ import store from './store';
 import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';
 
+// 导入自定义样式
+import './styles/variables.css';
+import './styles/global.css';
+import './styles/element-ui.css';
+
 // 导入权限指令
 import { registerDirectives } from './utils/directive';
 
