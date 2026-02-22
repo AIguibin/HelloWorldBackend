@@ -224,7 +224,7 @@
                                     <goal>install-node-and-npm</goal>
                                 </goals>
                                 <configuration>
-                                    <nodeVersion>v22.19.0</nodeVersion>
+                                    <nodeVersion>v22.22.0</nodeVersion>
                                     <nodeDownloadRoot>https://registry.npmmirror.com/-/binary/node/</nodeDownloadRoot>
                                 </configuration>
                             </execution>
