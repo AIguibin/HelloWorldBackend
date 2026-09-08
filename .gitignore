@@ -87,3 +87,7 @@ Thumbs.db
 # Temporary files
 .tmp/
 .temp/
+
+# AI agent file
+.cursor/
+.trae/
