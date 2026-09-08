@@ -275,8 +275,8 @@ aiguibin-platform-arch/          # 项目根目录
 
 | 分类 | 技术栈 |
 |------|--------|
-| 后端框架 | Spring Boot 4.1.x（JDK 17+，约定 21） |
-| 安全 | Spring Security 7.x + JWT（jjwt 0.13）+ Redis 登录态白名单 |
+| 后端框架 | Spring Boot 4.1.x（JDK 21，LTS） |
+| 安全 | Spring Security + JWT（按需回补，当前未启用；基线 Security 7.x / jjwt 0.13） |
 | 持久层框架 | MyBatis-Plus 3.5.x（mybatis-plus-spring-boot4-starter） |
 | 数据库 | MySQL 8.4（驱动 mysql-connector-j） |
 | 缓存 | Redis 7.x（Lettuce，随 Boot 提供） |

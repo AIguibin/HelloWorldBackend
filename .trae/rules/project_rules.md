@@ -22,7 +22,7 @@
 
 ---
 
-## ☕ 3. 后端开发规范 (Java 17+ / Spring Boot 4.1)
+## ☕ 3. 后端开发规范 (Java 21 / Spring Boot 4.1)
 
 - **分层标准**: 框架公共层为 `common/`（统一响应、全局异常）、`config/`、`security/`；业务模块严格按 `controller -> service -> service/impl -> mapper -> entity` 分层新增，依赖注入统一用构造器注入（不用 `@Resource`/`@Autowired` 字段注入）。
 - **Jakarta 命名空间**: Boot 4 一律 `jakarta.*`（`jakarta.servlet`、`jakarta.validation`、`jakarta.annotation`）；`javax.*` 仅允许 JDK 自带包（如 `javax.crypto`）。

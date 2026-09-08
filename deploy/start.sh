@@ -6,7 +6,7 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${PROJECT_ROOT}"
 
-# 后端（Maven Wrapper，自动下载 3.9.11；需 JDK 17+）
-# JAVA_HOME=/d/Java/jdk17.0.16 deploy/start.sh
+# 后端（Maven Wrapper，自动下载 3.9.11；需 JDK 21，最低 17）
+# JAVA_HOME=/d/Java/jdk21.0.12.1 deploy/start.sh
 deploy/mvnw -gs "D:/Maven/settings-aiguibin.xml" -Dmaven.repo.local="E:/Repository/Local" clean package -DskipTests
 java -jar target/aiguibin-platform-arch.jar

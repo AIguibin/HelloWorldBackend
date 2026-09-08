@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const stackCards = [
-  { title: '后端框架', value: 'Spring Boot 4.1', icon: 'Cpu', desc: 'Java 17+ / MyBatis-Plus / 统一响应与异常' },
+  { title: '后端框架', value: 'Spring Boot 4.1', icon: 'Cpu', desc: 'Java 21 / MyBatis-Plus / 统一响应与异常' },
   { title: '数据访问', value: 'MyBatis-Plus 3.5', icon: 'Coin', desc: 'MySQL 8.4 / HikariCP 连接池' },
   { title: '前端框架', value: 'Vue 3.5 + Vite 8', icon: 'Monitor', desc: 'TypeScript 5.9 strict / Element Plus' },
   { title: '构建工具', value: 'Maven 3.9 + pnpm 10+', icon: 'SetUp', desc: 'Maven Wrapper / 核心包锁定' },

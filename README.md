@@ -63,7 +63,7 @@ aiguibin-platform-arch/
 
 ### 环境准备
 
-- JDK 17+（推荐 21，修改 `pom.xml` 的 `java.version` 即可切换）
+- JDK 21（LTS，约定版本；最低 17，基线已按 21 编译）
 - Node.js ≥ 22.12 + pnpm ≥ 10.21（`corepack enable` 即可获得项目锁定的 pnpm）
 - MySQL / Redis：当前骨架未使用，业务模块按需引入
 
@@ -71,7 +71,7 @@ aiguibin-platform-arch/
 
 ```bash
 # Windows（wrapper 已随仓库提交于 deploy/，无需本机安装 Maven 3.9+）
-set JAVA_HOME=D:\path\to\jdk17
+set JAVA_HOME=D:\Java\jdk21.0.12.1
 deploy\mvnw.cmd -gs "D:\Maven\settings-aiguibin.xml" -Dmaven.repo.local="E:\Repository\Local" clean package -DskipTests
 
 # Linux / macOS

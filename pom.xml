@@ -18,9 +18,8 @@
     <description>Front-back integrated Platform Arch Management System (Spring Boot 4 + Vue 3)</description>
 
     <properties>
-        <!-- 技术基线：JDK 约定 21（LTS），最低 17（Spring Boot 4 支持下限）。
-             当前构建机为 JDK 17，故按最低线编译；升级 JDK 21 后仅需修改此值。 -->
-        <java.version>17</java.version>
+        <!-- 技术基线：JDK 21（LTS，约定版本）；最低 17（Spring Boot 4 支持下限） -->
+        <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
