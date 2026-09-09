@@ -1,0 +1,19 @@
+# 生产环境：数据源一律通过环境变量注入，禁止提交真实凭据
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/aiguibin_platform_arch?useSSL=false&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      validation-timeout: 5000
+      connection-test-query: SELECT 1
+      pool-name: PlatformArchHikariCP-prod
+  flyway:
+    enabled: true

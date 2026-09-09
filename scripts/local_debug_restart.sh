@@ -107,8 +107,8 @@ build_project() {
     print_info "开始Maven构建..."
     
     # 使用Maven Wrapper如果存在，否则直接使用mvn
-    if [ -f "deploy/mvnw" ]; then
-        MVN_CMD="deploy/mvnw"
+    if [ -f "./mvnw" ]; then
+        MVN_CMD="./mvnw"
     else
         MVN_CMD="mvn"
     fi

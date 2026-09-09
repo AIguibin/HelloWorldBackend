@@ -4,25 +4,16 @@ server:
 spring:
   application:
     name: aiguibin-platform-arch
-  datasource:
-    url: jdbc:mysql://localhost:3306/aiguibin_platform_arch?useSSL=false&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
-    username: root
-    password: P@ssW0rd
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    type: com.zaxxer.hikari.HikariDataSource
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
-      validation-timeout: 5000
-      connection-test-query: SELECT 1
-      pool-name: PlatformArchHikariCP
-      auto-commit: true
+  # 默认激活 dev；生产部署用 --spring.profiles.active=prod 覆盖
+  profiles:
+    active: dev
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
+  # 数据库迁移：骨架保持无数据库可启动；业务项目接入数据库后置为 true，
+  # 迁移脚本位于 classpath:db/migration（V1__xxx.sql 递增）
+  flyway:
+    enabled: false
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/*.xml
@@ -39,4 +30,3 @@ logging:
   level:
     root: INFO
     '[com.aiguibin.platform.arch]': INFO
-    '[com.aiguibin.platform.arch.mapper]': DEBUG

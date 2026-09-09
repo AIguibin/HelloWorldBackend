@@ -12,16 +12,12 @@ const activeMenu = computed(() => route.path);
   <el-container class="app-layout">
     <el-aside :width="'220px'" class="app-aside">
       <div class="app-logo">
-        <el-icon :size="22"><Platform /></el-icon>
+        <el-icon :size="22">
+          <Platform />
+        </el-icon>
         <span class="app-logo-text">架构管理平台</span>
       </div>
-      <el-menu
-        class="app-menu"
-        router
-        unique-opened
-        :default-active="activeMenu"
-        background-color="transparent"
-      >
+      <el-menu class="app-menu" router unique-opened :default-active="activeMenu" background-color="transparent">
         <el-menu-item index="/dashboard">
           <el-icon><Odometer /></el-icon>
           <span>首页</span>
@@ -31,7 +27,9 @@ const activeMenu = computed(() => route.path);
 
     <el-container>
       <el-header class="app-header" :height="'56px'">
-        <div class="app-header-title">{{ route.meta.title ?? '首页' }}</div>
+        <div class="app-header-title">
+          {{ route.meta.title ?? '首页' }}
+        </div>
       </el-header>
 
       <el-main class="app-main">

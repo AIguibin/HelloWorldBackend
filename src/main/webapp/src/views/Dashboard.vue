@@ -11,7 +11,9 @@ const stackCards = [
   <div class="dashboard">
     <el-card shadow="never" class="welcome-card">
       <div class="welcome-row">
-        <el-icon :size="36" color="var(--app-primary-color)"><Platform /></el-icon>
+        <el-icon :size="36" color="var(--app-primary-color)">
+          <Platform />
+        </el-icon>
         <div>
           <h2>工程框架骨架已就绪</h2>
           <p>当前为纯净脚手架，未包含任何业务功能；业务模块按分层规范与基线约定接入</p>
@@ -23,17 +25,23 @@ const stackCards = [
       <el-col v-for="card in stackCards" :key="card.title" :xs="24" :sm="12" :lg="6">
         <el-card shadow="hover" class="stack-card">
           <div class="stack-header">
-            <el-icon :size="20"><component :is="card.icon" /></el-icon>
+            <el-icon :size="20">
+              <component :is="card.icon" />
+            </el-icon>
             <span>{{ card.title }}</span>
           </div>
-          <div class="stack-value">{{ card.value }}</div>
-          <div class="stack-desc">{{ card.desc }}</div>
+          <div class="stack-value">
+            {{ card.value }}
+          </div>
+          <div class="stack-desc">
+            {{ card.desc }}
+          </div>
         </el-card>
       </el-col>
     </el-row>
 
     <el-card shadow="never" class="placeholder-card">
-      <template #header>业务模块</template>
+      <template #header> 业务模块 </template>
       <el-empty description="暂无业务模块，按项目规则文档的交付清单接入" />
     </el-card>
   </div>

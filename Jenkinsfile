@@ -29,7 +29,7 @@ pipeline {
 
         stage('Build Backend') {
             steps {
-                sh 'deploy/mvnw -B -DskipTests clean package'
+                sh './mvnw -B -DskipTests clean package'
             }
         }
 

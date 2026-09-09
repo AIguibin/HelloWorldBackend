@@ -191,19 +191,20 @@ description: "提供项目结构文档和开发规范，包括代码结构、命
    - 修改数据库时 → 考虑前后端字段映射
 5. **立即验证**：
    - 前端修改 → `pnpm build`（含 vue-tsc 严格类型检查）
-   - 后端修改 → `deploy/mvnw clean package` 并重启应用（Windows 下先停旧 java 进程）
+   - 后端修改 → `./mvnw clean package` 并重启应用（Windows 下先停旧 java 进程）
 6. **计划文档**：产出的plan开头的计划文档放在.trae/plan/目录下
 7. **其他文档**：其他文档（如设计文档、用户手册等）放在docs/目录下
 8. **任何功能开发，必须包含**：
-   - 数据库表 SQL 脚本（含索引、注释，放 sql/）
+   - Flyway 迁移脚本（含索引、注释，放 src/main/resources/db/migration/V<N>__xxx.sql）
    - 实体类（Entity）+ RO(入参) + VO（出参）
    - Mapper 接口 + XML/SQL（或 MyBatis-Plus 注解）
    - Service 接口 + ServiceImpl（含业务逻辑、事务）
-   - Controller（含接口注解、参数校验、返回ResultVO；免认证接口需同步 SecurityConfig.PUBLIC_APIS）
-   - 前端 types/ 类型 + api/ 封装 + views 页面（新页面需配 sys_menu 菜单数据，component 字段对应 src/views 相对路径且不含 .vue 后缀）
+   - Controller（含接口注解、参数校验、返回 ResultVO；springdoc @Tag/@Operation 注解）
+   - 前端 types/ 类型 + api/ 封装 + views 页面 + 路由注册
+   - 单元测试（随模块放 src/test 同包；集成测试用 Testcontainers，禁止依赖本机服务）
    - 各层依赖注入正确（推荐构造器注入，Controller 注入 Service，Service 注入 Mapper）
    - 数据库表字段 → 实体类字段 → DTO字段 → Mapper SQL → Service 逻辑 → Controller 参数，必须完全一致（名称、类型、非空约束）
-9. **构建工具**：后端一律 `deploy/mvnw`（禁止本机 mvn，3.6.0 无法解析 Boot 4 pom）；前端一律 pnpm（packageManager 字段固定）
+9. **构建工具**：后端一律根目录 `./mvnw`（Maven 官方标准位置；禁止本机 mvn，3.6.0 无法解析 Boot 4 pom）；前端一律 pnpm（packageManager 字段固定）
 
 ## 项目结构文档树
 
@@ -216,17 +217,12 @@ aiguibin-platform-arch/          # 项目根目录
 │   ├── plan/                    # 项目计划文档
 │   ├── rules/                   # 项目开发规范
 │   └── skills/                  # 技能库和工具集
-├── bin/                         # 本地调试脚本（check_kill_port.sh 等）
-├── checks/                      # 检查类脚本目录（预留）
-├── deploy/                      # 构建部署与启停脚本
-│   ├── Jenkinsfile              # CI 流水线（pnpm build → mvnw package → 归档）
-│   ├── mvnw / mvnw.cmd          # Maven 启动脚本（wrapper 向上查找 .mvn/wrapper）
-│   ├── restart.sh               # 生产重启脚本
-│   └── start.sh                 # 本地构建并运行
+├── Jenkinsfile                  # CI 流水线（Jenkins 标准：仓库根目录）
+├── mvnw / mvnw.cmd              # Maven 构建入口（Maven 官方标准：项目根目录）
+├── scripts/                     # 运维/工具脚本（restart/start/check_kill_port/local_debug_restart）
 ├── docs/                        # 项目文档目录
-├── sql/                         # 数据库脚本目录
-│   ├── aiguibin_platform_arch_data.sql  # 初始化数据脚本（RBAC + 首页菜单）
-│   └── aiguibin_platform_arch_init.sql  # 数据库表结构脚本（RBAC 十表）
+├── src/test/java/               # 测试：ArchitectureTest(分层守护) + 启动冒烟
+├── docs/scaffold-spec.md        # 工程脚手架规范（新项目搭建提示词）
 ├── src/                         # 源代码目录
 │   ├── main/                    # 主代码目录
 │   │   ├── java/                # Java后端代码
@@ -250,21 +246,16 @@ aiguibin-platform-arch/          # 项目根目录
 |-----------|----------|------------------|
 | **根目录** | 项目主目录，包含所有子目录和配置文件 | 构建脚本、配置文件、说明文档 |
 | **.trae/** | Trae IDE相关配置和文档 | 设计方案、开发规范、技能库 |
-| **bin/** | 本地调试脚本目录 | Shell脚本 |
-| **checks/** | 检查类脚本目录（预留） | 检查/校验脚本 |
-| **deploy/** | 构建部署与启停脚本 | Jenkinsfile、mvnw、restart.sh、start.sh |
+| **Jenkinsfile** | CI 流水线（仓库根目录，Jenkins 标准） | pnpm lint/build → mvnw test package |
 | **docs/** | 项目文档目录 | Markdown文档、设计方案 |
-| **sql/** | 数据库脚本目录 | SQL初始化脚本、数据脚本 |
+| **src/main/resources/db/migration/** | Flyway 迁移脚本 | V1__platform_rbac_schema.sql、V2__platform_rbac_data.sql |
 | **src/main/java/** | 后端Java源代码 | Java类文件（控制器、服务、实体等） |
 | **src/main/resources/** | 后端资源文件 | 配置文件、MyBatis映射文件、静态资源 |
 | **src/main/webapp/** | 前端Vue 3项目代码 | Vue组件、TypeScript文件、Vite配置 |
-| **config/** | 后端配置类 | SecurityConfig、MybatisPlusConfig |
-| **controller/** | 控制器层 | RESTful API控制器 |
-| **common/** | 框架公共层 | ResultVO 统一响应（common/result）、BusinessException + 全局异常处理（common/exception） |
-| **entity/** | 实体类（随业务模块新增） | 数据库表对应实体类 |
-| **mapper/** | Mapper接口（随业务模块新增） | MyBatis-Plus数据访问接口 |
-| **security/** | 认证与安全 | JWT签发/解析、认证过滤器 |
-| **service/** | 服务层 | AuthService（框架认证）；业务服务随模块新增 |
+| **config/** | 后端配置类 | MybatisPlusConfig（分页+审计填充） |
+| **module/<模块名>/** | 业务模块（按功能分包） | controller/service(+impl)/mapper/entity/dto 各子包，随业务新增 |
+| **common/** | 框架公共层 | ResultVO/ResultCode（result）、BusinessException + 全局异常（exception）、TraceIdFilter（web） |
+
 | **components/** | Vue组件 | 可复用的Vue组件 |
 | **router/** | 路由配置 | 静态壳路由（菜单驱动动态路由为预留能力） |
 | **stores/** | 状态管理 | Pinia store（随业务模块新增） |
@@ -279,7 +270,10 @@ aiguibin-platform-arch/          # 项目根目录
 | 安全 | Spring Security + JWT（按需回补，当前未启用；基线 Security 7.x / jjwt 0.13） |
 | 持久层框架 | MyBatis-Plus 3.5.x（mybatis-plus-spring-boot4-starter） |
 | 数据库 | MySQL 8.4（驱动 mysql-connector-j） |
-| 缓存 | Redis 7.x（Lettuce，随 Boot 提供） |
+| 接口文档 | springdoc-openapi 3.0.3（/swagger-ui/index.html） |
+| 数据库迁移 | Flyway（db/migration，骨架默认关闭） |
+| 测试/格式 | ArchUnit 1.4.x 分层守护、Spotless（palantirJavaFormat）、ESLint 10 + Prettier |
+| 缓存 | Redis（按需回补，当前未启用） |
 | 前端框架 | Vue 3.5 + TypeScript 5.9（strict） |
 | 构建工具 | Vite 8（Rolldown）、Maven Wrapper 3.9.x、pnpm ≥ 10.21 |
 | UI / 状态 | Element Plus 2.14、Pinia 3、Vue Router 4.5、Axios 1 |
@@ -287,16 +281,17 @@ aiguibin-platform-arch/          # 项目根目录
 ## 7. 项目架构特点
 
 1. **前后端分离架构**：后端提供RESTful API，前端通过AJAX调用
-2. **分层架构设计**：控制器层→服务层→数据访问层
+2. **按功能分包**：业务模块 module/<模块名>/{controller,service,mapper,entity,dto}，ArchUnit 测试守护分层依赖
 3. **认证**：框架默认不启用；业务需要时按基线回补 Spring Security + JWT
 5. **统一异常处理**：全局异常捕获和统一返回格式
-6. **详细日志记录**：关键业务节点日志记录
+6. **可观测性**：logback 文件滚动日志 + TraceIdFilter 链路追踪（X-Trace-Id）
 
 ## 8. 框架核心模块（不含任何业务与认证功能）
 
-1. **启动与约定**：统一响应（ResultVO）、全局异常处理、MyBatis-Plus 分页与审计字段填充
+1. **启动与约定**：统一响应（ResultVO/ResultCode）、全局异常处理、链路追踪（TraceIdFilter）、MyBatis-Plus 分页与审计字段填充
 2. **前端壳**：布局（MainLayout）+ 空壳首页 + axios 封装（ResultVO 解包）
-3. **预留能力**：RBAC 十表（sql/）、Spring Security + JWT、菜单驱动动态路由，均为业务模块按基线回补项
+3. **质量设施**：接口文档（springdoc）、ArchUnit 分层守护测试、Spotless/ESLint 代码风格
+4. **预留能力**：RBAC 十表（db/migration）、Spring Security + JWT、菜单驱动动态路由，均为业务模块按基线回补项
 
 ## 9. 开发流程规范
 
@@ -305,17 +300,17 @@ aiguibin-platform-arch/          # 项目根目录
 3. **代码审查**：符合规范后合并到主干
 4. **文档生成**：所有计划文档放入`.trae/plan/`，其余文档都放在`docs/`目录
 5. **前端构建**：`pnpm build`（vue-tsc 类型检查 + Vite 构建，产物输出 src/main/resources/static）
-6. **后端重启**：`deploy/mvnw clean package` 后重启应用；Windows 下重启前先停旧 java 进程
+6. **后端重启**：`./mvnw clean package` 后重启应用；Windows 下重启前先停旧 java 进程
 
 ## 10. 部署说明
 
-1. **后端部署**：打包为jar文件，通过Java命令运行（启停脚本见 deploy/restart.sh）
-2. **前端部署**：`pnpm build` 生成静态资源到 src/main/resources/static，随 jar 一体打包（CI 见 deploy/Jenkinsfile）
-3. **数据库部署**：执行 sql/ 下脚本初始化数据库（先 init 后 data）
-4. **环境配置**：通过application.yml配置环境变量；生产必须覆盖 ARCH_JWT_SECRET
+1. **后端部署**：打包为jar文件，通过Java命令运行（启停脚本见 scripts/restart.sh）
+2. **前端部署**：`pnpm build` 生成静态资源到 src/main/resources/static，随 jar 一体打包（CI 见根目录 Jenkinsfile）
+3. **数据库部署**：启用 Flyway（prod profile 已置 true）后启动时自动执行 db/migration 迁移
+4. **环境配置**：application-dev/-prod.yml 区分环境，生产数据源用 ${DB_URL}/${DB_USERNAME}/${DB_PASSWORD} 环境变量注入
 
 ---
 
-**文档版本**：v2.0
-**生成日期**：2026-09-07
+**文档版本**：v2.2
+**生成日期**：2026-09-09
 **适用范围**：开发人员、架构师、测试人员

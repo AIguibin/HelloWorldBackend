@@ -23,6 +23,6 @@
   /* Element Plus 主题对齐 */
   --el-color-primary: var(--app-primary-color);
   --el-color-primary-dark-2: var(--app-primary-dark);
-  --el-font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
-    'Microsoft YaHei', Arial, sans-serif;
+  --el-font-family:
+    'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
 }

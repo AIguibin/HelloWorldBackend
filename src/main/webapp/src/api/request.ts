@@ -11,9 +11,16 @@ interface ApiEnvelope<T = unknown> {
 }
 
 const service = axios.create({
-  baseURL: '/api',
+  // 多环境 API 地址（.env.development / .env.production 的 VITE_API_BASE_URL）
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 10000,
 });
+
+// 请求拦截器扩展点：接入认证时在此添加 Authorization 头，例如：
+// service.interceptors.request.use((config) => {
+//   config.headers.Authorization = `Bearer ${localStorage.getItem('token')}`;
+//   return config;
+// });
 
 service.interceptors.response.use(
   (response) => {

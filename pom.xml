@@ -24,6 +24,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <mybatis-plus.version>3.5.16</mybatis-plus.version>
+        <springdoc.version>3.0.3</springdoc.version>
+        <archunit.version>1.4.1</archunit.version>
     </properties>
 
     <dependencies>
@@ -46,6 +48,21 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!-- 接口文档（OpenAPI 3 + Swagger UI：/swagger-ui.html） -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+        <!-- 数据库迁移（骨架默认关闭；接入数据库后置 spring.flyway.enabled=true） -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
         </dependency>
 
         <!-- ORM：MyBatis-Plus（Boot 4 专用 starter，内含 Jakarta 适配的 mybatis-spring 4.x） -->
@@ -80,6 +97,13 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- 架构守护：分层依赖规则测试 -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>${archunit.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -95,6 +119,19 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <!-- 代码格式化：deploy/mvnw spotless:apply 手动格式化；spotless:check 校验（CI 用） -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.44.0</version>
+                <configuration>
+                    <java>
+                        <palantirJavaFormat/>
+                        <removeUnusedImports/>
+                        <importOrder/>
+                    </java>
                 </configuration>
             </plugin>
         </plugins>
