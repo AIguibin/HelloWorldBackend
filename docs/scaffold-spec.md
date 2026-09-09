@@ -67,7 +67,7 @@
 
 ## 3. 后端结构与文件清单
 
-包根：`src/main/java/com/<域名>/<应用名>/`（下例以 `com.aiguibin.platform.arch` 为例，新项目替换为实际 groupId/artifactId）。
+包根：`src/main/java/com/aiguibin/<域名>/<应用名>/`（公司统一前缀 `com.aiguibin`；下例以 `com.aiguibin.platform.arch` 为例——groupId 取 `com.aiguibin.<域名>`，artifactId 取 `<应用名>`）。
 
 **框架层（固定不变）**：
 
@@ -267,6 +267,9 @@ src/main/webapp/
     <artifactId>spring-boot-starter-parent</artifactId>
     <version>4.1.1</version>
 </parent>
+<groupId>com.aiguibin.<域名></groupId>
+<artifactId><应用名></artifactId>
+<version>1.0.0</version>
 <properties>
     <java.version>21</java.version>              <!-- 最低 17 -->
     <mybatis-plus.version>3.5.16</mybatis-plus.version>
@@ -330,7 +333,7 @@ pnpm build                   # vue-tsc 严格类型检查 + 构建，产物输�
 ## 9. 新项目搭建执行清单（可直接作为提示词）
 
 1. 建根目录，按第 2 节创建 `bin/`、`db/migration/`（resources 下）、`docs/`、`.editorconfig`、`.gitignore`、`README.md`
-2. 写 `pom.xml`（第 7 节骨架，替换 groupId/artifactId/项目名）
+2. 写 `pom.xml`（第 7 节骨架；groupId = `com.aiguibin.<域名>`，artifactId = `<应用名>`，包根 `src/main/java/com/aiguibin/<域名>/<应用名>/`）
 3. 生成并提交 Maven Wrapper（官方标准位置）：根目录 `mvnw`、`mvnw.cmd` + `.mvn/wrapper/`
 4. 写根目录 `Jenkinsfile` 与 `bin/restart.sh`、`bin/start.sh`
 5. 按第 3 节创建后端框架文件：`SpringbootStarterApplication`、`common/result/ResultCode`、`common/result/ResultVO`、`common/web/TraceIdFilter`、`common/exception/BusinessException`、`common/exception/GlobalExceptionHandler`、`config/MybatisPlusConfig`
