@@ -46,7 +46,7 @@
 ├── mvnw                             # Linux/macOS 构建入口（Maven 官方标准：项目根目录）
 ├── mvnw.cmd                         # Windows 构建入口
 ├── Jenkinsfile                      # CI 流水线（Jenkins 标准：仓库根目录）
-├── scripts/                         # 运维/工具脚本（业界惯例目录）
+├── bin/                             # 运维/工具脚本（restart/start/端口检查等）
 │   ├── restart.sh                   # 生产重启（kill 旧进程 + nohup 启动）
 │   ├── start.sh                     # 本地构建并运行
 │   ├── check_kill_port.sh           # 端口占用检查/清理
@@ -60,7 +60,7 @@
 ```
 
 规则：
-- `mvnw`、`mvnw.cmd`、`.mvn/wrapper/` 按 Maven 官方标准放**项目根目录**（Spring Initializr 与官方文档一致），保证 IDE 与各类 CI 工具默认识别；运维/工具脚本统一放 `scripts/`。
+- `mvnw`、`mvnw.cmd`、`.mvn/wrapper/` 按 Maven 官方标准放**项目根目录**（Spring Initializr 与官方文档一致），保证 IDE 与各类 CI 工具默认识别；运维/工具脚本统一放 `bin/`。
 - 生成方式：项目根目录执行 `mvn org.apache.maven.plugins:maven-wrapper-plugin:3.2.0:wrapper -Dmaven=3.9.11`，生成的 `mvnw*` 与 `.mvn/` 即在根目录。
 
 ---
@@ -89,7 +89,10 @@ src/main/java/com/aiguibin/platform/arch/
 │   └── web/
 │       └── TraceIdFilter.java            # OncePerRequestFilter：生成/透传 X-Trace-Id 并写 MDC（最高优先级）
 └── config/
-    └── MybatisPlusConfig.java            # MybatisPlusInterceptor(分页) + MetaObjectHandler(审计字段填充)
+    └── MybatisPlusConfig.java            # MybatisPlusInterceptor(乐观锁+分页) + MetaObjectHandler(审计字段填充)
+
+另：common/util/PrimaryKeyGenerator.java       # 64 位有序主键生成器（规范 V4.0）：时间前缀(17,UTC)
+                                               #   +大写UUID(32)+机器标识(4,ARCH_MACHINE_ID)+序列号(11)
 ```
 
 **业务模块（按功能分包，不按技术层分包）**——每个业务模块一个子包，内聚自己的五层：
@@ -106,7 +109,9 @@ src/main/java/com/aiguibin/platform/arch/
         ├── mapper/
         │   └── <实体>Mapper.java         # extends BaseMapper<实体> + @Mapper
         ├── entity/
-        │   └── <表名转驼峰>.java         # @TableName/@TableField/@TableId/@TableLogic
+        │   └── <表名转驼峰>.java         # @TableName；主键 String + @TableId(type=IdType.INPUT)，
+        │                                 #   插入前 PrimaryKeyGenerator.nextId() 赋值；
+        │                                 #   @Version version(乐观锁)；@TableLogic delInd；@TableField 对齐大写公共列
         └── dto/
             ├── <动作>RO.java             # 入参，jakarta.validation 注解校验
             └── <结果>VO.java             # 出参，禁止把 Entity 直接返回给前端
@@ -147,16 +152,16 @@ src/test/java/com/aiguibin/platform/arch/
 ```
 src/main/resources/
 ├── application.yml                       # 公共配置：server.port、spring.profiles.active: dev、
-│                                         #   jackson、mybatis-plus(逻辑删除/驼峰)、logging.level、
+│                                         #   jackson、mybatis-plus(逻辑删除字段 delInd/驼峰)、logging.level、
 │                                         #   spring.flyway.enabled: false（骨架无库可启动；接入库后置 true）
 ├── application-dev.yml                   # 本地数据源（localhost + HikariCP 参数）
 ├── application-prod.yml                  # 生产数据源：${DB_URL}/${DB_USERNAME}/${DB_PASSWORD} 环境变量占位，
 │                                         #   flyway.enabled: true；禁止提交真实凭据
 ├── logback-spring.xml                    # 控制台 + 文件滚动（logs/arch.log，按天+100MB 切割，保留30天），
 │                                         #   日志模式含 %X{traceId}
-├── db/migration/                         # Flyway 迁移脚本（启动时按版本号执行）：
-│   ├── V1__platform_rbac_schema.sql      #   表结构（示例：RBAC 十表）
-│   └── V2__platform_rbac_data.sql        #   初始数据；业务增量一律新增 V<N>__描述.sql，禁止改历史脚本
+├── db/migration/                         # Flyway 迁移脚本（启动时按版本号执行，DDL 必须符合第 6 节 V4.0 规范）：
+│   └── (.gitkeep)                        #   业务增量一律新增 V<N>__描述.sql，禁止修改历史脚本
+│                                         #   （RBAC 预留表 DDL 未按 V4.0，已移除；需要时从 git 历史 79fede4^:sql/ 找回并重构）
 └── static/                               # 前端构建产物（git 忽略，由 pnpm build 生成）
 ```
 
@@ -223,7 +228,34 @@ src/main/webapp/
 | API 路径 | `/api/v1/<模块>/<动作>` RESTful | `POST /api/v1/orders` |
 | 迁移脚本 | `V<N>__<描述>.sql` | `V3__add_order_index.sql` |
 
-**建表规范**：所有表必含 `uuid varchar(32)`、`id bigint AUTO_INCREMENT`、`created_by`、`created_time`、`updated_by`、`updated_time`、`is_deleted tinyint`（逻辑删除，由 MetaObjectHandler 自动填充审计字段）；SQL 禁止拼接，必须 `#{}` 参数化。
+### 建表规范（公司标准 V4.0，强制）
+
+**公共字段（8 个，所有业务表必含，名称/类型固定）**：
+
+| 字段名 | 类型 | 空 | 默认 | 说明 |
+|--------|------|----|------|------|
+| `id` | `CHAR(64)` | 否 | 应用层生成 | 主键，全局唯一且趋势递增，见下 |
+| `CREATE_TIME` | `DATETIME(3)` | 否 | CURRENT_TIMESTAMP(3) | 创建时间（框架自动填充） |
+| `CREATE_USER` | `VARCHAR(32)` | 是 | - | 创建人（框架自动填充，默认 system） |
+| `UPDATE_TIME` | `DATETIME(3)` | 否 | CURRENT_TIMESTAMP(3) ON UPDATE | 更新时间（框架自动填充） |
+| `UPDATE_USER` | `VARCHAR(32)` | 是 | - | 更新人（框架自动填充） |
+| `DEL_IND` | `TINYINT(1)` | 否 | 0 | 逻辑删除 0/1（@TableLogic） |
+| `VERSION` | `INT` | 否 | 0 | 乐观锁版本号（@Version + 乐观锁插件） |
+| `TENANT_ID` | `BIGINT` | 是 | - | 租户 ID（多租户预留） |
+
+**主键 `id` 构成（CHAR(64)，应用层 PrimaryKeyGenerator.nextId() 生成，禁止数据库自增）**：
+
+| 段位 | 长度 | 内容 |
+|------|------|------|
+| 1 | 17 | 时间前缀 `yyyyMMddHHmmssSSS`（UTC，保证趋势递增、减少页分裂） |
+| 2 | 32 | 标准 UUID 去横线转大写（跨节点唯一） |
+| 3 | 4 | 机器/节点标识（环境变量 ARCH_MACHINE_ID 注入，多节点必须唯一） |
+| 4 | 11 | 毫秒内自增序列（补零，同一毫秒单机 10^11 个） |
+
+**命名规范**：表名 `业务域_表功能`（小写+下划线、单数、禁 t_/tb_ 前缀）；字段禁用保留字；公共字段为大写下划线（历史标准）；布尔业务字段 `is_xxx`；外键字段 `xxx_id CHAR(64)` 且值保持大写。
+**索引命名**：主键 `pk_表名`、唯一 `uk_表名_字段`、普通 `idx_表名_字段`；逻辑删除表建议唯一约束组合 `DEL_IND`（如 `uk_user_mobile_del(mobile, DEL_IND)`）。
+**类型选择**：金额 `DECIMAL(m,n)`；时间 `DATETIME(3)`；布尔 `TINYINT(1)`；大文本慎用并独立成表。
+**SQL 红线**：禁止拼接（MyBatis `#{}` 参数化）、禁止 `SELECT *`、所有表和字段必须 COMMENT。
 
 ---
 
@@ -267,7 +299,7 @@ src/main/webapp/
 2. web starter 不含 Jackson → 显式加 `spring-boot-jackson`，且 Jackson 3 包名是 `tools.jackson.databind`；
 3. `spring-boot-starter-aop` 已移除（需要切面直接依赖 aspectjweaver）；
 4. MyBatis-Plus 必须 `mybatis-plus-spring-boot4-starter` 且 ≥3.5.15（低版本启动报 Invalid value type），jsqlparser 单独引入；
-5. 本机 Maven < 3.6.3 解析不了 Boot 4 的 pom → 一律用项目根目录的 `./mvnw`；
+5. 多版本 Maven 共存的机器先 `mvn -version` 确认：旧版（< 3.6.3）解析不了 Boot 4 的 pom，禁止使用；推荐一律用项目根目录的 `./mvnw`（wrapper 锁定 3.9.11），本机安装的 Maven 3.9.16+ 或 mvnd 1.0.6（内置 3.9.x，本地加速）也可直接构建，CI 统一保持 `./mvnw`；
 6. Windows 下重新打包前先停掉运行中的 java 进程，否则 jar 被锁定会产出缺资源的坏包。
 
 ---
@@ -297,10 +329,10 @@ pnpm build                   # vue-tsc 严格类型检查 + 构建，产物输�
 
 ## 9. 新项目搭建执行清单（可直接作为提示词）
 
-1. 建根目录，按第 2 节创建 `scripts/`、`db/migration/`（resources 下）、`docs/`、`.editorconfig`、`.gitignore`、`README.md`
+1. 建根目录，按第 2 节创建 `bin/`、`db/migration/`（resources 下）、`docs/`、`.editorconfig`、`.gitignore`、`README.md`
 2. 写 `pom.xml`（第 7 节骨架，替换 groupId/artifactId/项目名）
 3. 生成并提交 Maven Wrapper（官方标准位置）：根目录 `mvnw`、`mvnw.cmd` + `.mvn/wrapper/`
-4. 写根目录 `Jenkinsfile` 与 `scripts/restart.sh`、`scripts/start.sh`
+4. 写根目录 `Jenkinsfile` 与 `bin/restart.sh`、`bin/start.sh`
 5. 按第 3 节创建后端框架文件：`SpringbootStarterApplication`、`common/result/ResultCode`、`common/result/ResultVO`、`common/web/TraceIdFilter`、`common/exception/BusinessException`、`common/exception/GlobalExceptionHandler`、`config/MybatisPlusConfig`
 6. 按第 4 节写 `application.yml` + `application-dev.yml` + `application-prod.yml` + `logback-spring.xml`，初始表结构放 `db/migration/V1__xxx.sql`
 7. 按第 3 节写测试：`ArchitectureTest`（分层守护）+ `SpringbootStarterApplicationTests`（启动冒烟）

@@ -33,7 +33,7 @@ aiguibin-platform-arch/
 ├── .mvn/wrapper/                       # Maven Wrapper 发行版配置（必须提交，官方标准位置）
 ├── mvnw / mvnw.cmd                     # Maven 构建入口（官方标准：项目根目录）
 ├── Jenkinsfile                         # CI 流水线（Jenkins 标准：仓库根目录）
-├── scripts/                            # 运维/工具脚本（业界惯例目录）
+├── bin/                                # 运维/工具脚本（restart/start/端口检查等）
 │   ├── restart.sh                      # 生产重启脚本
 │   ├── start.sh                        # 本地构建并运行
 │   ├── check_kill_port.sh              # 端口占用检查/清理
@@ -44,9 +44,10 @@ aiguibin-platform-arch/
 │   ├── common/
 │   │   ├── exception/                  # BusinessException + 全局异常处理
 │   │   ├── result/                     # ResultVO 统一响应 + ResultCode 响应码枚举
+│   │   ├── util/                       # PrimaryKeyGenerator（64 位有序主键，建表规范 V4.0）
 │   │   └── web/                        # TraceIdFilter（X-Trace-Id 链路追踪 + MDC）
 │   └── config/
-│       └── MybatisPlusConfig           # 分页插件 + 审计字段填充
+│       └── MybatisPlusConfig           # 乐观锁 + 分页插件 + 审计字段填充
 ├── src/test/java/.../arch/
 │   ├── ArchitectureTest                # ArchUnit 分层守护测试
 │   └── SpringbootStarterApplicationTests  # 启动冒烟测试
@@ -55,7 +56,7 @@ aiguibin-platform-arch/
 │   ├── application-dev.yml             # 本地数据源
 │   ├── application-prod.yml            # 生产数据源（环境变量注入）
 │   ├── logback-spring.xml              # 日志：文件滚动 + traceId 模式
-│   ├── db/migration/                   # Flyway 迁移脚本（V1 RBAC 表结构 / V2 初始数据）
+│   ├── db/migration/                   # Flyway 迁移脚本（DDL 按建表规范 V4.0，随业务新增）
 │   └── static/                         # 前端构建产物（git 忽略，pnpm build 生成）
 └── src/main/webapp/                    # Vue 3 前端壳（Vite + TS + ESLint/Prettier）
     ├── .env.development / .env.production  # API 地址多环境
@@ -111,6 +112,7 @@ pnpm build      # 类型检查 + 构建，产物输出到 ../resources/static
 ## 业务模块接入约定
 
 - 后端：按 `module/<模块名>/{controller, service, mapper, entity, dto}` 功能分包新增；公共设施复用 `common/`（ResultVO/ResultCode、BusinessException、全局异常、TraceIdFilter）；接口文档用 springdoc 注解（`@Tag`/`@Operation`），访问 `/swagger-ui/index.html`
+- 建表与主键必须遵循公司《建表规范 V4.0》：8 个公共字段（id CHAR(64) 主键由 PrimaryKeyGenerator 应用层生成 + CREATE_TIME/CREATE_USER/UPDATE_TIME/UPDATE_USER/DEL_IND/VERSION/TENANT_ID），详见 docs/scaffold-spec.md 第 6 节
 - 需要认证时按基线回补 Spring Security + JWT：无状态过滤器链、免认证接口集中声明、密钥走环境变量（详见 `.trae/rules/project_rules.md`）
 - 数据库结构变更一律新增 Flyway 脚本 `db/migration/V<N>__描述.sql`，禁止修改历史脚本
 - 前端：`types/` 类型 + `api/` 封装 + `views/` 页面 + 静态路由（或恢复菜单驱动动态路由）
